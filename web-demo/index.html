@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Awesome-OS Desktop — Live WASM SharedWorker Boot Demo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      background: #070a10; color: #e2e8f0;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    }
+    .screen { position: fixed; inset: 0; display: flex; flex-direction: column; }
+    .hidden { display: none !important; }
+
+    /* Top Status Bar */
+    .topbar {
+      height: 36px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 14px; background: #0d121d; border-bottom: 1px solid rgba(148,163,184,0.15);
+      font-size: 12px; color: #94a3b8; flex-shrink: 0;
+    }
+    .topbar strong { color: #f8fafc; }
+    .pills { display: flex; gap: 8px; align-items: center; }
+    .pill {
+      padding: 2px 8px; border-radius: 999px; font-size: 11px;
+      background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.3); color: #7dd3fc;
+      font-family: ui-monospace, Consolas, monospace;
+    }
+    .pill.green { background: rgba(16,185,129,0.14); border-color: rgba(16,185,129,0.35); color: #6ee7b7; }
+    .topbar a, .topbar button {
+      color: #7dd3fc; background: transparent; border: none; cursor: pointer;
+      font-size: 12px; text-decoration: none;
+    }
+
+    /* Greeter Screen */
+    .greeter-main {
+      flex: 1; display: flex; flex-direction: column; justify-content: center;
+      max-width: 980px; width: 100%; margin: 0 auto; padding: 24px; gap: 18px;
+    }
+    .hero h1 { font-size: 1.9rem; color: #f8fafc; margin-bottom: 4px; }
+    .hero p { color: #94a3b8; font-size: 14px; }
+    .bootlog {
+      background: #0b101b; border: 1px solid rgba(148,163,184,0.18); border-radius: 10px;
+      padding: 10px 14px; font-family: ui-monospace, Consolas, monospace; font-size: 12px;
+      color: #6ee7b7; max-height: 110px; overflow-y: auto; line-height: 1.5;
+    }
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+    .card {
+      background: #101624; border: 2px solid rgba(148,163,184,0.16); border-radius: 12px;
+      padding: 16px; cursor: pointer; transition: border-color 120ms ease, background 120ms ease;
+    }
+    .card:hover { border-color: rgba(56,189,248,0.5); }
+    .card.selected { background: #13253b; border-color: #38bdf8; }
+    .card h3 { font-size: 15px; color: #f8fafc; margin-bottom: 4px; }
+    .card p { font-size: 12px; color: #94a3b8; }
+    .greeter-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .g-pill {
+      flex: 1; min-width: 170px; padding: 9px 12px; border-radius: 10px; text-align: center;
+      background: #101624; border: 1px solid rgba(148,163,184,0.2); color: #94a3b8;
+      cursor: pointer; font-size: 12px; font-weight: 600;
+    }
+    .g-pill.selected { background: #261a3f; border-color: #a78bfa; color: #f3e8ff; }
+    .launch-bar { display: flex; gap: 10px; align-items: center; }
+    .uri-box {
+      flex: 1; padding: 10px 14px; border-radius: 10px; background: #0b101b;
+      border: 1px solid rgba(148,163,184,0.2); font-family: ui-monospace, Consolas, monospace;
+      font-size: 12px; color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .launch-btn {
+      padding: 11px 22px; border-radius: 10px; border: 1px solid #38bdf8;
+      background: #0284c7; color: #fff; font-weight: 700; font-size: 14px; cursor: pointer;
+    }
+    .launch-btn:hover { background: #0369a1; }
+
+    /* Live Desktop Session Screen */
+    .desktop-body { flex: 1; display: flex; min-height: 0; }
+    .rail {
+      width: 52px; background: #0d1320; border-right: 1px solid rgba(148,163,184,0.14);
+      display: flex; flex-direction: column; align-items: center; padding: 10px 0; gap: 10px;
+    }
+    .rail-ico {
+      width: 34px; height: 34px; border-radius: 8px; background: rgba(56,189,248,0.14);
+      border: 1px solid rgba(56,189,248,0.3); color: #7dd3fc; display: grid; place-items: center;
+      font-weight: 700; font-size: 13px; cursor: pointer;
+    }
+    .split-area { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px; background: #070a10; min-height: 0; }
+    @media (max-width: 820px) { .split-area { grid-template-columns: 1fr; } }
+    .pane {
+      background: #0e1422; border: 1px solid rgba(148,163,184,0.18); border-radius: 10px;
+      display: flex; flex-direction: column; overflow: hidden; min-height: 0;
+    }
+    .pane-hdr {
+      height: 32px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between;
+      background: #121a2b; border-bottom: 1px solid rgba(148,163,184,0.14); font-size: 12px; color: #cbd5e1;
+    }
+    .term-out {
+      flex: 1; padding: 12px; overflow-y: auto; font-family: ui-monospace, Consolas, monospace;
+      font-size: 12.5px; line-height: 1.55; white-space: pre-wrap; color: #e2e8f0;
+    }
+    .term-form {
+      display: flex; border-top: 1px solid rgba(148,163,184,0.14); background: #0a0f1a;
+    }
+    .term-prompt {
+      padding: 10px 8px 10px 12px; font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; color: #38bdf8;
+    }
+    .term-in {
+      flex: 1; background: transparent; border: none; outline: none; color: #f8fafc;
+      font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; padding: 10px 12px 10px 0;
+    }
+    .info-pane { padding: 16px; overflow-y: auto; font-size: 13px; color: #cbd5e1; line-height: 1.6; }
+    .info-pane code {
+      font-family: ui-monospace, Consolas, monospace; background: rgba(148,163,184,0.14);
+      padding: 1px 5px; border-radius: 4px; color: #7dd3fc;
+    }
+  </style>
+</head>
+<body>
+  <!-- GREETER SCREEN -->
+  <div id="greeter-screen" class="screen">
+    <div class="topbar">
+      <div><strong>Awesome-OS Desktop</strong> · Live WASM SharedWorker Boot</div>
+      <div class="pills">
+        <span id="abi-pill" class="pill">booting wasm...</span>
+        <span id="worker-pill" class="pill green">SharedWorker</span>
+        <a href="/docs/">/docs/</a>
+      </div>
+    </div>
+
+    <div class="greeter-main">
+      <div class="hero">
+        <h1>Boot Awesome-OS Desktop in Browser (WASM + SharedWorker)</h1>
+        <p>Powered by <code>wasi-host-web</code> running <code>B8G_ABI_MAGIC_V3</code> WebAssembly inside a SharedWorker with an in-memory <code>v11</code> CAS.</p>
+      </div>
+
+      <div id="bootlog" class="bootlog">[0.00 ms] connecting to wasi-host-worker.js...</div>
+
+      <div id="desktop-grid" class="grid"></div>
+      <div id="greeter-row" class="greeter-row"></div>
+
+      <div class="launch-bar">
+        <div id="uri-box" class="uri-box"></div>
+        <button id="launch-btn" class="launch-btn">Boot Desktop &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIVE DESKTOP SESSION SCREEN -->
+  <div id="desktop-screen" class="screen hidden">
+    <div class="topbar">
+      <div><strong id="active-desktop-title">Sectium Desktop</strong> · <span id="active-greeter-tag">lumi-chromatic-greeter</span></div>
+      <div class="pills">
+        <span id="session-cas-pill" class="pill green">v11 CAS</span>
+        <button id="reboot-btn">&#8635; Switch Desktop / Greeter</button>
+      </div>
+    </div>
+
+    <div class="desktop-body">
+      <div class="rail">
+        <div class="rail-ico" title="Sectium">S</div>
+        <div class="rail-ico" title="Terminal">&gt;_</div>
+        <div class="rail-ico" title="v11 CAS">v11</div>
+      </div>
+      <div class="split-area">
+        <div class="pane">
+          <div class="pane-hdr"><span>wasi-host-web Interactive Terminal (SharedWorker WASM)</span><span>ttyS0</span></div>
+          <div id="term-out" class="term-out"></div>
+          <form id="term-form" class="term-form">
+            <span class="term-prompt">holo@awesome-os:~$</span>
+            <input id="term-in" class="term-in" placeholder="Type help, uname -a, wasm-check, holo-pm status, reboot..." autocomplete="off" />
+          </form>
+        </div>
+        <div class="pane">
+          <div class="pane-hdr"><span>Sectium Surface · Live Projection State</span><span>0x33564742</span></div>
+          <div id="info-pane" class="info-pane"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DESKTOPS = [
+      { id: 'sectium-desktop', name: 'Sectium Pure-Art Desktop', desc: 'Sectium Universal Display Driver (Skia / Dawn / Blink) + Code - OSS', uri: 'project://node/sectium-desktop?from=repository://github.com/awesome-os/sectium@main' },
+      { id: 'omarchy-hyprland', name: 'Omarchy Hyprland / Wayland', desc: 'holo-display-wayland + static musl awesome-os/coreutils', uri: 'project://coreutils/omarchy?from=repository://github.com/awesome-os/t2desktop-omarchy@main' },
+      { id: 'noctalia-shell', name: 'Noctalia Shell / Quickshell', desc: 'holo-display-qt prismatic desktop projected from v11 CAS', uri: 'project://coreutils/noctalia?from=repository://github.com/awesome-os/t2desktop-noctalia@main' },
+      { id: 'kitty-ink-tui', name: 'Kitty-Ink DevOps TUI', desc: 'Zero-GPU holo-display-tty terminal shell', uri: 'project://node/kitty-ink?from=repository://github.com/awesome-os/awesome-os@main' },
+    ];
+    const GREETERS = ['lumi-chromatic-greeter', 'tty-ink-greeter', 'wol-warm-resume'];
+
+    let selDesktop = 0;
+    let selGreeter = 0;
+
+    const greeterScreen = document.getElementById('greeter-screen');
+    const desktopScreen = document.getElementById('desktop-screen');
+    const bootlog = document.getElementById('bootlog');
+    const abiPill = document.getElementById('abi-pill');
+    const workerPill = document.getElementById('worker-pill');
+    const grid = document.getElementById('desktop-grid');
+    const gRow = document.getElementById('greeter-row');
+    const uriBox = document.getElementById('uri-box');
+    const termOut = document.getElementById('term-out');
+    const termIn = document.getElementById('term-in');
+    const infoPane = document.getElementById('info-pane');
+
+    function renderChooser() {
+      grid.innerHTML = '';
+      DESKTOPS.forEach((d, i) => {
+        const el = document.createElement('div');
+        el.className = 'card' + (i === selDesktop ? ' selected' : '');
+        el.innerHTML = '<h3>' + d.name + '</h3><p>' + d.desc + '</p>';
+        el.onclick = () => { selDesktop = i; renderChooser(); };
+        grid.append(el);
+      });
+      gRow.innerHTML = '';
+      GREETERS.forEach((g, i) => {
+        const el = document.createElement('div');
+        el.className = 'g-pill' + (i === selGreeter ? ' selected' : '');
+        el.textContent = g;
+        el.onclick = () => { selGreeter = i; renderChooser(); };
+        gRow.append(el);
+      });
+      uriBox.textContent = 'holo-project "' + DESKTOPS[selDesktop].uri + '"';
+    }
+    renderChooser();
+
+    // Connect to SharedWorker (with Worker fallback for browsers without SharedWorker)
+    let port;
+    if (typeof SharedWorker !== 'undefined') {
+      const sw = new SharedWorker('./wasi-host-worker.js');
+      port = sw.port;
+      port.start();
+      workerPill.textContent = 'SharedWorker (Multi-Tab)';
+    } else {
+      port = new Worker('./wasi-host-worker.js');
+      workerPill.textContent = 'WebWorker';
+    }
+
+    function appendBoot(lines) {
+      bootlog.textContent += '\n' + lines.join('\n');
+      bootlog.scrollTop = bootlog.scrollHeight;
+    }
+
+    port.onmessage = (ev) => {
+      const msg = ev.data;
+      if (msg.type === 'boot-log') {
+        abiPill.textContent = 'WASM ' + msg.magic;
+        appendBoot(msg.lines);
+      } else if (msg.type === 'ready') {
+        abiPill.textContent = 'WASM ' + msg.magic;
+        if (msg.activeSession && msg.activeSession.desktop) {
+          showDesktop(msg.activeSession, msg.casCount);
+        }
+      } else if (msg.type === 'desktop-booted') {
+        showDesktop(msg.session, msg.casCount);
+      } else if (msg.type === 'reboot-greeter') {
+        desktopScreen.classList.add('hidden');
+        greeterScreen.classList.remove('hidden');
+      } else if (msg.type === 'shell-out') {
+        termOut.textContent += 'holo@awesome-os:~$ ' + msg.cmd + '\n' + (msg.out ? msg.out + '\n' : '');
+        termOut.scrollTop = termOut.scrollHeight;
+      }
+    };
+
+    function showDesktop(session, casCount) {
+      greeterScreen.classList.add('hidden');
+      desktopScreen.classList.remove('hidden');
+      const d = DESKTOPS.find((x) => x.id === session.desktop) || DESKTOPS[0];
+      document.getElementById('active-desktop-title').textContent = d.name;
+      document.getElementById('active-greeter-tag').textContent = session.greeter;
+      document.getElementById('session-cas-pill').textContent = 'v11 CAS (' + casCount + ' blobs · ' + (session.casHit ? 'HIT' : session.bootMs + 'ms') + ')';
+      infoPane.innerHTML =
+        '<p><strong>Active Desktop:</strong> ' + d.name + '</p>' +
+        '<p><strong>Projection URI:</strong> <code>' + session.projectUri + '</code></p>' +
+        '<p><strong>v11 Blob:</strong> <code>' + session.blobPath + '</code></p>' +
+        '<p><strong>Boot Time:</strong> ' + session.bootMs + ' ms (' + (session.casHit ? 'warm SharedWorker CAS hit' : 'hydrated into v11') + ')</p>' +
+        '<hr style="border:0;border-top:1px solid rgba(148,163,184,0.2);margin:14px 0" />' +
+        '<p>This session is shared across browser tabs via <code>SharedWorker</code> running live <code>B8G_ABI_MAGIC_V3 (0x33564742)</code> WebAssembly.</p>' +
+        '<p style="margin-top:8px">Try running <code>wasm-check</code>, <code>holo-pm status</code>, or <code>uname -a</code> in the left terminal.</p>';
+      termOut.textContent = 'Booted ' + d.name + ' via wasi-host-web SharedWorker (' + session.bootMs + ' ms).\nType "help" or "wasm-check".\n\n';
+      termIn.focus();
+    }
+
+    document.getElementById('launch-btn').onclick = () => {
+      const d = DESKTOPS[selDesktop];
+      port.postMessage({ type: 'boot-desktop', desktop: d.id, greeter: GREETERS[selGreeter], projectUri: d.uri });
+    };
+    document.getElementById('reboot-btn').onclick = () => {
+      port.postMessage({ type: 'shell-exec', cmd: 'reboot' });
+    };
+    document.getElementById('term-form').onsubmit = (e) => {
+      e.preventDefault();
+      const cmd = termIn.value.trim();
+      termIn.value = '';
+      if (cmd) port.postMessage({ type: 'shell-exec', cmd });
+    };
+    window.addEventListener('keydown', (e) => {
+      if (!greeterScreen.classList.contains('hidden')) {
+        if (e.key === 'ArrowRight') { selDesktop = (selDesktop + 1) % 4; renderChooser(); }
+        else if (e.key === 'ArrowLeft') { selDesktop = (selDesktop + 3) % 4; renderChooser(); }
+        else if (e.key === 'Enter') { document.getElementById('launch-btn').click(); }
+      }
+    });
+  </script>
+</body>
+</html>
