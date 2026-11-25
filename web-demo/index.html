@@ -661,6 +661,10 @@
     document.getElementById('launch-btn').onclick = () => {
       const d = DESKTOPS[selDesktop];
       showLoader('Booting ' + d.name, 'holo-project "' + d.uri + '" -> OPFS:/v11/files/', 45);
+      if (d.id === 'omarchy-hyprland') {
+        setTimeout(() => { location.href = './omarchy.html'; }, 280);
+        return;
+      }
       port.postMessage({ type: 'boot-desktop', desktop: d.id, greeter: GREETERS[selGreeter], projectUri: d.uri });
     };
     document.getElementById('reboot-btn').onclick = () => {
