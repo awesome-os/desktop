@@ -1,0 +1,70 @@
+{
+  "schema": "awesome-os-desktop-manifest-v1",
+  "abiMagic": "0x33564742",
+  "casLayout": "v11",
+  "defaultDesktop": "sectium-desktop",
+  "defaultGreeter": "lumi-chromatic-greeter",
+  "desktops": [
+    {
+      "id": "sectium-desktop",
+      "name": "Sectium Desktop",
+      "summary": "Sectium Pure-Art Canvas + Sectium Browser + Code - OSS",
+      "projectUri": "project://node/sectium-desktop?from=repository://github.com/awesome-os/sectium-browser@main",
+      "runtime": "node",
+      "compositor": "sectium-canvas",
+      "defaultGreeter": "lumi-chromatic-greeter",
+      "casProjectionBytes": 0
+    },
+    {
+      "id": "omarchy-hyprland",
+      "name": "Omarchy Hyprland",
+      "summary": "Omarchy Hyprland/Wayland",
+      "projectUri": "project://coreutils/omarchy?from=repository://github.com/awesome-os/t2desktop-omarchy@main",
+      "runtime": "coreutils",
+      "compositor": "hyprland-wayland",
+      "defaultGreeter": "lumi-chromatic-greeter",
+      "casProjectionBytes": 0
+    },
+    {
+      "id": "noctalia-shell",
+      "name": "Noctalia Shell",
+      "summary": "Noctalia Shell / Quickshell",
+      "projectUri": "project://coreutils/noctalia?from=repository://github.com/awesome-os/t2desktop-noctalia@main",
+      "runtime": "coreutils",
+      "compositor": "quickshell-wayland",
+      "defaultGreeter": "lumi-chromatic-greeter",
+      "casProjectionBytes": 0
+    },
+    {
+      "id": "kitty-ink-tui",
+      "name": "Kitty-Ink TUI",
+      "summary": "Headless Kitty-Ink DevOps TUI",
+      "projectUri": "project://node/kitty-ink?from=repository://github.com/awesome-os/awesome-os@main",
+      "runtime": "node",
+      "compositor": "kitty-ink-ansi",
+      "defaultGreeter": "tty-ink-greeter",
+      "casProjectionBytes": 0
+    }
+  ],
+  "greeters": [
+    {
+      "id": "lumi-chromatic-greeter",
+      "name": "Lumi Chromatic Greeter",
+      "summary": "GPU/Sectium Lumi Chromatic Startup Chooser",
+      "mode": "gpu-canvas",
+      "entrypoint": "./greeter/index.html"
+    },
+    {
+      "id": "tty-ink-greeter",
+      "name": "TTY-Ink Greeter",
+      "summary": "Zero-GPU Kitty-Ink / ANSI Terminal Greeter",
+      "mode": "tty-ansi"
+    },
+    {
+      "id": "wol-warm-resume",
+      "name": "WoL Warm Resume",
+      "summary": "1-Way WoL Warm-RAM Instant Session Resume",
+      "mode": "wol-warm-ram"
+    }
+  ]
+}

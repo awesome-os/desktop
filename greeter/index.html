@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Awesome-OS Desktop — Lumi Chromatic Startup Chooser</title>
+    <style>
+      :root {
+        --bg-0: #06070c;
+        --bg-1: #0c0f1a;
+        --surface: rgba(18, 22, 36, 0.78);
+        --surface-hover: rgba(26, 32, 52, 0.92);
+        --border: rgba(148, 163, 184, 0.18);
+        --border-active: rgba(125, 211, 252, 0.75);
+        --text-primary: #f8fafc;
+        --text-secondary: #94a3b8;
+        --accent-cyan: #38bdf8;
+        --accent-violet: #a78bfa;
+        --accent-magenta: #f472b6;
+        --accent-emerald: #34d399;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        --sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background-color: var(--bg-0);
+        background-image:
+          radial-gradient(60rem 36rem at 14% 10%, rgba(56, 189, 248, 0.16), transparent 60%),
+          radial-gradient(50rem 32rem at 86% 18%, rgba(167, 139, 250, 0.18), transparent 60%),
+          radial-gradient(46rem 28rem at 52% 96%, rgba(244, 114, 182, 0.12), transparent 65%);
+        color: var(--text-primary);
+        font-family: var(--sans);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .shell {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 2.25rem 1.5rem 2.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.75rem;
+      }
+
+      .topbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+      }
+
+      .lumi-orb {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: conic-gradient(from 190deg, var(--accent-cyan), var(--accent-violet), var(--accent-magenta), var(--accent-emerald), var(--accent-cyan));
+        box-shadow: 0 0 28px rgba(125, 211, 252, 0.35);
+        position: relative;
+      }
+
+      .lumi-orb::after {
+        content: "";
+        position: absolute;
+        inset: 4px;
+        border-radius: 9px;
+        background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.35), rgba(6, 7, 12, 0.92));
+      }
+
+      .brand h1 {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      .brand p {
+        margin: 0.15rem 0 0;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+      }
+
+      .badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.38rem 0.72rem;
+        border-radius: 999px;
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        border: 1px solid var(--border);
+        background: rgba(15, 23, 42, 0.75);
+        color: var(--text-primary);
+      }
+
+      .badge-cas {
+        border-color: rgba(52, 211, 153, 0.45);
+        background: rgba(6, 78, 59, 0.28);
+        color: #a7f3d0;
+      }
+
+      .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--accent-emerald);
+        box-shadow: 0 0 10px var(--accent-emerald);
+      }
+
+      .section-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.8rem;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--text-secondary);
+      }
+
+      .desktop-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(235px, 1fr));
+        gap: 1rem;
+      }
+
+      .desktop-card {
+        text-align: left;
+        cursor: pointer;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.15rem 1.15rem 1.05rem;
+        background: var(--surface);
+        color: var(--text-primary);
+        transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .desktop-card:hover {
+        transform: translateY(-2px);
+        background: var(--surface-hover);
+        border-color: rgba(148, 163, 184, 0.38);
+      }
+
+      .desktop-card.is-selected {
+        border-color: var(--border-active);
+        background: linear-gradient(160deg, rgba(24, 34, 58, 0.95), rgba(15, 20, 36, 0.92));
+        box-shadow:
+          0 0 0 1px rgba(56, 189, 248, 0.35),
+          0 16px 36px -18px rgba(56, 189, 248, 0.55);
+      }
+
+      .card-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+
+      .card-tag {
+        font-family: var(--mono);
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 6px;
+        background: rgba(148, 163, 184, 0.12);
+        color: var(--accent-cyan);
+      }
+
+      .card-title {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 650;
+      }
+
+      .card-summary {
+        margin: 0;
+        font-size: 0.84rem;
+        line-height: 1.45;
+        color: var(--text-secondary);
+      }
+
+      .card-id {
+        margin-top: auto;
+        font-family: var(--mono);
+        font-size: 0.73rem;
+        color: #cbd5e1;
+        opacity: 0.82;
+      }
+
+      .greeter-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      .greeter-pill {
+        cursor: pointer;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.62rem 1.05rem;
+        background: var(--surface);
+        color: var(--text-primary);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 0.86rem;
+        transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+      }
+
+      .greeter-pill:hover {
+        background: var(--surface-hover);
+      }
+
+      .greeter-pill.is-selected {
+        border-color: rgba(167, 139, 250, 0.85);
+        background: linear-gradient(90deg, rgba(76, 29, 149, 0.45), rgba(30, 58, 138, 0.45));
+        box-shadow: 0 0 22px -6px rgba(167, 139, 250, 0.65);
+      }
+
+      .pill-sub {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+      }
+
+      .launch-panel {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.15rem 1.25rem;
+        background: rgba(9, 12, 22, 0.88);
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+      }
+
+      .command-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .command-box {
+        flex: 1 1 520px;
+        margin: 0;
+        padding: 0.82rem 0.95rem;
+        border-radius: 10px;
+        border: 1px solid rgba(56, 189, 248, 0.25);
+        background: #04060b;
+        color: #7dd3fc;
+        font-family: var(--mono);
+        font-size: 0.82rem;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+
+      .btn {
+        cursor: pointer;
+        border-radius: 10px;
+        padding: 0.78rem 1.15rem;
+        font-size: 0.86rem;
+        font-weight: 600;
+        border: 1px solid transparent;
+        transition: transform 120ms ease, opacity 120ms ease;
+      }
+
+      .btn:active {
+        transform: scale(0.98);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent-cyan), var(--accent-violet));
+        color: #04060b;
+      }
+
+      .btn-ghost {
+        background: rgba(30, 41, 59, 0.6);
+        border-color: var(--border);
+        color: var(--text-primary);
+      }
+
+      .footer-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+      }
+
+      kbd {
+        font-family: var(--mono);
+        font-size: 0.72rem;
+        padding: 0.14rem 0.4rem;
+        border-radius: 5px;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        background: rgba(15, 23, 42, 0.85);
+        color: var(--text-primary);
+      }
+
+      .status-line {
+        font-family: var(--mono);
+        font-size: 0.78rem;
+        color: var(--accent-emerald);
+        min-height: 1.15rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell" aria-label="Awesome-OS Startup Desktop and Greeter Chooser">
+      <header class="topbar">
+        <div class="brand">
+          <div class="lumi-orb" aria-hidden="true"></div>
+          <div>
+            <h1>Awesome-OS Desktop</h1>
+            <p>100% Holo-native Startup Desktop &amp; Greeter Chooser &bull; Zero T2 SDE</p>
+          </div>
+        </div>
+        <div class="badges">
+          <span class="badge badge-cas" id="cas-badge"><span class="dot"></span>0 B v11 CAS Projection</span>
+          <span class="badge">ABI 0x33564742</span>
+          <span class="badge">awesome-os/coreutils</span>
+        </div>
+      </header>
+
+      <section aria-labelledby="desktop-heading">
+        <div class="section-label">
+          <span id="desktop-heading">1. Desktop Environment</span>
+          <span>4 Holo-Native Targets</span>
+        </div>
+        <div class="desktop-grid" id="desktop-grid" role="radiogroup" aria-label="Desktop Environment"></div>
+      </section>
+
+      <section aria-labelledby="greeter-heading">
+        <div class="section-label">
+          <span id="greeter-heading">2. Greeter Style</span>
+          <span>3 Session Entry Modes</span>
+        </div>
+        <div class="greeter-pills" id="greeter-pills" role="radiogroup" aria-label="Greeter Style"></div>
+      </section>
+
+      <section class="launch-panel" aria-label="Live Holo Launch Command">
+        <div class="section-label" style="margin-bottom: 0">
+          <span>Live Holo-Project Launch Command</span>
+          <span id="selection-summary">sectium-desktop + lumi-chromatic-greeter</span>
+        </div>
+        <div class="command-row">
+          <pre class="command-box" id="launch-command"></pre>
+          <button type="button" class="btn btn-ghost" id="copy-btn">Copy</button>
+          <button type="button" class="btn btn-primary" id="launch-btn">Launch Session</button>
+        </div>
+        <div class="footer-meta">
+          <span>
+            Keys: <kbd>ArrowLeft</kbd> / <kbd>ArrowRight</kbd> switch desktop &middot;
+            <kbd>1</kbd>-<kbd>3</kbd> switch greeter &middot;
+            <kbd>Enter</kbd> launch
+          </span>
+          <span class="status-line" id="status-line" role="status" aria-live="polite"></span>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      (function () {
+        const DESKTOPS = [
+          {
+            id: "sectium-desktop",
+            name: "Sectium Desktop",
+            summary: "Sectium Pure-Art Canvas + Sectium Browser + Code - OSS",
+            projectUri: "project://node/sectium-desktop?from=repository://github.com/awesome-os/sectium-browser@main",
+            runtime: "node",
+            defaultGreeter: "lumi-chromatic-greeter",
+          },
+          {
+            id: "omarchy-hyprland",
+            name: "Omarchy Hyprland",
+            summary: "Omarchy Hyprland/Wayland",
+            projectUri: "project://coreutils/omarchy?from=repository://github.com/awesome-os/t2desktop-omarchy@main",
+            runtime: "coreutils",
+            defaultGreeter: "lumi-chromatic-greeter",
+          },
+          {
+            id: "noctalia-shell",
+            name: "Noctalia Shell",
+            summary: "Noctalia Shell / Quickshell",
+            projectUri: "project://coreutils/noctalia?from=repository://github.com/awesome-os/t2desktop-noctalia@main",
+            runtime: "coreutils",
+            defaultGreeter: "lumi-chromatic-greeter",
+          },
+          {
+            id: "kitty-ink-tui",
+            name: "Kitty-Ink TUI",
+            summary: "Headless Kitty-Ink DevOps TUI",
+            projectUri: "project://node/kitty-ink?from=repository://github.com/awesome-os/awesome-os@main",
+            runtime: "node",
+            defaultGreeter: "tty-ink-greeter",
+          },
+        ];
+
+        const GREETERS = [
+          {
+            id: "lumi-chromatic-greeter",
+            name: "Lumi Chromatic",
+            summary: "GPU/Sectium Startup Chooser",
+          },
+          {
+            id: "tty-ink-greeter",
+            name: "TTY-Ink",
+            summary: "Zero-GPU ANSI Terminal",
+          },
+          {
+            id: "wol-warm-resume",
+            name: "WoL Warm Resume",
+            summary: "1-Way Warm-RAM Instant Resume",
+          },
+        ];
+
+        let desktopIndex = 0;
+        let greeterIndex = 0;
+
+        const desktopGrid = document.getElementById("desktop-grid");
+        const greeterPills = document.getElementById("greeter-pills");
+        const launchCommandEl = document.getElementById("launch-command");
+        const selectionSummaryEl = document.getElementById("selection-summary");
+        const statusLineEl = document.getElementById("status-line");
+        const copyBtn = document.getElementById("copy-btn");
+        const launchBtn = document.getElementById("launch-btn");
+
+        function currentCommand() {
+          const desktop = DESKTOPS[desktopIndex];
+          const greeter = GREETERS[greeterIndex];
+          return `holo-project "${desktop.projectUri}" --greeter=${greeter.id}`;
+        }
+
+        function render() {
+          const desktop = DESKTOPS[desktopIndex];
+          const greeter = GREETERS[greeterIndex];
+
+          desktopGrid.innerHTML = "";
+          DESKTOPS.forEach((item, index) => {
+            const card = document.createElement("button");
+            card.type = "button";
+            card.className = "desktop-card" + (index === desktopIndex ? " is-selected" : "");
+            card.setAttribute("role", "radio");
+            card.setAttribute("aria-checked", String(index === desktopIndex));
+            card.dataset.desktopId = item.id;
+            card.innerHTML =
+              '<div class="card-top">' +
+              `<h2 class="card-title">${item.name}</h2>` +
+              `<span class="card-tag">${item.runtime}</span>` +
+              "</div>" +
+              `<p class="card-summary">${item.summary}</p>` +
+              `<span class="card-id">${item.id}</span>`;
+            card.addEventListener("click", () => {
+              desktopIndex = index;
+              statusLineEl.textContent = "";
+              render();
+            });
+            desktopGrid.appendChild(card);
+          });
+
+          greeterPills.innerHTML = "";
+          GREETERS.forEach((item, index) => {
+            const pill = document.createElement("button");
+            pill.type = "button";
+            pill.className = "greeter-pill" + (index === greeterIndex ? " is-selected" : "");
+            pill.setAttribute("role", "radio");
+            pill.setAttribute("aria-checked", String(index === greeterIndex));
+            pill.dataset.greeterId = item.id;
+            pill.innerHTML = `<strong>${item.name}</strong><span class="pill-sub">${item.summary}</span>`;
+            pill.addEventListener("click", () => {
+              greeterIndex = index;
+              statusLineEl.textContent = "";
+              render();
+            });
+            greeterPills.appendChild(pill);
+          });
+
+          launchCommandEl.textContent = currentCommand();
+          selectionSummaryEl.textContent = `${desktop.id} + ${greeter.id}`;
+        }
+
+        function triggerLaunch() {
+          const cmd = currentCommand();
+          statusLineEl.textContent = `Ready to project (0 B v11 CAS): ${cmd}`;
+        }
+
+        copyBtn.addEventListener("click", async () => {
+          const cmd = currentCommand();
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              await navigator.clipboard.writeText(cmd);
+              statusLineEl.textContent = "Copied launch command to clipboard.";
+            } else {
+              statusLineEl.textContent = cmd;
+            }
+          } catch {
+            statusLineEl.textContent = cmd;
+          }
+        });
+
+        launchBtn.addEventListener("click", triggerLaunch);
+
+        window.addEventListener("keydown", (event) => {
+          if (event.key === "ArrowRight") {
+            event.preventDefault();
+            desktopIndex = (desktopIndex + 1) % DESKTOPS.length;
+            statusLineEl.textContent = "";
+            render();
+          } else if (event.key === "ArrowLeft") {
+            event.preventDefault();
+            desktopIndex = (desktopIndex - 1 + DESKTOPS.length) % DESKTOPS.length;
+            statusLineEl.textContent = "";
+            render();
+          } else if (event.key === "1" || event.key === "2" || event.key === "3") {
+            greeterIndex = Number(event.key) - 1;
+            statusLineEl.textContent = "";
+            render();
+          } else if (event.key === "Enter") {
+            event.preventDefault();
+            triggerLaunch();
+          }
+        });
+
+        render();
+      })();
+    </script>
+  </body>
+</html>

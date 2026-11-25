@@ -1,0 +1,16 @@
+{
+  "name": "@awesome-os/awesome-os-desktop",
+  "version": "1.0.0",
+  "description": "Awesome-OS Desktop — 100% Holo-native Startup Desktop & Greeter Chooser with zero T2 SDE dependency",
+  "type": "module",
+  "main": "./index.mts",
+  "module": "./index.mts",
+  "types": "./index.mts",
+  "exports": {
+    ".": "./index.mts",
+    "./manifest": "./desktop-manifest.json"
+  },
+  "scripts": {
+    "test": "node --test desktop.test.mts"
+  }
+}
