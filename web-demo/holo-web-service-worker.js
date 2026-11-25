@@ -16,20 +16,26 @@
  *   4. Zero `caches.open` / `cache.match` / `cache.put` calls anywhere.
  */
 
-const SW_VERSION = 'holo-web-sw/v11.0';
+const SW_VERSION = 'holo-web-sw/v11.2';
 const B8G_ABI_MAGIC_V3 = '0x33564742';
 
+const memBlobs = new Map();
+const memRoutes = new Map();
+const writeLocks = new Map();
 let opfsRootPromise = null;
 
 async function getOpfsDirs() {
   if (!opfsRootPromise) {
     opfsRootPromise = (async () => {
+      if (typeof navigator === 'undefined' || !navigator.storage || typeof navigator.storage.getDirectory !== 'function') {
+        return null;
+      }
       const root = await navigator.storage.getDirectory();
       const v11 = await root.getDirectoryHandle('v11', { create: true });
       const files = await v11.getDirectoryHandle('files', { create: true });
       const routes = await v11.getDirectoryHandle('routes', { create: true });
       return { root, v11, files, routes };
-    })();
+    })().catch(() => null);
   }
   return opfsRootPromise;
 }
@@ -42,13 +48,28 @@ async function digestHex(algo, data) {
 }
 
 async function writeOpfsFile(dirHandle, name, bytes) {
-  const fh = await dirHandle.getFileHandle(name, { create: true });
-  const writable = await fh.createWritable();
-  await writable.write(bytes);
-  await writable.close();
+  if (!dirHandle) return false;
+  const prev = writeLocks.get(name) || Promise.resolve();
+  const next = prev.then(async () => {
+    const fh = await dirHandle.getFileHandle(name, { create: true });
+    if (typeof fh.createWritable === 'function') {
+      const writable = await fh.createWritable();
+      await writable.write(bytes);
+      await writable.close();
+      return true;
+    }
+    return false;
+  }).catch(() => false);
+  writeLocks.set(name, next);
+  try {
+    return await next;
+  } finally {
+    if (writeLocks.get(name) === next) writeLocks.delete(name);
+  }
 }
 
 async function readOpfsFile(dirHandle, name) {
+  if (!dirHandle) return null;
   try {
     const fh = await dirHandle.getFileHandle(name, { create: false });
     const file = await fh.getFile();
@@ -63,47 +84,69 @@ async function putV11Blob(bytes, executable = false) {
   const sha512 = await digestHex('SHA-512', u8);
   const shard = sha512.slice(0, 2);
   const fname = executable ? `${sha512}-exec` : sha512;
-  const { files } = await getOpfsDirs();
-  const shardDir = await files.getDirectoryHandle(shard, { create: true });
-  const existing = await readOpfsFile(shardDir, fname);
-  const casHit = existing !== null;
-  if (!casHit) {
-    await writeOpfsFile(shardDir, fname, u8);
+  const blobPath = `v11/files/${shard}/${fname}`;
+  let casHit = memBlobs.has(blobPath);
+  let persisted = false;
+
+  memBlobs.set(blobPath, u8.slice().buffer);
+
+  try {
+    const dirs = await getOpfsDirs();
+    if (dirs) {
+      const shardDir = await dirs.files.getDirectoryHandle(shard, { create: true });
+      const existing = await readOpfsFile(shardDir, fname);
+      if (existing !== null) {
+        casHit = true;
+        persisted = true;
+      } else {
+        persisted = await writeOpfsFile(shardDir, fname, u8);
+      }
+    }
+  } catch {
+    persisted = false;
   }
-  return { sha512, shard, fname, blobPath: `v11/files/${shard}/${fname}`, casHit, size: u8.byteLength };
+  return { sha512, shard, fname, blobPath, casHit, persisted, size: u8.byteLength };
 }
 
 async function getV11Blob(shard, fname) {
-  const { files } = await getOpfsDirs();
+  const blobPath = `v11/files/${shard}/${fname}`;
   try {
-    const shardDir = await files.getDirectoryHandle(shard, { create: false });
-    return await readOpfsFile(shardDir, fname);
-  } catch {
-    return null;
-  }
+    const dirs = await getOpfsDirs();
+    if (dirs) {
+      const shardDir = await dirs.files.getDirectoryHandle(shard, { create: false });
+      const buf = await readOpfsFile(shardDir, fname);
+      if (buf) return buf;
+    }
+  } catch {}
+  return memBlobs.get(blobPath) || null;
 }
 
-async function routeKey(pathname) {
-  return (await digestHex('SHA-256', new TextEncoder().encode(pathname))) + '.json';
+async function routeKey(routeUrl) {
+  return (await digestHex('SHA-256', new TextEncoder().encode(routeUrl))) + '.json';
 }
 
-async function getRouteEntry(pathname) {
-  const { routes } = await getOpfsDirs();
-  const key = await routeKey(pathname);
-  const raw = await readOpfsFile(routes, key);
-  if (!raw) return null;
+async function getRouteEntry(routeUrl) {
   try {
-    return JSON.parse(new TextDecoder().decode(raw));
-  } catch {
-    return null;
-  }
+    const dirs = await getOpfsDirs();
+    if (dirs) {
+      const key = await routeKey(routeUrl);
+      const raw = await readOpfsFile(dirs.routes, key);
+      if (raw) return JSON.parse(new TextDecoder().decode(raw));
+    }
+  } catch {}
+  return memRoutes.get(routeUrl) || null;
 }
 
-async function putRouteEntry(pathname, meta) {
-  const { routes } = await getOpfsDirs();
-  const key = await routeKey(pathname);
-  const bytes = new TextEncoder().encode(JSON.stringify(meta));
-  await writeOpfsFile(routes, key, bytes);
+async function putRouteEntry(routeUrl, meta) {
+  memRoutes.set(routeUrl, meta);
+  try {
+    const dirs = await getOpfsDirs();
+    if (dirs) {
+      const key = await routeKey(routeUrl);
+      const bytes = new TextEncoder().encode(JSON.stringify(meta));
+      await writeOpfsFile(dirs.routes, key, bytes);
+    }
+  } catch {}
 }
 
 function withHoloHeaders(body, status, contentType, extra = {}) {
@@ -133,7 +176,11 @@ function guessContentType(pathname, fallback) {
 }
 
 async function listOpfsStats() {
-  const { files, routes } = await getOpfsDirs();
+  const dirs = await getOpfsDirs();
+  if (!dirs) {
+    return { blobCount: memBlobs.size, routeCount: memRoutes.size, totalBytes: 0, cacheApiBypassed: true, swVersion: SW_VERSION };
+  }
+  const { files, routes } = dirs;
   let blobCount = 0;
   let routeCount = 0;
   let totalBytes = 0;
@@ -154,7 +201,7 @@ async function listOpfsStats() {
       if (entry.kind === 'file') routeCount++;
     }
   }
-  return { blobCount, routeCount, totalBytes, cacheApiBypassed: true, swVersion: SW_VERSION };
+  return { blobCount: Math.max(blobCount, memBlobs.size), routeCount: Math.max(routeCount, memRoutes.size), totalBytes, cacheApiBypassed: true, swVersion: SW_VERSION };
 }
 
 self.addEventListener('install', (event) => {
@@ -194,38 +241,49 @@ self.addEventListener('message', (event) => {
   }
 });
 
-async function fetchAndStoreOpfs(request, pathname) {
+async function fetchAndStoreOpfs(request, routeUrl) {
   const res = await fetch(request);
   if (!res || !res.ok || res.type === 'opaque') {
     return res;
   }
   const buf = await res.arrayBuffer();
-  const contentType = res.headers.get('content-type') || guessContentType(pathname);
-  const put = await putV11Blob(new Uint8Array(buf), pathname.endsWith('.wasm'));
-  await putRouteEntry(pathname, {
-    pathname,
-    sha512: put.sha512,
-    shard: put.shard,
-    fname: put.fname,
-    contentType,
-    size: put.size,
-    storedAt: Date.now(),
-  });
-  return withHoloHeaders(buf, res.status, contentType, {
-    'X-Holo-CAS': put.casHit ? 'HIT (OPFS-v11-DEDUP)' : 'MISS (STORED OPFS-v11)',
-    'X-Holo-SHA512': put.sha512,
-  });
+  const contentType = res.headers.get('content-type') || guessContentType(routeUrl);
+  let casHeader = 'PASS (MEM-v11)';
+  let shaHeader = '';
+  try {
+    const put = await putV11Blob(new Uint8Array(buf), routeUrl.includes('.wasm'));
+    await putRouteEntry(routeUrl, {
+      routeUrl,
+      sha512: put.sha512,
+      shard: put.shard,
+      fname: put.fname,
+      contentType,
+      size: put.size,
+      storedAt: Date.now(),
+    });
+    casHeader = put.casHit
+      ? (put.persisted ? 'HIT (OPFS-v11-DEDUP)' : 'HIT (MEM-v11)')
+      : (put.persisted ? 'MISS (STORED OPFS-v11)' : 'MISS (STORED MEM-v11)');
+    shaHeader = put.sha512;
+  } catch {}
+  const extra = { 'X-Holo-CAS': casHeader };
+  if (shaHeader) extra['X-Holo-SHA512'] = shaHeader;
+  return withHoloHeaders(buf, res.status, contentType, extra);
 }
 
-async function serveFromOpfsRoute(pathname) {
-  const entry = await getRouteEntry(pathname);
-  if (!entry) return null;
-  const buf = await getV11Blob(entry.shard, entry.fname);
-  if (!buf) return null;
-  return withHoloHeaders(buf, 200, entry.contentType || guessContentType(pathname), {
-    'X-Holo-CAS': 'HIT (OPFS-v11)',
-    'X-Holo-SHA512': entry.sha512,
-  });
+async function serveFromOpfsRoute(routeUrl) {
+  try {
+    const entry = await getRouteEntry(routeUrl);
+    if (!entry) return null;
+    const buf = await getV11Blob(entry.shard, entry.fname);
+    if (!buf) return null;
+    return withHoloHeaders(buf, 200, entry.contentType || guessContentType(routeUrl), {
+      'X-Holo-CAS': 'HIT (OPFS-v11)',
+      'X-Holo-SHA512': entry.sha512,
+    });
+  } catch {
+    return null;
+  }
 }
 
 self.addEventListener('fetch', (event) => {
@@ -234,6 +292,7 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
+  const routeUrl = url.pathname + url.search;
 
   // 1. Direct OPFS v11 CAS blob endpoint: /v11/files/<shard>/<sha512>[-exec]
   const v11Match = url.pathname.match(/^\/(?:demo\/)?v11\/files\/([0-9a-f]{2})\/([0-9a-f]{128}(?:-exec)?)$/i);
@@ -257,9 +316,9 @@ self.addEventListener('fetch', (event) => {
   if (req.mode === 'navigate' || url.pathname.endsWith('/') || url.pathname.endsWith('.html')) {
     event.respondWith((async () => {
       try {
-        return await fetchAndStoreOpfs(req, url.pathname);
+        return await fetchAndStoreOpfs(req, routeUrl);
       } catch {
-        const cached = await serveFromOpfsRoute(url.pathname);
+        const cached = await serveFromOpfsRoute(routeUrl);
         if (cached) return cached;
         return withHoloHeaders('Offline and not yet cached in OPFS:/v11/', 503, 'text/plain; charset=utf-8');
       }
@@ -267,10 +326,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. Static / binary assets (.wasm, .b8p, .js, .css): OPFS-first, background-free deterministic v11
+  // 3. Static / binary assets (.wasm, .b8p, .js, .css): OPFS-first, never fail fetch on OPFS error
   event.respondWith((async () => {
-    const cached = await serveFromOpfsRoute(url.pathname);
+    const cached = await serveFromOpfsRoute(routeUrl);
     if (cached) return cached;
-    return await fetchAndStoreOpfs(req, url.pathname);
+    try {
+      return await fetchAndStoreOpfs(req, routeUrl);
+    } catch {
+      return fetch(req);
+    }
   })());
 });

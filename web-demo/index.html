@@ -452,12 +452,12 @@
     // Connect SharedWorker (versioned URL avoids stale worker cache)
     let port;
     if (typeof SharedWorker !== 'undefined') {
-      const sw = new SharedWorker('./wasi-host-worker.js?v=11.1');
+      const sw = new SharedWorker('./wasi-host-worker.js?v=11.2');
       port = sw.port;
       port.start();
       workerPill.textContent = 'SharedWorker';
     } else {
-      port = new Worker('./wasi-host-worker.js?v=11.1');
+      port = new Worker('./wasi-host-worker.js?v=11.2');
       workerPill.textContent = 'WebWorker';
     }
 
