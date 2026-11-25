@@ -58,3 +58,20 @@ node --test desktop.test.mts
 - [`index.mts`](index.mts) — Erasable TypeScript resolver and `holo-project` launch command builder
 - [`desktop.test.mts`](desktop.test.mts) — Manifest, resolver, and greeter verification suite
 - [`package.json`](package.json) — Native ESM package metadata
+
+## Quick Install & Run (Windows / Linux / macOS)
+
+```powershell
+# Windows (PowerShell) — 1-line bootstrap install
+irm https://awesome-os.com/install.ps1 | iex
+```
+
+```sh
+# Linux & macOS — 1-line bootstrap install
+curl -fsSL https://awesome-os.com/install.sh | sh
+```
+
+```sh
+# Or hydrate directly via holo-pm (v11 CAS)
+holo-pm install repository://github.com/awesome-os/awesome-os-desktop@main
+```
