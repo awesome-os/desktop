@@ -1,0 +1,2064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GitLab Holo Forge — awesome-os/hello-holo (OPFS v11 CAS)</title>
+  <style>
+    :root {
+      --bg-canvas: #0d0e14;
+      --bg-surface: #151720;
+      --bg-elevated: #1c1f2b;
+      --bg-hover: #252938;
+      --bg-code: #0b0d13;
+      --border: #2a2e3f;
+      --border-strong: #3b4158;
+      --text-primary: #eceff6;
+      --text-secondary: #9aa3b8;
+      --text-muted: #6e778d;
+      --gl-orange: #fc6d26;
+      --gl-red-orange: #e24329;
+      --gl-amber: #fca326;
+      --gl-purple: #7b58cf;
+      --gl-purple-light: #b69df8;
+      --gl-blue: #428fdc;
+      --gl-green: #2da160;
+      --gl-green-bg: rgba(45, 161, 96, 0.14);
+      --gl-red: #dd2b0e;
+      --gl-red-bg: rgba(221, 43, 14, 0.14);
+      --gl-amber-bg: rgba(252, 163, 38, 0.14);
+      --gl-blue-bg: rgba(66, 143, 220, 0.14);
+      --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      background: var(--bg-canvas); color: var(--text-primary);
+      font-family: var(--font-sans); font-size: 13.5px; line-height: 1.5;
+    }
+
+    a { color: #79b8ff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    button { font-family: inherit; cursor: pointer; }
+    code, pre, textarea.code-editor { font-family: var(--font-mono); }
+
+    /* App Shell */
+    .app-shell { display: flex; flex-direction: column; width: 100%; height: 100%; }
+
+    /* Top Bar */
+    .topbar {
+      height: 48px; flex-shrink: 0;
+      background: #11131b; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 14px; gap: 12px; z-index: 40;
+    }
+    .topbar-left, .topbar-right { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .brand {
+      display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px;
+      color: var(--text-primary); letter-spacing: -0.01em; white-space: nowrap;
+    }
+    .tanuki-svg { width: 22px; height: 22px; flex-shrink: 0; }
+    .divider { width: 1px; height: 20px; background: var(--border); }
+    .breadcrumb {
+      display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .breadcrumb strong { color: var(--text-primary); font-weight: 600; }
+    .branch-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 2px 9px; border-radius: 999px; font-family: var(--font-mono); font-size: 11.5px;
+      background: rgba(123, 88, 207, 0.16); border: 1px solid rgba(123, 88, 207, 0.45);
+      color: var(--gl-purple-light);
+    }
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 10px; border-radius: 999px; font-family: var(--font-mono); font-size: 11.5px;
+      background: var(--gl-green-bg); border: 1px solid rgba(45, 161, 96, 0.4); color: #6ee7b7;
+      white-space: nowrap;
+    }
+    .status-pill.mem {
+      background: var(--gl-amber-bg); border-color: rgba(252, 163, 38, 0.45); color: #fcd34d;
+    }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .nav-link {
+      padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500;
+      color: var(--text-secondary); border: 1px solid var(--border); background: var(--bg-surface);
+      white-space: nowrap;
+    }
+    .nav-link:hover { background: var(--bg-hover); color: var(--text-primary); text-decoration: none; }
+
+    /* Main Workspace */
+    .workspace { flex: 1; display: flex; min-height: 0; overflow: hidden; }
+
+    /* Left Sidebar */
+    .sidebar {
+      width: 232px; flex-shrink: 0;
+      background: #12141c; border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; padding: 12px 8px; gap: 4px;
+      overflow-y: auto;
+    }
+    .sidebar-project {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px 12px; margin-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .project-avatar {
+      width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--gl-orange), var(--gl-purple));
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 14px; color: #fff;
+    }
+    .project-meta { min-width: 0; }
+    .project-meta .p-name { font-weight: 700; font-size: 13.5px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .project-meta .p-ns { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
+
+    .side-btn {
+      width: 100%; display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 10px; border-radius: 7px; border: 1px solid transparent;
+      background: transparent; color: var(--text-secondary);
+      font-size: 13px; font-weight: 500; text-align: left;
+      transition: background 100ms ease, color 100ms ease;
+    }
+    .side-btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
+    .side-btn.active {
+      background: rgba(252, 109, 38, 0.13); border-color: rgba(252, 109, 38, 0.35);
+      color: #fff; font-weight: 600;
+    }
+    .side-btn-left { display: flex; align-items: center; gap: 9px; }
+    .side-ico { width: 16px; text-align: center; font-size: 13px; opacity: 0.9; }
+    .side-badge {
+      padding: 1px 7px; border-radius: 999px; font-size: 11px; font-family: var(--font-mono);
+      background: var(--bg-elevated); color: var(--text-secondary); border: 1px solid var(--border);
+    }
+    .side-badge.passed { background: var(--gl-green-bg); color: #6ee7b7; border-color: rgba(45,161,96,0.35); }
+    .side-badge.failed { background: var(--gl-red-bg); color: #fca5a5; border-color: rgba(221,43,14,0.35); }
+    .side-badge.running { background: var(--gl-blue-bg); color: #93c5fd; border-color: rgba(66,143,220,0.35); }
+
+    .sidebar-footer {
+      margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 8px; font-size: 11.5px; color: var(--text-muted);
+    }
+    .sidebar-kv { display: flex; justify-content: space-between; padding: 0 6px; font-family: var(--font-mono); }
+    .sidebar-kv span:last-child { color: var(--text-secondary); }
+
+    /* Content Area */
+    .main {
+      flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0;
+      overflow-y: auto; padding: 18px 22px; gap: 16px;
+    }
+    .view { display: none; flex-direction: column; gap: 16px; min-height: 0; flex: 1; }
+    .view.active { display: flex; }
+
+    /* Common UI Elements */
+    .view-header {
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    }
+    .view-header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+    .view-header p { font-size: 12.5px; color: var(--text-secondary); }
+    .btn-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 13px; border-radius: 6px; font-size: 12.5px; font-weight: 600;
+      border: 1px solid var(--border-strong); background: var(--bg-elevated); color: var(--text-primary);
+      transition: background 100ms ease, border-color 100ms ease;
+    }
+    .btn:hover { background: var(--bg-hover); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-primary {
+      background: linear-gradient(180deg, #fc6d26, #e24329); border-color: #fc6d26; color: #fff;
+    }
+    .btn-primary:hover { filter: brightness(1.08); background: linear-gradient(180deg, #fc6d26, #e24329); }
+    .btn-blue {
+      background: #1f75cb; border-color: #428fdc; color: #fff;
+    }
+    .btn-blue:hover { background: #2684e2; }
+    .btn-green {
+      background: #1f884d; border-color: #2da160; color: #fff;
+    }
+    .btn-green:hover { background: #249b58; }
+    .btn-sm { padding: 4px 9px; font-size: 11.5px; }
+
+    .card {
+      background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px;
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 10px 14px; background: var(--bg-elevated); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      font-size: 12.5px; font-weight: 600;
+    }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600;
+      font-family: var(--font-mono);
+    }
+    .badge-passed { background: var(--gl-green-bg); color: #6ee7b7; border: 1px solid rgba(45,161,96,0.4); }
+    .badge-failed { background: var(--gl-red-bg); color: #fca5a5; border: 1px solid rgba(221,43,14,0.45); }
+    .badge-running { background: var(--gl-blue-bg); color: #93c5fd; border: 1px solid rgba(66,143,220,0.45); }
+    .badge-pending, .badge-skipped { background: rgba(148,163,184,0.12); color: var(--text-secondary); border: 1px solid var(--border); }
+    .badge-cas { background: rgba(123,88,207,0.16); color: var(--gl-purple-light); border: 1px solid rgba(123,88,207,0.4); }
+
+    /* Repository View */
+    .commit-banner {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 11px 14px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px;
+      flex-wrap: wrap;
+    }
+    .commit-banner-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .avatar-sm {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      background: #2b3248; border: 1px solid var(--border-strong);
+      display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #93c5fd;
+    }
+    .commit-msg { font-weight: 600; color: var(--text-primary); }
+    .commit-meta { font-size: 12px; color: var(--text-secondary); }
+    .sha-chip {
+      font-family: var(--font-mono); font-size: 11.5px; padding: 2px 7px; border-radius: 5px;
+      background: var(--bg-code); border: 1px solid var(--border); color: #79b8ff;
+    }
+
+    .repo-split {
+      display: grid; grid-template-columns: 290px 1fr; gap: 14px; flex: 1; min-height: 440px;
+    }
+    @media (max-width: 960px) {
+      .repo-split { grid-template-columns: 1fr; }
+      .sidebar { width: 196px; }
+    }
+    .file-tree { display: flex; flex-direction: column; }
+    .file-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      padding: 9px 12px; border-bottom: 1px solid var(--border); cursor: pointer;
+      transition: background 90ms ease;
+    }
+    .file-row:last-child { border-bottom: none; }
+    .file-row:hover { background: var(--bg-hover); }
+    .file-row.active { background: rgba(252, 109, 38, 0.12); border-left: 3px solid var(--gl-orange); padding-left: 9px; }
+    .file-name { font-family: var(--font-mono); font-size: 12.5px; color: var(--text-primary); display: flex; align-items: center; gap: 7px; }
+    .file-dirty { color: var(--gl-amber); font-weight: 700; }
+    .file-meta { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); text-align: right; }
+
+    .editor-pane { display: flex; flex-direction: column; min-height: 420px; }
+    .editor-wrap {
+      flex: 1; display: flex; background: var(--bg-code); min-height: 290px; position: relative;
+      overflow: hidden;
+    }
+    .line-nums {
+      width: 46px; padding: 12px 8px 12px 0; text-align: right;
+      font-family: var(--font-mono); font-size: 12.5px; line-height: 1.55;
+      color: var(--text-muted); background: #090b10; border-right: 1px solid var(--border);
+      user-select: none; overflow: hidden; flex-shrink: 0;
+    }
+    textarea.code-editor {
+      flex: 1; width: 100%; height: 100%; border: none; outline: none; resize: none;
+      background: transparent; color: #e6edf3; padding: 12px 14px;
+      font-size: 12.5px; line-height: 1.55; tab-size: 2; white-space: pre; overflow: auto;
+    }
+    .commit-bar {
+      padding: 10px 14px; background: var(--bg-elevated); border-top: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .commit-input {
+      flex: 1; min-width: 220px; padding: 7px 10px; border-radius: 6px;
+      border: 1px solid var(--border-strong); background: var(--bg-code); color: var(--text-primary);
+      font-size: 12.5px; outline: none;
+    }
+    .commit-input:focus { border-color: var(--gl-orange); }
+    .check-label { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); cursor: pointer; user-select: none; }
+
+    /* Pipelines View */
+    .pipeline-stages {
+      display: grid; grid-template-columns: repeat(4, minmax(160px, 1fr)); gap: 14px;
+      padding: 16px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px;
+      overflow-x: auto;
+    }
+    .stage-col { display: flex; flex-direction: column; gap: 8px; position: relative; }
+    .stage-title {
+      font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--text-muted); padding-bottom: 4px; border-bottom: 1px solid var(--border);
+    }
+    .job-card {
+      padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); cursor: pointer; display: flex; flex-direction: column; gap: 5px;
+      transition: border-color 120ms ease, transform 100ms ease;
+    }
+    .job-card:hover { border-color: var(--gl-blue); transform: translateY(-1px); }
+    .job-card.selected { border-color: var(--gl-orange); box-shadow: 0 0 0 1px rgba(252,109,38,0.4); }
+    .job-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+    .job-name { font-weight: 600; font-size: 13px; color: var(--text-primary); font-family: var(--font-mono); }
+    .job-sub { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); display: flex; justify-content: space-between; }
+
+    .log-terminal {
+      background: #07090e; border: 1px solid var(--border); border-radius: 8px;
+      display: flex; flex-direction: column; flex: 1; min-height: 290px; overflow: hidden;
+    }
+    .log-body {
+      flex: 1; padding: 12px 14px; overflow-y: auto; font-family: var(--font-mono);
+      font-size: 12px; line-height: 1.6; white-space: pre-wrap; word-break: break-word;
+      color: #d8dee9;
+    }
+    .ansi-cyan { color: #38bdf8; }
+    .ansi-green { color: #4ade80; }
+    .ansi-red { color: #f87171; }
+    .ansi-yellow { color: #fbbf24; }
+    .ansi-purple { color: #c084fc; }
+    .ansi-dim { color: #64748b; }
+    .ansi-bold { font-weight: 700; color: #f8fafc; }
+
+    .pipeline-history { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pipe-chip {
+      padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--bg-surface); color: var(--text-secondary); font-size: 12px;
+      font-family: var(--font-mono); display: inline-flex; align-items: center; gap: 6px;
+    }
+    .pipe-chip.active { border-color: var(--gl-orange); color: var(--text-primary); background: var(--bg-elevated); }
+
+    /* Diff View */
+    .diff-table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 12px; }
+    .diff-table td { padding: 1px 10px; vertical-align: top; white-space: pre-wrap; word-break: break-all; }
+    .diff-ln {
+      width: 44px; text-align: right; color: var(--text-muted); user-select: none;
+      border-right: 1px solid var(--border); background: #0a0c12;
+    }
+    .diff-sign { width: 20px; text-align: center; user-select: none; font-weight: 700; }
+    .diff-add { background: rgba(45, 161, 96, 0.16); color: #bbf7d0; }
+    .diff-add .diff-ln { background: rgba(45, 161, 96, 0.22); color: #6ee7b7; }
+    .diff-del { background: rgba(221, 43, 14, 0.16); color: #fecaca; }
+    .diff-del .diff-ln { background: rgba(221, 43, 14, 0.22); color: #fca5a5; }
+    .diff-ctx { background: var(--bg-code); color: #cbd5e1; }
+    .diff-stats-add { color: #4ade80; font-family: var(--font-mono); font-weight: 700; }
+    .diff-stats-del { color: #f87171; font-family: var(--font-mono); font-weight: 700; }
+
+    /* Pages View */
+    .pages-meta-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;
+      padding: 14px;
+    }
+    .meta-box {
+      padding: 10px 12px; background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px;
+    }
+    .meta-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .meta-val { font-family: var(--font-mono); font-size: 12px; color: var(--text-primary); margin-top: 3px; word-break: break-all; }
+    .pages-frame-wrap {
+      flex: 1; min-height: 380px; display: flex; flex-direction: column;
+      background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+    }
+    iframe.pages-iframe {
+      flex: 1; width: 100%; min-height: 340px; border: none; background: #0b0e14;
+    }
+
+    /* CAS Objects View */
+    .cas-grid { display: grid; grid-template-columns: 1.25fr 1fr; gap: 14px; flex: 1; min-height: 400px; }
+    @media (max-width: 960px) { .cas-grid { grid-template-columns: 1fr; } }
+    .cas-table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 11.5px; }
+    .cas-table th {
+      text-align: left; padding: 8px 10px; background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border); color: var(--text-secondary); font-weight: 600;
+    }
+    .cas-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    .cas-table tr:hover td { background: var(--bg-hover); cursor: pointer; }
+    .cas-table tr.selected td { background: rgba(123, 88, 207, 0.18); }
+    .cas-preview {
+      flex: 1; padding: 12px; background: var(--bg-code); font-family: var(--font-mono);
+      font-size: 12px; white-space: pre-wrap; word-break: break-word; overflow: auto;
+      color: #cbd5e1; max-height: 460px;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 18px; right: 18px; z-index: 90;
+      padding: 10px 14px; border-radius: 8px; font-size: 12.5px; font-weight: 500;
+      background: #1b2234; border: 1px solid var(--gl-orange); color: #fff;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.5); opacity: 0; pointer-events: none;
+      transform: translateY(8px); transition: opacity 160ms ease, transform 160ms ease;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    select.gl-select {
+      padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border-strong);
+      background: var(--bg-code); color: var(--text-primary); font-family: var(--font-mono); font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="brand">
+        <svg class="tanuki-svg" viewBox="0 0 36 36" fill="none" aria-hidden="true">
+          <path d="M18 33L24.2 14H11.8L18 33Z" fill="#E24329"/>
+          <path d="M18 33L11.8 14H3.1L18 33Z" fill="#FC6D26"/>
+          <path d="M3.1 14L1.2 19.8C1 20.4 1.2 21 1.7 21.4L18 33L3.1 14Z" fill="#FCA326"/>
+          <path d="M3.1 14H11.8L8.1 2.6C7.9 2 7.1 2 6.9 2.6L3.1 14Z" fill="#E24329"/>
+          <path d="M18 33L24.2 14H32.9L18 33Z" fill="#FC6D26"/>
+          <path d="M32.9 14L34.8 19.8C35 20.4 34.8 21 34.3 21.4L18 33L32.9 14Z" fill="#FCA326"/>
+          <path d="M32.9 14H24.2L27.9 2.6C28.1 2 28.9 2 29.1 2.6L32.9 14Z" fill="#E24329"/>
+        </svg>
+        <span>GitLab Holo Forge</span>
+      </div>
+      <div class="divider"></div>
+      <div class="breadcrumb">
+        <span>awesome-os</span> / <strong>hello-holo</strong>
+      </div>
+      <span class="branch-pill" title="Active Git branch">&#9095; main</span>
+    </div>
+    <div class="topbar-right">
+      <span id="opfs-status-pill" class="status-pill" title="Origin Private File System v11 CAS status">
+        <span class="status-dot"></span>
+        <span id="opfs-status-text">OPFS:/v11/ initializing…</span>
+      </span>
+      <a class="nav-link" href="./">App Catalog</a>
+      <a class="nav-link" href="./desktop.html">Desktop</a>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <!-- Left Project Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-project">
+        <div class="project-avatar">H</div>
+        <div class="project-meta">
+          <div class="p-name">hello-holo</div>
+          <div class="p-ns">awesome-os/hello-holo</div>
+        </div>
+      </div>
+
+      <button class="side-btn active" data-view="repo">
+        <span class="side-btn-left"><span class="side-ico">&#128193;</span> Repository</span>
+        <span class="side-badge" id="nav-file-count">4</span>
+      </button>
+      <button class="side-btn" data-view="pipelines">
+        <span class="side-btn-left"><span class="side-ico">&#9881;</span> CI/CD Pipelines</span>
+        <span class="side-badge" id="nav-pipe-status">idle</span>
+      </button>
+      <button class="side-btn" data-view="diff">
+        <span class="side-btn-left"><span class="side-ico">&#8644;</span> Merge Requests / Diff</span>
+        <span class="side-badge" id="nav-mr-count">!1</span>
+      </button>
+      <button class="side-btn" data-view="pages">
+        <span class="side-btn-left"><span class="side-ico">&#127760;</span> GitLab Pages</span>
+        <span class="side-badge" id="nav-pages-badge">live</span>
+      </button>
+      <button class="side-btn" data-view="cas">
+        <span class="side-btn-left"><span class="side-ico">&#9670;</span> v11 CAS Objects</span>
+        <span class="side-badge" id="nav-cas-count">0</span>
+      </button>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-kv"><span>Executor</span><span>executors/holo/</span></div>
+        <div class="sidebar-kv"><span>Pages Store</span><span>internal/casv11/</span></div>
+        <div class="sidebar-kv"><span>ServiceWorker</span><span id="sw-state">registering</span></div>
+        <div class="sidebar-kv"><span>Commits</span><span id="sidebar-commit-count">1</span></div>
+        <button class="btn btn-sm" id="btn-reset-repo" style="margin-top:4px; justify-content:center;">Reset Seed Repo</button>
+      </div>
+    </aside>
+
+    <!-- Main Content Views -->
+    <main class="main">
+      <!-- 1. REPOSITORY VIEW -->
+      <section class="view active" id="view-repo">
+        <div class="view-header">
+          <div>
+            <h1>Repository &mdash; <code>awesome-os/hello-holo</code></h1>
+            <p>Content-addressed Git blobs stored directly in <code>OPFS:/v11/files/&lt;sha512[:2]&gt;/&lt;sha512&gt;</code>.</p>
+          </div>
+          <div class="btn-row">
+            <button class="btn" id="btn-new-file">+ New File</button>
+            <button class="btn btn-blue" id="btn-quick-pipeline">&#9654; Run Pipeline</button>
+          </div>
+        </div>
+
+        <div class="commit-banner" id="latest-commit-banner">
+          <div class="commit-banner-left">
+            <div class="avatar-sm">H</div>
+            <div>
+              <div class="commit-msg" id="banner-commit-msg">Loading repository…</div>
+              <div class="commit-meta" id="banner-commit-meta"></div>
+            </div>
+          </div>
+          <div class="btn-row">
+            <span class="badge badge-pending" id="banner-pipe-badge">pipeline: pending</span>
+            <span class="sha-chip" id="banner-commit-sha">--------</span>
+          </div>
+        </div>
+
+        <div class="repo-split">
+          <div class="card file-tree">
+            <div class="card-header">
+              <span>Files on <code>main</code></span>
+              <span class="badge badge-cas" id="tree-blob-summary">SHA-512</span>
+            </div>
+            <div id="file-list"></div>
+          </div>
+
+          <div class="card editor-pane">
+            <div class="card-header">
+              <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+                <code id="editor-filename" style="color:#fff;">README.md</code>
+                <span class="badge badge-cas" id="editor-sha-badge">v11:…</span>
+                <span id="editor-dirty-pill" class="badge badge-running" style="display:none;">modified</span>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-sm" id="btn-discard" disabled>Discard</button>
+              </div>
+            </div>
+            <div class="editor-wrap">
+              <div class="line-nums" id="editor-lines">1</div>
+              <textarea id="code-editor" class="code-editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+            </div>
+            <div class="commit-bar">
+              <input id="commit-msg-input" class="commit-input" type="text" placeholder="Commit message (e.g. Update src/main.mts or public/index.html)" />
+              <label class="check-label">
+                <input type="checkbox" id="chk-trigger-ci" checked />
+                Trigger CI pipeline
+              </label>
+              <button class="btn btn-primary" id="btn-commit">Commit to <code>main</code></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. CI/CD PIPELINES VIEW -->
+      <section class="view" id="view-pipelines">
+        <div class="view-header">
+          <div>
+            <h1>CI/CD Pipelines &mdash; <code>executors/holo/</code></h1>
+            <p>Parses <code>.gitlab-ci.yml</code> live, checks <code>v11</code> CAS cache hits, compiles &amp; tests <code>src/main.mts</code>, and publishes Pages.</p>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="btn-run-pipeline">&#9654; Run Pipeline on <code>main</code></button>
+          </div>
+        </div>
+
+        <div class="pipeline-history" id="pipeline-history"></div>
+
+        <div class="pipeline-stages" id="pipeline-stages"></div>
+
+        <div class="log-terminal">
+          <div class="card-header">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span>Job Log: <code id="log-job-title">select a job</code></span>
+              <span class="badge badge-pending" id="log-job-status">idle</span>
+            </div>
+            <div class="btn-row">
+              <span style="font-family:var(--font-mono);font-size:11.5px;color:var(--text-muted);" id="log-job-duration">0.00s</span>
+            </div>
+          </div>
+          <div class="log-body" id="log-body">Click "Run Pipeline on main" or commit a file to execute stages from .gitlab-ci.yml.</div>
+        </div>
+      </section>
+
+      <!-- 3. MERGE REQUESTS / DIFF VIEW -->
+      <section class="view" id="view-diff">
+        <div class="view-header">
+          <div>
+            <h1>Merge Requests / Diff</h1>
+            <p>Line-by-line unified diff comparing commits against their parent tree in <code>OPFS:/v11/files/</code>.</p>
+          </div>
+          <div class="btn-row">
+            <select id="diff-commit-select" class="gl-select"></select>
+            <button class="btn btn-sm" id="btn-diff-working" style="display:none;">Show Uncommitted Edits</button>
+          </div>
+        </div>
+
+        <div class="commit-banner" id="diff-header-card">
+          <div>
+            <div class="commit-msg" id="diff-title">!1 &mdash; Initial commit</div>
+            <div class="commit-meta" id="diff-subtitle"></div>
+          </div>
+          <div class="btn-row" id="diff-summary-stats"></div>
+        </div>
+
+        <div id="diff-files-container" style="display:flex;flex-direction:column;gap:14px;"></div>
+      </section>
+
+      <!-- 4. GITLAB PAGES VIEW -->
+      <section class="view" id="view-pages">
+        <div class="view-header">
+          <div>
+            <h1>GitLab Pages &mdash; <code>internal/casv11/</code></h1>
+            <p>Live sandboxed preview of <code>public/index.html</code> published by the <code>pages</code> CI job directly from <code>OPFS:/v11/files/</code>.</p>
+          </div>
+          <div class="btn-row">
+            <button class="btn" id="btn-edit-pages-html">Edit <code>public/index.html</code></button>
+            <button class="btn btn-green" id="btn-rerun-pages">&#9654; Re-run <code>pages</code> Job</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span>Active Pages Deployment</span>
+            <span class="badge badge-passed" id="pages-deploy-status">deployed</span>
+          </div>
+          <div class="pages-meta-grid">
+            <div class="meta-box">
+              <div class="meta-label">OPFS v11 Content Path</div>
+              <div class="meta-val" id="pages-opfs-path">OPFS:/v11/files/…</div>
+            </div>
+            <div class="meta-box">
+              <div class="meta-label">SHA-512 Digest</div>
+              <div class="meta-val" id="pages-sha512">…</div>
+            </div>
+            <div class="meta-box">
+              <div class="meta-label">Source Commit &amp; Pipeline</div>
+              <div class="meta-val" id="pages-commit-info">…</div>
+            </div>
+            <div class="meta-box">
+              <div class="meta-label">Artifact Size &amp; Published At</div>
+              <div class="meta-val" id="pages-size-time">…</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pages-frame-wrap">
+          <div class="card-header">
+            <span>Sandboxed Preview &mdash; <code>https://awesome-os.pages.holo/hello-holo/</code></span>
+            <button class="btn btn-sm" id="btn-copy-pages-hash">Copy OPFS Path</button>
+          </div>
+          <iframe id="pages-iframe" class="pages-iframe" sandbox="allow-scripts" title="GitLab Pages Live Preview"></iframe>
+        </div>
+      </section>
+
+      <!-- 5. v11 CAS OBJECTS VIEW -->
+      <section class="view" id="view-cas">
+        <div class="view-header">
+          <div>
+            <h1>v11 CAS Objects &mdash; <code>OPFS:/v11/files/</code></h1>
+            <p>Immutable SHA-512 blobs persisted in Origin Private File System (shared with <code>holo-web-service-worker.js</code>).</p>
+          </div>
+          <div class="btn-row">
+            <button class="btn" id="btn-refresh-cas">&#8635; Refresh OPFS Scan</button>
+          </div>
+        </div>
+
+        <div class="cas-grid">
+          <div class="card" style="display:flex;flex-direction:column;">
+            <div class="card-header">
+              <span>Stored v11 Blobs (<span id="cas-total-count">0</span>)</span>
+              <span style="font-family:var(--font-mono);font-size:11.5px;color:var(--text-muted);" id="cas-total-bytes">0 B</span>
+            </div>
+            <div style="overflow:auto;flex:1;">
+              <table class="cas-table">
+                <thead>
+                  <tr>
+                    <th>Shard / SHA-512</th>
+                    <th>Role / Path</th>
+                    <th>Size</th>
+                    <th>Store</th>
+                  </tr>
+                </thead>
+                <tbody id="cas-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" style="display:flex;flex-direction:column;">
+            <div class="card-header">
+              <span id="cas-inspector-title">Object Inspector</span>
+              <button class="btn btn-sm" id="btn-verify-cas" disabled>Verify SHA-512</button>
+            </div>
+            <div class="cas-preview" id="cas-inspector-body">Select any v11 CAS object to inspect its raw content and verify its SHA-512 digest.</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+
+  // ---------------------------------------------------------------------------
+  // 1. Seed Project Files (awesome-os/hello-holo)
+  // ---------------------------------------------------------------------------
+  const SEED_FILES = {
+    'README.md': `# awesome-os / hello-holo
+
+Zero-backend **GitLab Holo Forge** running directly inside your browser on top of:
+- **OPFS v11 Content-Addressed Storage** (\`OPFS:/v11/files/<sha512[:2]>/<sha512>\`)
+- **Holo Web Service Worker** (\`./holo-web-service-worker.js\`, zero Cache API)
+- **Live Holo CI Executor** (\`executors/holo/\`) parsing \`.gitlab-ci.yml\`
+- **Live GitLab Pages** (\`internal/casv11/\`) rendering \`public/index.html\`
+
+## Try It Now
+1. Edit \`public/index.html\` and click **Commit to main** to watch the \`pages\` job publish a new live preview.
+2. Edit \`src/main.mts\` (try breaking syntax like \`const x = ;\`) to watch the \`build\` stage fail with a real exit code \`1\`!
+3. Open **Merge Requests / Diff** to inspect line-by-line \`+\`/\`-\` changes against the parent commit.
+`,
+    '.gitlab-ci.yml': `# GitLab Holo Forge Pipeline (executors/holo/)
+stages:
+  - lint
+  - build
+  - test
+  - pages
+
+variables:
+  HOLO_CAS_VERSION: "v11"
+  B8G_ABI_MAGIC: "0x33564742"
+
+lint:holo:
+  stage: lint
+  script:
+    - holo-lint --check .gitlab-ci.yml src/main.mts public/index.html
+
+build:ts:
+  stage: build
+  script:
+    - holo-compiler --erasable-ts src/main.mts --cas OPFS:/v11/files/
+
+test:unit:
+  stage: test
+  script:
+    - holo-test --runner inproc src/main.mts
+
+pages:
+  stage: pages
+  script:
+    - holo-pages --publish public/index.html --store internal/casv11/
+  artifacts:
+    paths:
+      - public
+`,
+    'src/main.mts': `// awesome-os/hello-holo — Erasable TypeScript entry point
+export const B8G_ABI_MAGIC: number = 0x33564742;
+
+export function greet(target: string): string {
+  return "Hello from Holo Forge, " + target + "!";
+}
+
+export function computeCasLabel(bytes: number): string {
+  return "v11-cas:" + String(bytes) + "B";
+}
+
+export function runTests(): { passed: number; failed: number; logs: string[] } {
+  const logs: string[] = [];
+  let passed = 0;
+  let failed = 0;
+
+  const assertEq = (name: string, actual: unknown, expected: unknown): void => {
+    if (actual === expected) {
+      passed++;
+      logs.push("PASS  " + name);
+    } else {
+      failed++;
+      logs.push("FAIL  " + name + " (got " + String(actual) + ", expected " + String(expected) + ")");
+    }
+  };
+
+  assertEq("B8G_ABI_MAGIC_V3 constant", B8G_ABI_MAGIC, 0x33564742);
+  assertEq("greet('OPFS v11')", greet("OPFS v11"), "Hello from Holo Forge, OPFS v11!");
+  assertEq("computeCasLabel(5080)", computeCasLabel(5080), "v11-cas:5080B");
+
+  return { passed, failed, logs };
+}
+`,
+    'public/index.html': `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>hello-holo — GitLab Pages (v11 CAS)</title>
+  <style>
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at 20% 20%, #2a1842, #0d101a 60%);
+      color: #f1f5f9;
+    }
+    .hero {
+      max-width: 560px; padding: 32px; border-radius: 16px; text-align: center;
+      background: rgba(21, 24, 36, 0.88); border: 1px solid rgba(252, 109, 38, 0.45);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    }
+    .tag {
+      display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 12px;
+      font-family: ui-monospace, monospace; background: rgba(252, 109, 38, 0.18);
+      color: #fdba74; border: 1px solid rgba(252, 109, 38, 0.4); margin-bottom: 14px;
+    }
+    h1 { margin: 0 0 10px; font-size: 28px; letter-spacing: -0.02em; }
+    p { margin: 0 0 18px; color: #94a3b8; font-size: 14.5px; line-height: 1.6; }
+    .pulse {
+      display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px;
+      border-radius: 8px; background: #1e293b; border: 1px solid #334155;
+      color: #6ee7b7; font-family: ui-monospace, monospace; font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <div class="tag">GitLab Pages &bull; internal/casv11/</div>
+    <h1>Hello from Holo Forge!</h1>
+    <p>
+      This live site was built by <strong>executors/holo/</strong> and stored as an
+      immutable SHA-512 artifact inside <code>OPFS:/v11/files/</code>.
+      Edit <code>public/index.html</code> and commit to see it update live!
+    </p>
+    <div class="pulse">&#9679; B8G_ABI_MAGIC_V3 = 0x33564742</div>
+  </div>
+</body>
+</html>
+`
+  };
+
+  // ---------------------------------------------------------------------------
+  // 2. OPFS v11 CAS Storage Layer (with In-Memory Fallback)
+  // ---------------------------------------------------------------------------
+  const STATE_STORAGE_KEY = 'holo_gitlab_forge_state_v1';
+  const memBlobs = new Map(); // blobPath -> Uint8Array
+  let opfsAvailable = false;
+  let opfsDirs = null;
+
+  async function sha512Hex(bytes) {
+    const u8 = bytes instanceof Uint8Array ? bytes : encoder.encode(String(bytes));
+    const buf = await crypto.subtle.digest('SHA-512', u8);
+    return Array.from(new Uint8Array(buf))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  async function initOpfs() {
+    try {
+      if (navigator.storage && typeof navigator.storage.getDirectory === 'function') {
+        const root = await navigator.storage.getDirectory();
+        const v11 = await root.getDirectoryHandle('v11', { create: true });
+        const files = await v11.getDirectoryHandle('files', { create: true });
+        opfsDirs = { root, v11, files };
+        opfsAvailable = true;
+        return true;
+      }
+    } catch {
+      opfsAvailable = false;
+    }
+    return false;
+  }
+
+  async function putV11Blob(textOrBytes) {
+    const u8 = textOrBytes instanceof Uint8Array ? textOrBytes : encoder.encode(String(textOrBytes));
+    const sha512 = await sha512Hex(u8);
+    const shard = sha512.slice(0, 2);
+    const blobPath = `v11/files/${shard}/${sha512}`;
+    let casHit = memBlobs.has(blobPath);
+    let persisted = false;
+
+    memBlobs.set(blobPath, u8.slice());
+
+    if (opfsAvailable && opfsDirs) {
+      try {
+        const shardDir = await opfsDirs.files.getDirectoryHandle(shard, { create: true });
+        let exists = false;
+        try {
+          await shardDir.getFileHandle(sha512, { create: false });
+          exists = true;
+        } catch {
+          exists = false;
+        }
+        if (exists) {
+          casHit = true;
+          persisted = true;
+        } else {
+          const fh = await shardDir.getFileHandle(sha512, { create: true });
+          const writable = await fh.createWritable();
+          await writable.write(u8);
+          await writable.close();
+          persisted = true;
+        }
+      } catch {
+        persisted = false;
+      }
+    }
+
+    // Also mirror to active Service Worker if controlling the page
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      try {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'HOLO_V11_PUT',
+          bytes: u8.slice().buffer,
+          executable: false,
+        });
+      } catch {}
+    }
+
+    return {
+      sha512,
+      shard,
+      blobPath,
+      opfsUri: `OPFS:/${blobPath}`,
+      size: u8.byteLength,
+      casHit,
+      persisted,
+    };
+  }
+
+  async function getV11BlobBytes(sha512) {
+    const shard = sha512.slice(0, 2);
+    const blobPath = `v11/files/${shard}/${sha512}`;
+    if (opfsAvailable && opfsDirs) {
+      try {
+        const shardDir = await opfsDirs.files.getDirectoryHandle(shard, { create: false });
+        const fh = await shardDir.getFileHandle(sha512, { create: false });
+        const file = await fh.getFile();
+        const buf = await file.arrayBuffer();
+        const u8 = new Uint8Array(buf);
+        memBlobs.set(blobPath, u8);
+        return u8;
+      } catch {}
+    }
+    return memBlobs.get(blobPath) || null;
+  }
+
+  async function getV11BlobText(sha512) {
+    const u8 = await getV11BlobBytes(sha512);
+    return u8 ? decoder.decode(u8) : null;
+  }
+
+  async function listAllV11Objects() {
+    const map = new Map();
+    if (opfsAvailable && opfsDirs && typeof opfsDirs.files.values === 'function') {
+      try {
+        for await (const shardEntry of opfsDirs.files.values()) {
+          if (shardEntry.kind === 'directory' && typeof shardEntry.values === 'function') {
+            for await (const fileEntry of shardEntry.values()) {
+              if (fileEntry.kind === 'file') {
+                let size = 0;
+                try { size = (await fileEntry.getFile()).size; } catch {}
+                const sha = fileEntry.name.replace(/-exec$/, '');
+                const key = `${shardEntry.name}/${fileEntry.name}`;
+                map.set(key, {
+                  shard: shardEntry.name,
+                  fname: fileEntry.name,
+                  sha512: sha,
+                  size,
+                  store: 'OPFS',
+                });
+              }
+            }
+          }
+        }
+      } catch {}
+    }
+    for (const [blobPath, u8] of memBlobs.entries()) {
+      const parts = blobPath.split('/');
+      if (parts.length === 4) {
+        const shard = parts[2];
+        const fname = parts[3];
+        const key = `${shard}/${fname}`;
+        if (!map.has(key)) {
+          map.set(key, {
+            shard,
+            fname,
+            sha512: fname.replace(/-exec$/, ''),
+            size: u8.byteLength,
+            store: 'MEM',
+          });
+        }
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.sha512.localeCompare(b.sha512));
+  }
+
+  async function saveRepoState(stateObj) {
+    const json = JSON.stringify(stateObj);
+    try { localStorage.setItem(STATE_STORAGE_KEY, json); } catch {}
+    if (opfsAvailable && opfsDirs) {
+      try {
+        const fh = await opfsDirs.v11.getFileHandle('gitlab-forge-state.json', { create: true });
+        const w = await fh.createWritable();
+        await w.write(encoder.encode(json));
+        await w.close();
+      } catch {}
+    }
+  }
+
+  async function loadRepoState() {
+    if (opfsAvailable && opfsDirs) {
+      try {
+        const fh = await opfsDirs.v11.getFileHandle('gitlab-forge-state.json', { create: false });
+        const file = await fh.getFile();
+        const parsed = JSON.parse(await file.text());
+        if (parsed && Array.isArray(parsed.commits) && parsed.commits.length > 0) return parsed;
+      } catch {}
+    }
+    try {
+      const raw = localStorage.getItem(STATE_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.commits) && parsed.commits.length > 0) return parsed;
+      }
+    } catch {}
+    return null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // 3. Application State
+  // ---------------------------------------------------------------------------
+  const state = {
+    branch: 'main',
+    commits: [],          // newest last
+    pipelines: [],        // newest last
+    pages: null,          // { sha512, shard, opfsUri, size, commitSha, pipelineId, deployedAt, html }
+    selectedFile: 'README.md',
+    draftEdits: {},       // path -> string (unsaved working tree edits)
+    activeView: 'repo',
+    selectedPipelineId: null,
+    selectedJobName: null,
+    selectedDiffSha: null,
+    showWorkingDiff: false,
+    knownBlobRoles: {},   // sha512 -> label
+    runningPipeline: false,
+    swStatus: 'registering',
+    selectedCasSha: null,
+  };
+
+  function currentCommit() {
+    return state.commits[state.commits.length - 1];
+  }
+
+  function shortSha(sha, len = 8) {
+    return sha ? sha.slice(0, len) : '00000000';
+  }
+
+  function formatBytes(n) {
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  function formatRelTime(ts) {
+    const diff = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+    if (diff < 5) return 'just now';
+    if (diff < 60) return `${diff}s ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    return `${Math.floor(diff / 3600)}h ago`;
+  }
+
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => el.classList.remove('show'), 2800);
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ---------------------------------------------------------------------------
+  // 4. Service Worker Registration
+  // ---------------------------------------------------------------------------
+  async function registerHoloSW() {
+    const swEl = document.getElementById('sw-state');
+    if (!('serviceWorker' in navigator)) {
+      state.swStatus = 'unsupported';
+      swEl.textContent = 'unavailable';
+      return;
+    }
+    try {
+      const reg = await navigator.serviceWorker.register('./holo-web-service-worker.js');
+      state.swStatus = reg.active ? 'active' : 'installed';
+      swEl.textContent = 'v11 active';
+      await navigator.serviceWorker.ready;
+      const worker = navigator.serviceWorker.controller || reg.active;
+      if (worker) {
+        const ch = new MessageChannel();
+        ch.port1.onmessage = (ev) => {
+          const d = ev.data || {};
+          if (d.swVersion) swEl.textContent = d.swVersion.replace('holo-web-sw/', '');
+          updateOpfsStatusPill();
+        };
+        worker.postMessage({ type: 'HOLO_SW_STATUS' }, [ch.port2]);
+      }
+    } catch {
+      state.swStatus = 'local-only';
+      swEl.textContent = 'standalone';
+    }
+  }
+
+  async function updateOpfsStatusPill() {
+    const pill = document.getElementById('opfs-status-pill');
+    const txt = document.getElementById('opfs-status-text');
+    const objs = await listAllV11Objects();
+    document.getElementById('nav-cas-count').textContent = String(objs.length);
+    if (opfsAvailable) {
+      pill.classList.remove('mem');
+      txt.textContent = `OPFS:/v11/ (${objs.length} blobs)`;
+    } else {
+      pill.classList.add('mem');
+      txt.textContent = `MEM:/v11/ (${objs.length} blobs)`;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 5. Git Seeding & Commits
+  // ---------------------------------------------------------------------------
+  async function seedFreshRepo() {
+    state.commits = [];
+    state.pipelines = [];
+    state.draftEdits = {};
+    state.knownBlobRoles = {};
+
+    const tree = {};
+    const treeSizes = {};
+    for (const [path, content] of Object.entries(SEED_FILES)) {
+      const put = await putV11Blob(content);
+      tree[path] = put.sha512;
+      treeSizes[path] = put.size;
+      state.knownBlobRoles[put.sha512] = path;
+    }
+
+    const commitPayload = {
+      parentSha: null,
+      author: 'Holo Maintainer <dev@awesome-os.org>',
+      message: 'Initial commit: seed hello-holo with .gitlab-ci.yml, src/main.mts & Pages',
+      timestamp: Date.now(),
+      tree,
+      treeSizes,
+      changedFiles: Object.keys(SEED_FILES),
+    };
+    const commitBlob = await putV11Blob(JSON.stringify(commitPayload, null, 2));
+    commitPayload.sha = commitBlob.sha512;
+    state.knownBlobRoles[commitBlob.sha512] = `commit:${shortSha(commitBlob.sha512)}`;
+    state.commits.push(commitPayload);
+    state.selectedFile = 'README.md';
+    state.selectedDiffSha = commitPayload.sha;
+
+    // Seed initial Pages deployment from public/index.html
+    const pagesHtml = SEED_FILES['public/index.html'];
+    const pagesSha = tree['public/index.html'];
+    state.pages = {
+      sha512: pagesSha,
+      shard: pagesSha.slice(0, 2),
+      opfsUri: `OPFS:/v11/files/${pagesSha.slice(0, 2)}/${pagesSha}`,
+      size: treeSizes['public/index.html'],
+      commitSha: commitPayload.sha,
+      pipelineId: 1,
+      deployedAt: Date.now(),
+      html: pagesHtml,
+    };
+
+    await saveRepoState({
+      commits: state.commits,
+      pipelines: state.pipelines,
+      pages: state.pages,
+      knownBlobRoles: state.knownBlobRoles,
+    });
+  }
+
+  async function hydrateOrSeed() {
+    await initOpfs();
+    const saved = await loadRepoState();
+    if (saved) {
+      state.commits = saved.commits || [];
+      state.pipelines = saved.pipelines || [];
+      state.pages = saved.pages || null;
+      state.knownBlobRoles = saved.knownBlobRoles || {};
+      // Verify latest commit blobs are readable; if missing (e.g. fresh memory session), re-seed
+      const head = currentCommit();
+      let intact = Boolean(head && head.tree);
+      if (intact) {
+        for (const sha of Object.values(head.tree)) {
+          const b = await getV11BlobBytes(sha);
+          if (!b) { intact = false; break; }
+        }
+      }
+      if (!intact) {
+        await seedFreshRepo();
+      } else {
+        state.selectedFile = Object.keys(head.tree)[0] || 'README.md';
+        state.selectedDiffSha = head.sha;
+        if (state.pipelines.length > 0) {
+          const lastPipe = state.pipelines[state.pipelines.length - 1];
+          state.selectedPipelineId = lastPipe.id;
+          state.selectedJobName = lastPipe.jobs[0] ? lastPipe.jobs[0].name : null;
+        }
+      }
+    } else {
+      await seedFreshRepo();
+    }
+  }
+
+  async function getFileContentAtCommit(commit, path) {
+    if (!commit || !commit.tree || !commit.tree[path]) return '';
+    const txt = await getV11BlobText(commit.tree[path]);
+    return txt !== null ? txt : '';
+  }
+
+  async function getWorkingContent(path) {
+    if (Object.prototype.hasOwnProperty.call(state.draftEdits, path)) {
+      return state.draftEdits[path];
+    }
+    return getFileContentAtCommit(currentCommit(), path);
+  }
+
+  async function commitCurrentChanges(message, triggerCi) {
+    const head = currentCommit();
+    const newTree = { ...head.tree };
+    const newSizes = { ...(head.treeSizes || {}) };
+    const changedFiles = [];
+
+    // Ensure current editor text is captured
+    const editorText = document.getElementById('code-editor').value;
+    const committedHeadText = await getFileContentAtCommit(head, state.selectedFile);
+    if (editorText !== committedHeadText) {
+      state.draftEdits[state.selectedFile] = editorText;
+    }
+
+    const editPaths = Object.keys(state.draftEdits);
+    if (editPaths.length === 0) {
+      showToast('No file changes to commit.');
+      return null;
+    }
+
+    let casHits = 0;
+    let casWrites = 0;
+    for (const path of editPaths) {
+      const content = state.draftEdits[path];
+      const put = await putV11Blob(content);
+      if (put.casHit) casHits++; else casWrites++;
+      if (newTree[path] !== put.sha512) {
+        newTree[path] = put.sha512;
+        newSizes[path] = put.size;
+        state.knownBlobRoles[put.sha512] = path;
+        changedFiles.push(path);
+      }
+    }
+
+    if (changedFiles.length === 0) {
+      state.draftEdits = {};
+      await renderRepoView();
+      showToast('Content matches HEAD (SHA-512 identical).');
+      return null;
+    }
+
+    const commitMsg = (message || '').trim() || `Update ${changedFiles.join(', ')}`;
+    const commitObj = {
+      parentSha: head.sha,
+      author: 'Holo Maintainer <dev@awesome-os.org>',
+      message: commitMsg,
+      timestamp: Date.now(),
+      tree: newTree,
+      treeSizes: newSizes,
+      changedFiles,
+    };
+    const commitPut = await putV11Blob(JSON.stringify(commitObj, null, 2));
+    commitObj.sha = commitPut.sha512;
+    state.knownBlobRoles[commitObj.sha] = `commit:${shortSha(commitObj.sha)}`;
+
+    state.commits.push(commitObj);
+    state.draftEdits = {};
+    state.selectedDiffSha = commitObj.sha;
+    document.getElementById('commit-msg-input').value = '';
+
+    await saveRepoState({
+      commits: state.commits,
+      pipelines: state.pipelines,
+      pages: state.pages,
+      knownBlobRoles: state.knownBlobRoles,
+    });
+
+    await updateOpfsStatusPill();
+    await renderAll();
+    showToast(`Committed ${shortSha(commitObj.sha)} to main (${casWrites} stored, ${casHits} CAS hit)`);
+
+    if (triggerCi) {
+      switchView('pipelines');
+      await runPipeline(commitObj);
+    }
+    return commitObj;
+  }
+
+  // ---------------------------------------------------------------------------
+  // 6. .gitlab-ci.yml Parser & Live Holo Executor (executors/holo/)
+  // ---------------------------------------------------------------------------
+  function parseGitLabCiYaml(yamlText) {
+    const lines = String(yamlText || '').split(/\r?\n/);
+    const stages = [];
+    const jobs = [];
+    let inStages = false;
+    let currentJob = null;
+    let inScript = false;
+
+    for (const raw of lines) {
+      const trimmed = raw.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const indent = raw.search(/\S/);
+
+      if (indent === 0) {
+        inStages = false;
+        inScript = false;
+        currentJob = null;
+        if (trimmed === 'stages:') {
+          inStages = true;
+        } else if (trimmed.endsWith(':') && !trimmed.startsWith('variables:') && !trimmed.startsWith('default:')) {
+          const name = trimmed.slice(0, -1).trim();
+          currentJob = { name, stage: name === 'pages' ? 'pages' : 'test', scripts: [] };
+          jobs.push(currentJob);
+        }
+      } else if (inStages && trimmed.startsWith('- ')) {
+        stages.push(trimmed.slice(2).trim());
+      } else if (currentJob) {
+        if (trimmed.startsWith('stage:')) {
+          currentJob.stage = trimmed.slice(6).trim();
+          inScript = false;
+        } else if (trimmed === 'script:') {
+          inScript = true;
+        } else if (inScript && trimmed.startsWith('- ')) {
+          currentJob.scripts.push(trimmed.slice(2).trim());
+        } else if (indent <= 2 && trimmed.endsWith(':')) {
+          inScript = false;
+        }
+      }
+    }
+
+    const finalStages = stages.length > 0 ? stages : ['lint', 'build', 'test', 'pages'];
+    if (jobs.length === 0) {
+      return {
+        stages: finalStages,
+        jobs: finalStages.map((s) => ({ name: s, stage: s, scripts: [`holo-run ${s}`] })),
+      };
+    }
+    return { stages: finalStages, jobs };
+  }
+
+  // Strip erasable TypeScript syntax to executable JS so new Function() validates real syntax & runs tests
+  function stripErasableTs(tsSource) {
+    let code = String(tsSource);
+    // Remove export keywords so function/const declarations run cleanly inside Function body
+    code = code.replace(/^\s*export\s+(?=(?:const|let|var|function|class|async)\b)/gm, '');
+    // Remove `interface ... { ... }` and `type ... = ...;`
+    code = code.replace(/^\s*(?:export\s+)?interface\s+\w+\s*\{[^}]*\}/gm, '');
+    code = code.replace(/^\s*(?:export\s+)?type\s+\w+\s*=\s*[^;]+;/gm, '');
+    // Strip return type annotations: `): ReturnType {` or `): { a: number; b: string } {` or `): ReturnType =>`
+    code = code.replace(/\)\s*:\s*(?:\{[^}]*\}|[A-Za-z0-9_<>\[\]|\s]+?)\s*(?=\{|=>)/g, ') ');
+    // Strip variable type annotations: `const x: Type =`
+    code = code.replace(/\b(const|let|var)\s+([A-Za-z_$][\w$]*)\s*:\s*[^=;\n]+(?==)/g, '$1 $2 ');
+    // Strip parameter type annotations inside function/arrow signatures
+    code = code.replace(/\(([^()]*)\)/g, (match, params) => {
+      if (!params.includes(':')) return match;
+      const cleaned = params.split(',').map((p) => {
+        const idx = p.indexOf(':');
+        if (idx === -1) return p;
+        const eqIdx = p.indexOf('=');
+        if (eqIdx !== -1 && eqIdx > idx) {
+          return p.slice(0, idx).trim() + ' ' + p.slice(eqIdx);
+        }
+        return p.slice(0, idx);
+      }).join(',');
+      return `(${cleaned})`;
+    });
+    return code;
+  }
+
+  function delay(ms) {
+    return new Promise((r) => setTimeout(r, ms));
+  }
+
+  async function runPipeline(targetCommit, singleStageOnly = null) {
+    if (state.runningPipeline) {
+      showToast('A pipeline is already running.');
+      return;
+    }
+    state.runningPipeline = true;
+    const commit = targetCommit || currentCommit();
+    const yamlText = await getFileContentAtCommit(commit, '.gitlab-ci.yml');
+    const parsed = parseGitLabCiYaml(yamlText);
+
+    const pipeId = state.pipelines.length > 0 ? state.pipelines[state.pipelines.length - 1].id + 1 : 1;
+    const previousPipe = state.pipelines[state.pipelines.length - 1] || null;
+    const prevTree = previousPipe ? previousPipe.treeSnapshot : {};
+
+    const pipeline = {
+      id: pipeId,
+      commitSha: commit.sha,
+      commitMessage: commit.message,
+      startedAt: Date.now(),
+      status: 'running',
+      stages: parsed.stages,
+      treeSnapshot: { ...commit.tree },
+      jobs: parsed.jobs.map((j) => ({
+        name: j.name,
+        stage: j.stage,
+        scripts: j.scripts,
+        status: singleStageOnly && j.stage !== singleStageOnly ? 'skipped' : 'pending',
+        durationMs: 0,
+        exitCode: null,
+        logs: [], // array of { cls, text }
+      })),
+    };
+
+    state.pipelines.push(pipeline);
+    state.selectedPipelineId = pipeline.id;
+    renderPipelinesView();
+    renderHeaderBadges();
+
+    const appendLog = (job, text, cls = '') => {
+      job.logs.push({ text, cls });
+      if (state.selectedPipelineId === pipeline.id && state.selectedJobName === job.name) {
+        renderJobLog(job);
+      }
+    };
+
+    let pipelineFailed = false;
+    let compiledJs = null;
+
+    for (const stage of pipeline.stages) {
+      const stageJobs = pipeline.jobs.filter((j) => j.stage === stage);
+      for (const job of stageJobs) {
+        if (singleStageOnly && job.stage !== singleStageOnly) continue;
+        if (pipelineFailed) {
+          job.status = 'skipped';
+          appendLog(job, `Skipped because previous stage failed.`, 'ansi-dim');
+          renderPipelinesView();
+          continue;
+        }
+
+        state.selectedJobName = job.name;
+        job.status = 'running';
+        const t0 = performance.now();
+        renderPipelinesView();
+
+        appendLog(job, `Running with executors/holo/runner-v11.2 (B8G_ABI_MAGIC_V3=0x33564742)`, 'ansi-cyan ansi-bold');
+        appendLog(job, `  on browser-opfs-worker (${opfsAvailable ? 'OPFS:/v11/files/' : 'MEM:/v11/files/'})`, 'ansi-dim');
+        await delay(140);
+
+        appendLog(job, `\n$ holo-checkout --commit ${shortSha(commit.sha, 12)} --branch main`, 'ansi-bold');
+        for (const [fpath, sha] of Object.entries(commit.tree)) {
+          const isHit = prevTree[fpath] === sha;
+          const tag = isHit ? 'CAS HIT (0.1ms zero-copy)' : 'CAS MISS (materialized)';
+          const cls = isHit ? 'ansi-green' : 'ansi-yellow';
+          appendLog(job, `  [${tag}] ${fpath} -> v11/files/${sha.slice(0,2)}/${sha.slice(0,16)}…`, cls);
+        }
+        await delay(160);
+
+        for (const cmd of job.scripts) {
+          appendLog(job, `\n$ ${cmd}`, 'ansi-cyan');
+        }
+        await delay(150);
+
+        try {
+          if (stage === 'lint') {
+            if (!yamlText.includes('stages:')) {
+              throw new Error('.gitlab-ci.yml is missing required `stages:` block');
+            }
+            const tsText = await getFileContentAtCommit(commit, 'src/main.mts');
+            const htmlText = await getFileContentAtCommit(commit, 'public/index.html');
+            appendLog(job, `  lint .gitlab-ci.yml     OK (${pipeline.stages.length} stages, ${pipeline.jobs.length} jobs)`, 'ansi-green');
+            appendLog(job, `  lint src/main.mts       OK (${tsText.split('\n').length} lines)`, 'ansi-green');
+            appendLog(job, `  lint public/index.html  OK (${htmlText.length} bytes)`, 'ansi-green');
+            if (/TODO|FIXME/.test(tsText)) {
+              appendLog(job, `  warn: found TODO/FIXME comment in src/main.mts`, 'ansi-yellow');
+            }
+          } else if (stage === 'build') {
+            const tsText = await getFileContentAtCommit(commit, 'src/main.mts');
+            appendLog(job, `  holo-compiler: stripping erasable TypeScript from src/main.mts…`, 'ansi-dim');
+            compiledJs = stripErasableTs(tsText);
+            // Validate real JavaScript syntax!
+            new Function(compiledJs);
+            const builtPut = await putV11Blob(compiledJs);
+            state.knownBlobRoles[builtPut.sha512] = 'artifact:dist/main.mjs';
+            appendLog(
+              job,
+              `  emitted dist/main.mjs (${builtPut.size} B) -> ${builtPut.opfsUri.slice(0, 42)}… [${builtPut.casHit ? 'CAS HIT' : 'STORED'}]`,
+              'ansi-green'
+            );
+          } else if (stage === 'test') {
+            if (!compiledJs) {
+              const tsText = await getFileContentAtCommit(commit, 'src/main.mts');
+              compiledJs = stripErasableTs(tsText);
+            }
+            const runnerFn = new Function(
+              `${compiledJs}\nreturn typeof runTests === 'function' ? runTests() : { passed: 1, failed: 0, logs: ['PASS  module evaluated cleanly'] };`
+            );
+            const result = runnerFn();
+            const logs = Array.isArray(result && result.logs) ? result.logs : [];
+            for (const line of logs) {
+              appendLog(job, `  ${line}`, line.startsWith('FAIL') ? 'ansi-red' : 'ansi-green');
+            }
+            if (!result || result.failed > 0) {
+              throw new Error(`Unit test suite failed (${result ? result.failed : 1} failing assertions)`);
+            }
+            appendLog(job, `  Summary: ${result.passed} passed, ${result.failed} failed`, 'ansi-green ansi-bold');
+          } else if (stage === 'pages') {
+            const htmlText = await getFileContentAtCommit(commit, 'public/index.html');
+            if (!htmlText.trim()) {
+              throw new Error('public/index.html is empty — cannot publish Pages artifact');
+            }
+            const pagesPut = await putV11Blob(htmlText);
+            state.knownBlobRoles[pagesPut.sha512] = 'pages:public/index.html';
+            state.pages = {
+              sha512: pagesPut.sha512,
+              shard: pagesPut.shard,
+              opfsUri: pagesPut.opfsUri,
+              size: pagesPut.size,
+              commitSha: commit.sha,
+              pipelineId: pipeline.id,
+              deployedAt: Date.now(),
+              html: htmlText,
+            };
+            appendLog(job, `  packing public/index.html (${pagesPut.size} B) into internal/casv11/…`, 'ansi-purple');
+            appendLog(job, `  artifact: ${pagesPut.opfsUri}`, 'ansi-green');
+            appendLog(job, `  status:   ${pagesPut.casHit ? 'v11 CAS HIT (deduplicated)' : 'v11 CAS STORED'}`, 'ansi-green');
+            appendLog(job, `  live URL: https://awesome-os.pages.holo/hello-holo/`, 'ansi-cyan');
+            renderPagesView();
+          } else {
+            appendLog(job, `  executed custom stage "${stage}" cleanly.`, 'ansi-green');
+          }
+
+          job.durationMs = Math.round(performance.now() - t0);
+          job.exitCode = 0;
+          job.status = 'passed';
+          appendLog(job, `\nJob succeeded (exit code 0) in ${(job.durationMs / 1000).toFixed(2)}s`, 'ansi-green ansi-bold');
+        } catch (err) {
+          job.durationMs = Math.round(performance.now() - t0);
+          job.exitCode = 1;
+          job.status = 'failed';
+          pipelineFailed = true;
+          appendLog(job, `\nERROR: ${err && err.message ? err.message : String(err)}`, 'ansi-red ansi-bold');
+          appendLog(job, `Job failed: exit code 1 (${(job.durationMs / 1000).toFixed(2)}s)`, 'ansi-red');
+        }
+
+        renderPipelinesView();
+        await delay(120);
+      }
+    }
+
+    pipeline.status = pipelineFailed ? 'failed' : 'passed';
+    state.runningPipeline = false;
+
+    await saveRepoState({
+      commits: state.commits,
+      pipelines: state.pipelines,
+      pages: state.pages,
+      knownBlobRoles: state.knownBlobRoles,
+    });
+    await updateOpfsStatusPill();
+    renderAll();
+    showToast(pipelineFailed ? `Pipeline #${pipeline.id} failed (exit code 1)` : `Pipeline #${pipeline.id} passed — Pages updated!`);
+  }
+
+  // ---------------------------------------------------------------------------
+  // 7. Line-by-Line LCS Diff Engine
+  // ---------------------------------------------------------------------------
+  function computeLineDiff(oldText, newText) {
+    const a = oldText ? oldText.split('\n') : [];
+    const b = newText ? newText.split('\n') : [];
+    const m = a.length;
+    const n = b.length;
+
+    // DP LCS table
+    const dp = Array.from({ length: m + 1 }, () => new Uint16Array(n + 1));
+    for (let i = m - 1; i >= 0; i--) {
+      for (let j = n - 1; j >= 0; j--) {
+        if (a[i] === b[j]) dp[i][j] = dp[i + 1][j + 1] + 1;
+        else dp[i][j] = dp[i + 1][j] >= dp[i][j + 1] ? dp[i + 1][j] : dp[i][j + 1];
+      }
+    }
+
+    const rows = [];
+    let i = 0, j = 0, oldLn = 1, newLn = 1;
+    let added = 0, removed = 0;
+
+    while (i < m && j < n) {
+      if (a[i] === b[j]) {
+        rows.push({ type: 'ctx', oldLn: oldLn++, newLn: newLn++, text: a[i] });
+        i++; j++;
+      } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+        rows.push({ type: 'del', oldLn: oldLn++, newLn: '', text: a[i] });
+        removed++;
+        i++;
+      } else {
+        rows.push({ type: 'add', oldLn: '', newLn: newLn++, text: b[j] });
+        added++;
+        j++;
+      }
+    }
+    while (i < m) {
+      rows.push({ type: 'del', oldLn: oldLn++, newLn: '', text: a[i++] });
+      removed++;
+    }
+    while (j < n) {
+      rows.push({ type: 'add', oldLn: '', newLn: newLn++, text: b[j++] });
+      added++;
+    }
+    return { rows, added, removed };
+  }
+
+  // ---------------------------------------------------------------------------
+  // 8. View Renderers
+  // ---------------------------------------------------------------------------
+  function switchView(viewName) {
+    state.activeView = viewName;
+    document.querySelectorAll('.side-btn').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.view === viewName);
+    });
+    document.querySelectorAll('.view').forEach((sec) => {
+      sec.classList.toggle('active', sec.id === `view-${viewName}`);
+    });
+    if (viewName === 'diff') renderDiffView();
+    if (viewName === 'pages') renderPagesView();
+    if (viewName === 'cas') renderCasView();
+    if (viewName === 'pipelines') renderPipelinesView();
+  }
+
+  function renderHeaderBadges() {
+    const head = currentCommit();
+    document.getElementById('nav-file-count').textContent = String(Object.keys(head.tree).length);
+    document.getElementById('sidebar-commit-count').textContent = String(state.commits.length);
+    document.getElementById('nav-mr-count').textContent = `!${state.commits.length}`;
+
+    const lastPipe = state.pipelines[state.pipelines.length - 1];
+    const navPipe = document.getElementById('nav-pipe-status');
+    const bannerBadge = document.getElementById('banner-pipe-badge');
+    if (lastPipe) {
+      navPipe.textContent = lastPipe.status;
+      navPipe.className = `side-badge ${lastPipe.status}`;
+      bannerBadge.textContent = `pipeline #${lastPipe.id}: ${lastPipe.status}`;
+      bannerBadge.className = `badge badge-${lastPipe.status}`;
+    } else {
+      navPipe.textContent = 'ready';
+      navPipe.className = 'side-badge';
+      bannerBadge.textContent = 'pipeline: ready';
+      bannerBadge.className = 'badge badge-pending';
+    }
+  }
+
+  function updateEditorLineNumbers() {
+    const ta = document.getElementById('code-editor');
+    const lnEl = document.getElementById('editor-lines');
+    const count = Math.max(1, ta.value.split('\n').length);
+    let html = '';
+    for (let i = 1; i <= count; i++) html += i + '\n';
+    lnEl.textContent = html;
+    lnEl.scrollTop = ta.scrollTop;
+  }
+
+  async function renderRepoView() {
+    const head = currentCommit();
+    document.getElementById('banner-commit-msg').textContent = head.message;
+    document.getElementById('banner-commit-meta').textContent = `${head.author} • ${formatRelTime(head.timestamp)} • ${head.changedFiles.length} file(s)`;
+    document.getElementById('banner-commit-sha').textContent = shortSha(head.sha, 10);
+    renderHeaderBadges();
+
+    const fileListEl = document.getElementById('file-list');
+    fileListEl.innerHTML = '';
+
+    const allPaths = Array.from(new Set([...Object.keys(head.tree), ...Object.keys(state.draftEdits)])).sort();
+    for (const path of allPaths) {
+      const sha = head.tree[path] || '';
+      const size = head.treeSizes && head.treeSizes[path] ? head.treeSizes[path] : 0;
+      const isDirty = Object.prototype.hasOwnProperty.call(state.draftEdits, path);
+      const row = document.createElement('div');
+      row.className = 'file-row' + (path === state.selectedFile ? ' active' : '');
+      row.innerHTML = `
+        <div class="file-name">
+          <span>${path.endsWith('.html') ? '&#127760;' : path.endsWith('.yml') ? '&#9881;' : path.endsWith('.mts') ? '&#9889;' : '&#128196;'}</span>
+          <span>${escapeHtml(path)}</span>
+          ${isDirty ? '<span class="file-dirty">&bull;</span>' : ''}
+        </div>
+        <div class="file-meta">
+          <div>${sha ? `v11:${sha.slice(0,2)}/${sha.slice(0,6)}` : 'new file'}</div>
+          <div>${formatBytes(isDirty ? encoder.encode(state.draftEdits[path]).byteLength : size)}</div>
+        </div>
+      `;
+      row.addEventListener('click', async () => {
+        state.selectedFile = path;
+        await renderRepoView();
+      });
+      fileListEl.appendChild(row);
+    }
+
+    const content = await getWorkingContent(state.selectedFile);
+    const committedContent = await getFileContentAtCommit(head, state.selectedFile);
+    const isDirty = Object.prototype.hasOwnProperty.call(state.draftEdits, state.selectedFile) && content !== committedContent;
+
+    document.getElementById('editor-filename').textContent = state.selectedFile;
+    const sha = head.tree[state.selectedFile];
+    document.getElementById('editor-sha-badge').textContent = sha
+      ? `v11:${sha.slice(0,2)}/${sha.slice(0,12)}…`
+      : 'untracked';
+    document.getElementById('editor-dirty-pill').style.display = isDirty ? 'inline-flex' : 'none';
+    document.getElementById('btn-discard').disabled = !isDirty;
+
+    const ta = document.getElementById('code-editor');
+    if (ta.value !== content) ta.value = content;
+    updateEditorLineNumbers();
+  }
+
+  function renderJobLog(job) {
+    document.getElementById('log-job-title').textContent = job ? `${job.name} (${job.stage})` : 'none';
+    const st = document.getElementById('log-job-status');
+    st.textContent = job ? job.status : 'idle';
+    st.className = `badge badge-${job ? job.status : 'pending'}`;
+    document.getElementById('log-job-duration').textContent = job ? `${(job.durationMs / 1000).toFixed(2)}s` : '0.00s';
+
+    const body = document.getElementById('log-body');
+    if (!job || job.logs.length === 0) {
+      body.textContent = job ? 'Waiting for runner…' : 'No job selected.';
+      return;
+    }
+    body.innerHTML = job.logs
+      .map((entry) => `<div class="${entry.cls || ''}">${escapeHtml(entry.text)}</div>`)
+      .join('');
+    body.scrollTop = body.scrollHeight;
+  }
+
+  function renderPipelinesView() {
+    const histEl = document.getElementById('pipeline-history');
+    const stagesEl = document.getElementById('pipeline-stages');
+    histEl.innerHTML = '';
+
+    if (state.pipelines.length === 0) {
+      stagesEl.innerHTML = '<div style="grid-column:1/-1;color:var(--text-secondary);padding:8px;">No pipelines run yet. Click <strong>Run Pipeline on main</strong> above or commit an edit.</div>';
+      renderJobLog(null);
+      return;
+    }
+
+    if (!state.selectedPipelineId) {
+      state.selectedPipelineId = state.pipelines[state.pipelines.length - 1].id;
+    }
+    const pipe = state.pipelines.find((p) => p.id === state.selectedPipelineId) || state.pipelines[state.pipelines.length - 1];
+    state.selectedPipelineId = pipe.id;
+
+    for (const p of [...state.pipelines].reverse()) {
+      const btn = document.createElement('button');
+      btn.className = 'pipe-chip' + (p.id === pipe.id ? ' active' : '');
+      btn.innerHTML = `<span class="badge badge-${p.status}">#${p.id}</span> <span>${shortSha(p.commitSha, 7)}</span>`;
+      btn.addEventListener('click', () => {
+        state.selectedPipelineId = p.id;
+        state.selectedJobName = p.jobs[0] ? p.jobs[0].name : null;
+        renderPipelinesView();
+      });
+      histEl.appendChild(btn);
+    }
+
+    stagesEl.innerHTML = '';
+    stagesEl.style.gridTemplateColumns = `repeat(${Math.max(1, pipe.stages.length)}, minmax(160px, 1fr))`;
+
+    for (const stage of pipe.stages) {
+      const col = document.createElement('div');
+      col.className = 'stage-col';
+      col.innerHTML = `<div class="stage-title">${escapeHtml(stage)}</div>`;
+      const jobs = pipe.jobs.filter((j) => j.stage === stage);
+      for (const job of jobs) {
+        const card = document.createElement('div');
+        card.className = 'job-card' + (job.name === state.selectedJobName ? ' selected' : '');
+        card.innerHTML = `
+          <div class="job-top">
+            <span class="job-name">${escapeHtml(job.name)}</span>
+            <span class="badge badge-${job.status}">${job.status}</span>
+          </div>
+          <div class="job-sub">
+            <span>exit: ${job.exitCode === null ? '-' : job.exitCode}</span>
+            <span>${(job.durationMs / 1000).toFixed(2)}s</span>
+          </div>
+        `;
+        card.addEventListener('click', () => {
+          state.selectedJobName = job.name;
+          renderPipelinesView();
+        });
+        col.appendChild(card);
+      }
+      stagesEl.appendChild(col);
+    }
+
+    const activeJob = pipe.jobs.find((j) => j.name === state.selectedJobName) || pipe.jobs[0] || null;
+    if (activeJob) state.selectedJobName = activeJob.name;
+    renderJobLog(activeJob);
+  }
+
+  async function renderDiffView() {
+    const sel = document.getElementById('diff-commit-select');
+    sel.innerHTML = '';
+    for (let idx = state.commits.length - 1; idx >= 0; idx--) {
+      const c = state.commits[idx];
+      const opt = document.createElement('option');
+      opt.value = c.sha;
+      opt.textContent = `!${idx + 1} (${shortSha(c.sha, 7)}) — ${c.message.slice(0, 48)}`;
+      sel.appendChild(opt);
+    }
+    if (!state.selectedDiffSha || !state.commits.some((c) => c.sha === state.selectedDiffSha)) {
+      state.selectedDiffSha = currentCommit().sha;
+    }
+    sel.value = state.selectedDiffSha;
+
+    const hasWorking = Object.keys(state.draftEdits).length > 0;
+    const workBtn = document.getElementById('btn-diff-working');
+    workBtn.style.display = hasWorking ? 'inline-flex' : 'none';
+    workBtn.textContent = state.showWorkingDiff ? 'Show Committed Diff' : 'Show Uncommitted Edits';
+
+    const container = document.getElementById('diff-files-container');
+    container.innerHTML = '';
+
+    let totalAdd = 0;
+    let totalDel = 0;
+    let fileDiffs = [];
+
+    if (state.showWorkingDiff && hasWorking) {
+      const head = currentCommit();
+      document.getElementById('diff-title').textContent = 'Uncommitted Working Tree Changes vs HEAD';
+      document.getElementById('diff-subtitle').textContent = `Base commit ${shortSha(head.sha, 10)} on main`;
+      for (const [path, newText] of Object.entries(state.draftEdits)) {
+        const oldText = await getFileContentAtCommit(head, path);
+        const diff = computeLineDiff(oldText, newText);
+        totalAdd += diff.added;
+        totalDel += diff.removed;
+        fileDiffs.push({ path, diff });
+      }
+    } else {
+      const idx = state.commits.findIndex((c) => c.sha === state.selectedDiffSha);
+      const commit = state.commits[idx] || currentCommit();
+      const parent = commit.parentSha ? state.commits.find((c) => c.sha === commit.parentSha) : null;
+      document.getElementById('diff-title').textContent = `!${idx + 1} — ${commit.message}`;
+      document.getElementById('diff-subtitle').textContent =
+        `${shortSha(commit.sha, 10)} ← ${parent ? shortSha(parent.sha, 10) : 'root (empty tree)'} • ${commit.author}`;
+
+      const paths = commit.changedFiles && commit.changedFiles.length > 0
+        ? commit.changedFiles
+        : Object.keys(commit.tree);
+
+      for (const path of paths) {
+        const oldText = parent ? await getFileContentAtCommit(parent, path) : '';
+        const newText = await getFileContentAtCommit(commit, path);
+        const diff = computeLineDiff(oldText, newText);
+        totalAdd += diff.added;
+        totalDel += diff.removed;
+        fileDiffs.push({ path, diff });
+      }
+    }
+
+    document.getElementById('diff-summary-stats').innerHTML = `
+      <span class="diff-stats-add">+${totalAdd}</span>
+      <span class="diff-stats-del">-${totalDel}</span>
+      <span class="badge badge-cas">${fileDiffs.length} file(s)</span>
+    `;
+
+    for (const { path, diff } of fileDiffs) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      const rowsHtml = diff.rows.map((r) => {
+        const cls = r.type === 'add' ? 'diff-add' : r.type === 'del' ? 'diff-del' : 'diff-ctx';
+        const sign = r.type === 'add' ? '+' : r.type === 'del' ? '-' : ' ';
+        return `<tr class="${cls}"><td class="diff-ln">${r.oldLn}</td><td class="diff-ln">${r.newLn}</td><td class="diff-sign">${sign}</td><td>${escapeHtml(r.text)}</td></tr>`;
+      }).join('');
+      card.innerHTML = `
+        <div class="card-header">
+          <code>${escapeHtml(path)}</code>
+          <div class="btn-row">
+            <span class="diff-stats-add">+${diff.added}</span>
+            <span class="diff-stats-del">-${diff.removed}</span>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="diff-table"><tbody>${rowsHtml}</tbody></table>
+        </div>
+      `;
+      container.appendChild(card);
+    }
+  }
+
+  function renderPagesView() {
+    const p = state.pages;
+    if (!p) return;
+    document.getElementById('pages-opfs-path').textContent = p.opfsUri;
+    document.getElementById('pages-sha512').textContent = p.sha512;
+    document.getElementById('pages-commit-info').textContent = `commit ${shortSha(p.commitSha, 10)} • pipeline #${p.pipelineId}`;
+    document.getElementById('pages-size-time').textContent = `${formatBytes(p.size)} • ${new Date(p.deployedAt).toLocaleTimeString()}`;
+
+    const iframe = document.getElementById('pages-iframe');
+    if (iframe.getAttribute('data-sha') !== p.sha512) {
+      iframe.setAttribute('data-sha', p.sha512);
+      iframe.srcdoc = p.html;
+    }
+  }
+
+  async function renderCasView() {
+    const objs = await listAllV11Objects();
+    document.getElementById('cas-total-count').textContent = String(objs.length);
+    const totalBytes = objs.reduce((acc, o) => acc + o.size, 0);
+    document.getElementById('cas-total-bytes').textContent = formatBytes(totalBytes);
+
+    const tbody = document.getElementById('cas-table-body');
+    tbody.innerHTML = '';
+
+    for (const obj of objs) {
+      const tr = document.createElement('tr');
+      if (obj.sha512 === state.selectedCasSha) tr.className = 'selected';
+      const role = state.knownBlobRoles[obj.sha512] || 'sw/asset-blob';
+      tr.innerHTML = `
+        <td><span style="color:#79b8ff;">${obj.shard}/</span>${obj.sha512.slice(0, 20)}…</td>
+        <td style="color:var(--text-secondary);">${escapeHtml(role)}</td>
+        <td>${formatBytes(obj.size)}</td>
+        <td><span class="badge ${obj.store === 'OPFS' ? 'badge-passed' : 'badge-running'}">${obj.store}</span></td>
+      `;
+      tr.addEventListener('click', async () => {
+        state.selectedCasSha = obj.sha512;
+        await renderCasView();
+        await inspectCasObject(obj);
+      });
+      tbody.appendChild(tr);
+    }
+  }
+
+  async function inspectCasObject(obj) {
+    document.getElementById('cas-inspector-title').textContent = `OPFS:/v11/files/${obj.shard}/${obj.sha512.slice(0, 16)}…`;
+    document.getElementById('btn-verify-cas').disabled = false;
+    const u8 = await getV11BlobBytes(obj.sha512);
+    const pre = document.getElementById('cas-inspector-body');
+    if (!u8) {
+      pre.textContent = 'Blob bytes unavailable in memory/OPFS.';
+      return;
+    }
+    const text = decoder.decode(u8);
+    pre.textContent = text.slice(0, 16000) + (text.length > 16000 ? '\n… [truncated]' : '');
+  }
+
+  async function renderAll() {
+    await renderRepoView();
+    renderPipelinesView();
+    renderPagesView();
+    if (state.activeView === 'diff') await renderDiffView();
+    if (state.activeView === 'cas') await renderCasView();
+  }
+
+  // ---------------------------------------------------------------------------
+  // 9. Event Listeners
+  // ---------------------------------------------------------------------------
+  document.querySelectorAll('.side-btn').forEach((btn) => {
+    btn.addEventListener('click', () => switchView(btn.dataset.view));
+  });
+
+  const codeEditor = document.getElementById('code-editor');
+  codeEditor.addEventListener('input', async () => {
+    const head = currentCommit();
+    const committed = await getFileContentAtCommit(head, state.selectedFile);
+    if (codeEditor.value === committed) {
+      delete state.draftEdits[state.selectedFile];
+    } else {
+      state.draftEdits[state.selectedFile] = codeEditor.value;
+    }
+    updateEditorLineNumbers();
+    const isDirty = Object.prototype.hasOwnProperty.call(state.draftEdits, state.selectedFile);
+    document.getElementById('editor-dirty-pill').style.display = isDirty ? 'inline-flex' : 'none';
+    document.getElementById('btn-discard').disabled = !isDirty;
+  });
+  codeEditor.addEventListener('scroll', () => {
+    document.getElementById('editor-lines').scrollTop = codeEditor.scrollTop;
+  });
+
+  document.getElementById('btn-discard').addEventListener('click', async () => {
+    delete state.draftEdits[state.selectedFile];
+    await renderRepoView();
+    showToast(`Discarded edits to ${state.selectedFile}`);
+  });
+
+  document.getElementById('btn-commit').addEventListener('click', async () => {
+    const msg = document.getElementById('commit-msg-input').value;
+    const triggerCi = document.getElementById('chk-trigger-ci').checked;
+    await commitCurrentChanges(msg, triggerCi);
+  });
+
+  document.getElementById('btn-new-file').addEventListener('click', async () => {
+    const name = window.prompt('New file path (e.g. src/helper.mts):');
+    if (!name || !name.trim()) return;
+    const clean = name.trim().replace(/^\/+/, '');
+    state.draftEdits[clean] = `// ${clean}\n`;
+    state.selectedFile = clean;
+    await renderRepoView();
+    codeEditor.focus();
+  });
+
+  document.getElementById('btn-quick-pipeline').addEventListener('click', () => {
+    switchView('pipelines');
+    runPipeline(currentCommit());
+  });
+
+  document.getElementById('btn-run-pipeline').addEventListener('click', () => {
+    runPipeline(currentCommit());
+  });
+
+  document.getElementById('diff-commit-select').addEventListener('change', (ev) => {
+    state.selectedDiffSha = ev.target.value;
+    state.showWorkingDiff = false;
+    renderDiffView();
+  });
+
+  document.getElementById('btn-diff-working').addEventListener('click', () => {
+    state.showWorkingDiff = !state.showWorkingDiff;
+    renderDiffView();
+  });
+
+  document.getElementById('btn-edit-pages-html').addEventListener('click', async () => {
+    state.selectedFile = 'public/index.html';
+    switchView('repo');
+    await renderRepoView();
+    codeEditor.focus();
+  });
+
+  document.getElementById('btn-rerun-pages').addEventListener('click', async () => {
+    switchView('pipelines');
+    await runPipeline(currentCommit(), 'pages');
+    switchView('pages');
+  });
+
+  document.getElementById('btn-copy-pages-hash').addEventListener('click', async () => {
+    if (!state.pages) return;
+    try {
+      await navigator.clipboard.writeText(state.pages.opfsUri);
+      showToast('Copied OPFS v11 path to clipboard');
+    } catch {
+      showToast(state.pages.opfsUri);
+    }
+  });
+
+  document.getElementById('btn-refresh-cas').addEventListener('click', async () => {
+    await updateOpfsStatusPill();
+    await renderCasView();
+    showToast('Refreshed OPFS:/v11/files/ scan');
+  });
+
+  document.getElementById('btn-verify-cas').addEventListener('click', async () => {
+    if (!state.selectedCasSha) return;
+    const u8 = await getV11BlobBytes(state.selectedCasSha);
+    if (!u8) { showToast('Blob not found'); return; }
+    const digest = await sha512Hex(u8);
+    if (digest === state.selectedCasSha) {
+      showToast(`SHA-512 VERIFIED (${shortSha(digest, 16)}…)`);
+    } else {
+      showToast('SHA-512 MISMATCH!');
+    }
+  });
+
+  document.getElementById('btn-reset-repo').addEventListener('click', async () => {
+    try { localStorage.removeItem(STATE_STORAGE_KEY); } catch {}
+    await seedFreshRepo();
+    await updateOpfsStatusPill();
+    await renderAll();
+    showToast('Repository reset to initial seed.');
+  });
+
+  // ---------------------------------------------------------------------------
+  // 10. Boot
+  // ---------------------------------------------------------------------------
+  (async () => {
+    registerHoloSW();
+    await hydrateOrSeed();
+    await updateOpfsStatusPill();
+    await renderAll();
+  })();
+})();
+</script>
+</body>
+</html>

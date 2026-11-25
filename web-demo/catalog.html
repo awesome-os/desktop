@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Awesome-OS — Curated App Catalog</title>
+  <meta name="description" content="Instant-launch Awesome-OS applications running natively in the browser via wasi-host-web, OPFS:/v11/files/, holo-web-service-worker.js, and WebGL2/WebGPU, plus the Native Awesome-OS CLI Stack." />
+  <style>
+    :root {
+      --bg-0: #050810;
+      --bg-1: #0b1120;
+      --bg-2: #111a2e;
+      --surface: rgba(15, 23, 42, 0.78);
+      --surface-hover: rgba(20, 31, 56, 0.92);
+      --border: rgba(148, 163, 184, 0.16);
+      --border-strong: rgba(56, 189, 248, 0.42);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --cyan: #38bdf8;
+      --cyan-soft: rgba(56, 189, 248, 0.14);
+      --emerald: #34d399;
+      --emerald-soft: rgba(16, 185, 129, 0.14);
+      --violet: #a78bfa;
+      --violet-soft: rgba(167, 139, 250, 0.14);
+      --amber: #fbbf24;
+      --amber-soft: rgba(245, 158, 11, 0.14);
+      --rose: #fb7185;
+      --mono: ui-monospace, 'Cascadia Code', 'JetBrains Mono', Consolas, monospace;
+      --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse 80% 50% at 15% -5%, rgba(56, 189, 248, 0.16), transparent 60%),
+        radial-gradient(ellipse 65% 45% at 88% 5%, rgba(167, 139, 250, 0.14), transparent 55%),
+        radial-gradient(ellipse 60% 45% at 50% 105%, rgba(16, 185, 129, 0.10), transparent 60%),
+        var(--bg-0);
+      color: var(--text);
+      font-family: var(--sans);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Sticky Header */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 60;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px 16px;
+      padding: 10px 24px;
+      background: rgba(7, 11, 20, 0.86);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      font-size: 15px;
+    }
+    .brand-mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 55%, #10b981 100%);
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.35);
+      flex-shrink: 0;
+    }
+    .brand-sub {
+      font-weight: 500;
+      color: var(--text-muted);
+      font-size: 13px;
+      padding-left: 8px;
+      border-left: 1px solid var(--border);
+    }
+
+    .telemetry {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      background: var(--cyan-soft);
+      border: 1px solid rgba(56, 189, 248, 0.32);
+      color: #7dd3fc;
+      white-space: nowrap;
+    }
+    .pill.green {
+      background: var(--emerald-soft);
+      border-color: rgba(16, 185, 129, 0.36);
+      color: #6ee7b7;
+    }
+    .pill.violet {
+      background: var(--violet-soft);
+      border-color: rgba(167, 139, 250, 0.36);
+      color: #ddd6fe;
+    }
+    .pill.amber {
+      background: var(--amber-soft);
+      border-color: rgba(245, 158, 11, 0.36);
+      color: #fde68a;
+    }
+    .dot-live {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .nav-links a {
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 12.5px;
+      font-weight: 500;
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+    }
+    .nav-links a:hover {
+      background: rgba(56, 189, 248, 0.12);
+      border-color: rgba(56, 189, 248, 0.28);
+      color: #fff;
+    }
+
+    /* Main Container */
+    .shell {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 36px 24px 72px;
+    }
+
+    /* Hero */
+    .hero {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .hero-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: fit-content;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      color: #7dd3fc;
+      background: rgba(14, 165, 233, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+    }
+    .hero h1 {
+      font-size: clamp(1.85rem, 3.4vw, 2.75rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.12;
+      background: linear-gradient(110deg, #ffffff 0%, #bae6fd 52%, #c4b5fd 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .hero p {
+      max-width: 780px;
+      font-size: 15px;
+      color: var(--text-muted);
+    }
+    .hero code {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: #7dd3fc;
+      background: rgba(148, 163, 184, 0.12);
+      padding: 1px 6px;
+      border-radius: 5px;
+    }
+
+    /* Controls: Search + Category Pills */
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 32px;
+      padding: 16px;
+      border-radius: var(--radius);
+      background: rgba(11, 17, 32, 0.72);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+    }
+    .search-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .search-box {
+      position: relative;
+      flex: 1;
+      display: flex;
+      align-items: center;
+    }
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      color: var(--text-dim);
+      pointer-events: none;
+    }
+    .search-input {
+      width: 100%;
+      padding: 11px 64px 11px 42px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      background: rgba(6, 10, 20, 0.9);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 140ms ease, box-shadow 140ms ease;
+    }
+    .search-input::placeholder { color: var(--text-dim); }
+    .search-input:focus {
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.16);
+    }
+    .search-kbd {
+      position: absolute;
+      right: 12px;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      background: rgba(148, 163, 184, 0.1);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      pointer-events: none;
+    }
+    .result-count {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      padding: 0 4px;
+    }
+
+    .category-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .cat-pill {
+      padding: 7px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      background: rgba(15, 23, 42, 0.65);
+      color: #cbd5e1;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 140ms ease, border-color 140ms ease, color 140ms ease, transform 120ms ease;
+    }
+    .cat-pill:hover {
+      border-color: rgba(56, 189, 248, 0.45);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+    .cat-pill.active {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.28), rgba(99, 102, 241, 0.28));
+      border-color: var(--cyan);
+      color: #ffffff;
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.18);
+    }
+
+    /* Section Headings */
+    .section {
+      margin-bottom: 42px;
+    }
+    .section.hidden { display: none; }
+    .section-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px 16px;
+      margin-bottom: 18px;
+    }
+    .section-head h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.015em;
+      color: #f8fafc;
+    }
+    .section-head span {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Instant-Launch App Grid */
+    .app-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+    @media (max-width: 1060px) { .app-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 680px) { .app-grid { grid-template-columns: 1fr; } }
+
+    .app-card {
+      display: flex;
+      flex-direction: column;
+      border-radius: var(--radius);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+    .app-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--border-strong);
+      background: var(--surface-hover);
+      box-shadow: 0 18px 44px rgba(2, 6, 23, 0.65), 0 0 0 1px rgba(56, 189, 248, 0.14);
+    }
+
+    .card-accent {
+      position: relative;
+      padding: 18px 18px 16px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .accent-cyan { background: linear-gradient(135deg, rgba(14, 165, 233, 0.24) 0%, rgba(37, 99, 235, 0.12) 60%, rgba(15, 23, 42, 0.2) 100%); }
+    .accent-emerald { background: linear-gradient(135deg, rgba(16, 185, 129, 0.24) 0%, rgba(6, 182, 212, 0.12) 60%, rgba(15, 23, 42, 0.2) 100%); }
+    .accent-amber { background: linear-gradient(135deg, rgba(245, 158, 11, 0.24) 0%, rgba(234, 88, 12, 0.12) 60%, rgba(15, 23, 42, 0.2) 100%); }
+    .accent-violet { background: linear-gradient(135deg, rgba(139, 92, 246, 0.26) 0%, rgba(56, 189, 248, 0.12) 60%, rgba(15, 23, 42, 0.2) 100%); }
+    .accent-rose { background: linear-gradient(135deg, rgba(244, 63, 94, 0.24) 0%, rgba(168, 85, 247, 0.14) 60%, rgba(15, 23, 42, 0.2) 100%); }
+    .accent-indigo { background: linear-gradient(135deg, rgba(99, 102, 241, 0.26) 0%, rgba(16, 185, 129, 0.12) 60%, rgba(15, 23, 42, 0.2) 100%); }
+
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: rgba(7, 11, 20, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #f8fafc;
+      flex-shrink: 0;
+    }
+    .card-cat {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: rgba(7, 11, 20, 0.62);
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      color: #cbd5e1;
+      white-space: nowrap;
+    }
+
+    .card-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 16px 18px 18px;
+    }
+    .card-title {
+      font-size: 16.5px;
+      font-weight: 700;
+      color: #f8fafc;
+      letter-spacing: -0.015em;
+      line-height: 1.25;
+    }
+    .card-desc {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.55;
+      flex: 1;
+    }
+    .card-desc code {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: #bae6fd;
+      background: rgba(148, 163, 184, 0.12);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .tag {
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: rgba(148, 163, 184, 0.1);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      color: #cbd5e1;
+    }
+
+    .uri-line {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: #7dd3fc;
+      background: rgba(6, 10, 20, 0.82);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 8px;
+      padding: 7px 10px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      user-select: all;
+    }
+
+    .launch-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: 1px solid rgba(56, 189, 248, 0.6);
+      background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 13.5px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      transition: filter 140ms ease, transform 120ms ease, box-shadow 140ms ease;
+    }
+    .launch-btn:hover {
+      filter: brightness(1.12);
+      box-shadow: 0 8px 24px rgba(14, 165, 233, 0.34);
+      transform: translateY(-1px);
+    }
+
+    /* Native CLI Stack Grid */
+    .cli-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    @media (max-width: 860px) { .cli-grid { grid-template-columns: 1fr; } }
+
+    .cli-card {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 16px 18px;
+      border-radius: var(--radius);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      transition: border-color 140ms ease, background 140ms ease;
+    }
+    .cli-card:hover {
+      border-color: rgba(16, 185, 129, 0.42);
+      background: var(--surface-hover);
+    }
+    .cli-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .cli-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .cli-sub {
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+    .cmd-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 9px;
+      background: rgba(5, 8, 16, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+    }
+    .cmd-text {
+      flex: 1;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: #6ee7b7;
+      overflow-x: auto;
+      white-space: nowrap;
+      scrollbar-width: none;
+      user-select: all;
+    }
+    .cmd-text::-webkit-scrollbar { display: none; }
+    .copy-btn {
+      flex-shrink: 0;
+      padding: 5px 11px;
+      border-radius: 7px;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      background: rgba(30, 41, 59, 0.85);
+      color: #e2e8f0;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+    }
+    .copy-btn:hover {
+      border-color: var(--cyan);
+      color: #fff;
+      background: rgba(14, 165, 233, 0.22);
+    }
+    .copy-btn.copied {
+      border-color: var(--emerald);
+      background: rgba(16, 185, 129, 0.22);
+      color: #6ee7b7;
+    }
+    .ext-link {
+      flex-shrink: 0;
+      padding: 5px 10px;
+      border-radius: 7px;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      background: rgba(14, 165, 233, 0.14);
+      color: #7dd3fc;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .ext-link:hover {
+      background: rgba(14, 165, 233, 0.26);
+      color: #fff;
+    }
+
+    /* Empty State */
+    .empty-state {
+      display: none;
+      text-align: center;
+      padding: 48px 20px;
+      border-radius: var(--radius);
+      border: 1px dashed rgba(148, 163, 184, 0.28);
+      background: rgba(11, 17, 32, 0.5);
+      color: var(--text-muted);
+    }
+    .empty-state.visible { display: block; }
+    .empty-state button {
+      margin-top: 14px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--cyan);
+      background: var(--cyan-soft);
+      color: #7dd3fc;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 12.5px;
+      color: var(--text-dim);
+    }
+    .footer code {
+      font-family: var(--mono);
+      color: #94a3b8;
+    }
+    .footer a {
+      color: #7dd3fc;
+      text-decoration: none;
+    }
+    .footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./catalog.html" aria-label="Awesome-OS Curated App Catalog">
+      <span class="brand-mark" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon>
+          <line x1="12" y1="22" x2="12" y2="15.5"></line>
+          <polyline points="22 8.5 12 15.5 2 8.5"></polyline>
+        </svg>
+      </span>
+      <span>Awesome-OS</span>
+      <span class="brand-sub">Curated App Catalog</span>
+    </a>
+
+    <div class="telemetry" aria-label="Live System Telemetry">
+      <span id="opfs-pill" class="pill green" title="Direct OPFS:/v11/files/ CAS blobs served via holo-web-service-worker.js">
+        <span class="dot-live" aria-hidden="true"></span>
+        <span>OPFS:/v11/ …</span>
+      </span>
+      <span id="coi-pill" class="pill" title="Cross-Origin Isolation &amp; SharedArrayBuffer readiness">
+        COI/SAB: checking…
+      </span>
+      <span id="abi-pill" class="pill violet" title="B8G Universal ABI V3 Magic">
+        B8G_ABI_MAGIC_V3 (0x33564742)
+      </span>
+    </div>
+
+    <nav class="nav-links" aria-label="Primary Navigation">
+      <a href="/">Home</a>
+      <a href="/docs/">Docs</a>
+      <a href="https://github.com/awesome-os/holo-v11" target="_blank" rel="noopener noreferrer">holo-v11 ↗</a>
+    </nav>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-kicker">
+        <span>wasi-host-web</span> · <span>OPFS:/v11/files/</span> · <span>WebGL2 / WebGPU</span>
+      </div>
+      <h1>Awesome-OS — Curated App Catalog</h1>
+      <p>
+        Launch full Awesome-OS applications directly in your browser with zero installation — powered by
+        <code>wasi-host-web</code>, direct <code>OPFS:/v11/files/</code> content-addressed storage via
+        <code>holo-web-service-worker.js</code>, and hardware-accelerated WebGL2/WebGPU — or install the
+        native stack with <code>holo-pm</code>.
+      </p>
+    </section>
+
+    <section class="controls" aria-label="Search and Category Filters">
+      <div class="search-row">
+        <div class="search-box">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input
+            id="search-input"
+            class="search-input"
+            type="search"
+            placeholder="Search apps, capabilities, themes, repository:// URIs, or holo-pm packages…"
+            autocomplete="off"
+            aria-label="Search Awesome-OS apps and native packages"
+          />
+          <span class="search-kbd" aria-hidden="true">/</span>
+        </div>
+        <div id="result-count" class="result-count" aria-live="polite">12 items</div>
+      </div>
+
+      <div id="category-bar" class="category-bar" role="tablist" aria-label="App Categories">
+        <button class="cat-pill active" data-cat="All" role="tab" aria-selected="true">All</button>
+        <button class="cat-pill" data-cat="Desktops &amp; OS" role="tab" aria-selected="false">Desktops &amp; OS</button>
+        <button class="cat-pill" data-cat="Dev &amp; Forge" role="tab" aria-selected="false">Dev &amp; Forge</button>
+        <button class="cat-pill" data-cat="Emulation &amp; GPU" role="tab" aria-selected="false">Emulation &amp; GPU</button>
+        <button class="cat-pill" data-cat="Demoscene" role="tab" aria-selected="false">Demoscene</button>
+        <button class="cat-pill" data-cat="Native CLI" role="tab" aria-selected="false">Native CLI</button>
+      </div>
+    </section>
+
+    <section id="browser-apps-section" class="section" aria-labelledby="browser-apps-heading">
+      <div class="section-head">
+        <h2 id="browser-apps-heading">Instant-Launch Browser Applications</h2>
+        <span>Zero-Cache-API · OPFS v11 Direct · Instant Launch</span>
+      </div>
+      <div id="app-grid" class="app-grid"></div>
+    </section>
+
+    <section id="native-cli-section" class="section" aria-labelledby="native-cli-heading">
+      <div class="section-head">
+        <h2 id="native-cli-heading">Native Awesome-OS Stack (<code>holo-pm install</code>)</h2>
+        <span>1-Click Copy · Win32 / Linux / WASI · B8G_ABI_MAGIC_V3</span>
+      </div>
+      <div id="cli-grid" class="cli-grid"></div>
+    </section>
+
+    <div id="empty-state" class="empty-state" role="status">
+      <p>No Awesome-OS applications or packages match your current filter.</p>
+      <button id="reset-filters" type="button">Reset Search &amp; Category</button>
+    </div>
+
+    <footer class="footer">
+      <div>
+        Awesome-OS <code>v11</code> · Served via <code>holo-web-service-worker.js</code> (OPFS CAS, 0 Cache API)
+      </div>
+      <div>
+        <a href="/">Home</a> · <a href="/docs/">Documentation</a> ·
+        <a href="https://github.com/awesome-os/holo-v11" target="_blank" rel="noopener noreferrer">github.com/awesome-os/holo-v11</a>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    'use strict';
+
+    const ICONS = {
+      desktop: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>',
+      layers: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>',
+      git: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"></circle><circle cx="6" cy="6" r="3"></circle><path d="M13 6h3a2 2 0 0 1 2 2v7"></path><line x1="6" y1="9" x2="6" y2="21"></line></svg>',
+      cpu: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>',
+      sparkles: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z"></path></svg>',
+      compass: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>'
+    };
+
+    const BROWSER_APPS = [
+      {
+        id: 'awesome-os-desktop',
+        title: 'Awesome-OS Desktop (Sectium Pure-Art)',
+        category: 'Desktops & OS',
+        href: './desktop.html',
+        accent: 'accent-cyan',
+        icon: 'desktop',
+        desc: 'Startup Greeter, draggable windowed OS, <code>wasi-host-web</code> SharedWorker terminal, and live OPFS <code>v11</code> explorer.',
+        tags: ['wasi-host-web', 'SharedWorker', 'OPFS v11', 'Sectium Pure-Art'],
+        uri: 'repository://github.com/awesome-os/awesome-os-desktop@main'
+      },
+      {
+        id: 'omarchy-hyprland',
+        title: 'Omarchy Hyprland (25 Themes)',
+        category: 'Desktops & OS',
+        href: './omarchy.html',
+        accent: 'accent-emerald',
+        icon: 'layers',
+        desc: 'Authentic Waybar, 25 real themes (<code>lumi-chromatic</code>, <code>tokyo-night</code>, <code>gruvbox</code>, <code>nord</code>, etc.), Walker launcher, and W3C Keyboard Lock <code>Super</code> hotkeys.',
+        tags: ['Waybar', '25 Themes', 'Walker', 'Keyboard Lock'],
+        uri: 'repository://github.com/awesome-os/desktop-omarchy@main'
+      },
+      {
+        id: 'gitlab-holo-forge',
+        title: 'GitLab Holo Forge',
+        category: 'Dev & Forge',
+        href: './gitlab.html',
+        accent: 'accent-amber',
+        icon: 'git',
+        desc: 'In-browser Gitaly <code>v11</code> CAS repository editor, live <code>.gitlab-ci.yml</code> WASM Runner, diffs, and instant GitLab Pages preview.',
+        tags: ['Gitaly v11 CAS', 'WASM CI Runner', 'Live Diffs', 'Pages Preview'],
+        uri: 'repository://github.com/awesome-os/holo-v11@main/apps/gitlab-forge'
+      },
+      {
+        id: 'b8g-emukit',
+        title: 'B8G Multi-Arch Emulator Kit',
+        category: 'Emulation & GPU',
+        href: '/emukit.html',
+        accent: 'accent-violet',
+        icon: 'cpu',
+        desc: 'WebGPU + COEP <code>SharedArrayBuffer</code> <code>fork()</code> multi-architecture (<code>x86_64</code> / <code>RISC-V</code> / <code>PowerPC</code>) microkernel (<code>b8g-emu-kit.b8p</code>).',
+        tags: ['WebGPU', 'SharedArrayBuffer', 'x86_64 / RISC-V / PPC', 'b8g-emu-kit.b8p'],
+        uri: 'repository://github.com/awesome-os/b8g-emu-kit@main'
+      },
+      {
+        id: 'lumi-white-dragon',
+        title: 'Lumi & White Dragon (8-Ch WebGL2)',
+        category: 'Demoscene',
+        href: './lumi-dragon-demo.html',
+        accent: 'accent-rose',
+        icon: 'sparkles',
+        desc: '20-minute 60fps procedural GLSL + WebAudio ProTracker showcase of Awesome-OS <code>v11</code>.',
+        tags: ['WebGL2 GLSL', '8-Ch WebAudio', 'ProTracker', '60 FPS'],
+        uri: 'repository://github.com/awesome-os/awesome-os-desktop@main/scenes/lumi-dragon'
+      },
+      {
+        id: 'cas-qself-intro',
+        title: 'CAS Q-Self Scene Intro',
+        category: 'Demoscene',
+        href: './cas-qself-intro.html',
+        accent: 'accent-indigo',
+        icon: 'compass',
+        desc: 'Standalone <code>Q(self) = self</code> fixed-point starlight tunnel + Amiga copper-bar sine scroller crediting PARADOX &amp; RAZOR 1911.',
+        tags: ['Q(self) = self', 'Copper Bars', 'Sine Scroller', 'WebGL2'],
+        uri: 'repository://github.com/awesome-os/awesome-os-desktop@main/scenes/cas-qself'
+      }
+    ];
+
+    const NATIVE_CLI_ITEMS = [
+      {
+        id: 'sectium-browser',
+        title: 'Sectium Browser',
+        category: 'Native CLI',
+        desc: 'Decoupled BSD-3 display browser appliance with AppContainer sandbox isolation.',
+        command: 'holo-pm install repository://github.com/awesome-os/sectium-browser@main'
+      },
+      {
+        id: 'sectium-driver',
+        title: 'Sectium Universal Display Driver',
+        category: 'Native CLI',
+        desc: 'Pure-art universal display sink and host device boundary over named pipes and mTLS.',
+        command: 'holo-pm install repository://github.com/awesome-os/sectium@main'
+      },
+      {
+        id: 'awesome-os-desktop-native',
+        title: 'Awesome-OS Desktop (Native Win32/Linux)',
+        category: 'Native CLI',
+        desc: 'Native Win32 and Linux compositor build of the Awesome-OS Desktop environment.',
+        command: 'holo-pm install repository://github.com/awesome-os/awesome-os-desktop@main'
+      },
+      {
+        id: 'rust-coreutils',
+        title: 'Awesome-OS Rust Coreutils',
+        category: 'Native CLI',
+        desc: 'Hermetic, zero-bloat Rust core utilities packaged for B8G and WASI targets.',
+        command: 'holo-pm install repository://github.com/awesome-os/coreutils@main'
+      },
+      {
+        id: 'desktop-omarchy-sdk',
+        title: 'Desktop Omarchy SDK',
+        category: 'Native CLI',
+        desc: 'Waybar, Walker, and 25-theme Hyprland configuration SDK for native and web desktops.',
+        command: 'holo-pm install repository://github.com/awesome-os/desktop-omarchy@main'
+      },
+      {
+        id: 'holo-v11-registry',
+        title: 'Global holo-v11 Registry',
+        category: 'Native CLI',
+        desc: 'Canonical content-addressed v11 package registry and cross-platform manifest index.',
+        command: 'https://github.com/awesome-os/holo-v11',
+        externalUrl: 'https://github.com/awesome-os/holo-v11'
+      }
+    ];
+
+    let activeCategory = 'All';
+    let searchQuery = '';
+
+    const appGrid = document.getElementById('app-grid');
+    const cliGrid = document.getElementById('cli-grid');
+    const browserAppsSection = document.getElementById('browser-apps-section');
+    const nativeCliSection = document.getElementById('native-cli-section');
+    const emptyState = document.getElementById('empty-state');
+    const resultCount = document.getElementById('result-count');
+    const searchInput = document.getElementById('search-input');
+    const categoryBar = document.getElementById('category-bar');
+    const opfsPill = document.getElementById('opfs-pill');
+    const coiPill = document.getElementById('coi-pill');
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function matchesFilter(item, query) {
+      if (activeCategory !== 'All' && item.category !== activeCategory) {
+        return false;
+      }
+      if (!query) return true;
+      const haystack = [
+        item.title,
+        item.category,
+        item.desc,
+        item.uri || '',
+        item.command || '',
+        ...(item.tags || [])
+      ].join(' ').toLowerCase();
+      return query.split(/\s+/).every((tok) => haystack.includes(tok));
+    }
+
+    function renderCatalog() {
+      const q = searchQuery.trim().toLowerCase();
+      const visibleApps = BROWSER_APPS.filter((a) => matchesFilter(a, q));
+      const visibleCli = NATIVE_CLI_ITEMS.filter((c) => matchesFilter(c, q));
+
+      browserAppsSection.classList.toggle('hidden', visibleApps.length === 0);
+      nativeCliSection.classList.toggle('hidden', visibleCli.length === 0);
+
+      appGrid.innerHTML = visibleApps.map((app) => {
+        const tagsHtml = app.tags.map((t) => '<span class="tag">' + escapeHtml(t) + '</span>').join('');
+        return (
+          '<article class="app-card">' +
+            '<div class="card-accent ' + app.accent + '">' +
+              '<div class="card-icon" aria-hidden="true">' + ICONS[app.icon] + '</div>' +
+              '<span class="card-cat">' + escapeHtml(app.category) + '</span>' +
+            '</div>' +
+            '<div class="card-body">' +
+              '<h3 class="card-title">' + escapeHtml(app.title) + '</h3>' +
+              '<p class="card-desc">' + app.desc + '</p>' +
+              '<div class="tags">' + tagsHtml + '</div>' +
+              '<div class="uri-line" title="' + escapeHtml(app.uri) + '">' + escapeHtml(app.uri) + '</div>' +
+              '<a class="launch-btn" href="' + escapeHtml(app.href) + '">Launch App &rarr;</a>' +
+            '</div>' +
+          '</article>'
+        );
+      }).join('');
+
+      cliGrid.innerHTML = visibleCli.map((item) => {
+        const openBtn = item.externalUrl
+          ? '<a class="ext-link" href="' + escapeHtml(item.externalUrl) + '" target="_blank" rel="noopener noreferrer">Open &nearr;</a>'
+          : '';
+        return (
+          '<article class="cli-card">' +
+            '<div class="cli-head">' +
+              '<h3 class="cli-title">' + escapeHtml(item.title) + '</h3>' +
+              '<span class="card-cat">Native CLI</span>' +
+            '</div>' +
+            '<p class="cli-sub">' + escapeHtml(item.desc) + '</p>' +
+            '<div class="cmd-row">' +
+              '<code class="cmd-text">' + escapeHtml(item.command) + '</code>' +
+              '<button class="copy-btn" type="button" data-copy="' + escapeHtml(item.command) + '">Copy</button>' +
+              openBtn +
+            '</div>' +
+          '</article>'
+        );
+      }).join('');
+
+      const total = visibleApps.length + visibleCli.length;
+      resultCount.textContent = total + (total === 1 ? ' item' : ' items');
+      emptyState.classList.toggle('visible', total === 0);
+    }
+
+    // 1-Click Copy handler
+    async function copyText(text, btn) {
+      let ok = false;
+      try {
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+          await navigator.clipboard.writeText(text);
+          ok = true;
+        }
+      } catch {}
+      if (!ok) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { ok = document.execCommand('copy'); } catch {}
+        document.body.removeChild(ta);
+      }
+      if (btn) {
+        btn.textContent = ok ? 'Copied ✓' : 'Select & Copy';
+        btn.classList.toggle('copied', ok);
+        clearTimeout(btn._copyTimer);
+        btn._copyTimer = setTimeout(() => {
+          btn.textContent = 'Copy';
+          btn.classList.remove('copied');
+        }, 1800);
+      }
+    }
+
+    cliGrid.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-copy]');
+      if (!btn) return;
+      copyText(btn.getAttribute('data-copy') || '', btn);
+    });
+
+    // Category filter click
+    categoryBar.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-cat]');
+      if (!btn) return;
+      activeCategory = btn.getAttribute('data-cat') || 'All';
+      categoryBar.querySelectorAll('.cat-pill').forEach((p) => {
+        const isActive = p === btn;
+        p.classList.toggle('active', isActive);
+        p.setAttribute('aria-selected', String(isActive));
+      });
+      renderCatalog();
+    });
+
+    // Instant search
+    searchInput.addEventListener('input', () => {
+      searchQuery = searchInput.value;
+      renderCatalog();
+    });
+
+    document.getElementById('reset-filters').addEventListener('click', () => {
+      searchQuery = '';
+      searchInput.value = '';
+      activeCategory = 'All';
+      categoryBar.querySelectorAll('.cat-pill').forEach((p) => {
+        const isActive = p.getAttribute('data-cat') === 'All';
+        p.classList.toggle('active', isActive);
+        p.setAttribute('aria-selected', String(isActive));
+      });
+      renderCatalog();
+      searchInput.focus();
+    });
+
+    // Keyboard shortcuts: "/" focuses search, "Escape" clears it
+    window.addEventListener('keydown', (e) => {
+      if (e.key === '/' && document.activeElement !== searchInput && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        searchInput.focus();
+      } else if (e.key === 'Escape' && document.activeElement === searchInput) {
+        searchInput.value = '';
+        searchQuery = '';
+        renderCatalog();
+        searchInput.blur();
+      }
+    });
+
+    // Live COI / SharedArrayBuffer telemetry
+    function updateCoiTelemetry() {
+      const hasCoi = Boolean(self.crossOriginIsolated);
+      const hasSab = typeof SharedArrayBuffer !== 'undefined';
+      if (hasCoi && hasSab) {
+        coiPill.textContent = 'COI/SAB: ACTIVE';
+        coiPill.className = 'pill green';
+      } else if (hasSab) {
+        coiPill.textContent = 'COI/SAB: SAB READY';
+        coiPill.className = 'pill';
+      } else {
+        coiPill.textContent = 'COI/SAB: PENDING SW';
+        coiPill.className = 'pill amber';
+      }
+    }
+
+    function setOpfsTelemetry(label) {
+      opfsPill.innerHTML = '<span class="dot-live" aria-hidden="true"></span><span>' + escapeHtml(label) + '</span>';
+    }
+
+    async function countOpfsDirect() {
+      try {
+        if (!navigator.storage || typeof navigator.storage.getDirectory !== 'function') return null;
+        const root = await navigator.storage.getDirectory();
+        const v11 = await root.getDirectoryHandle('v11', { create: true });
+        const files = await v11.getDirectoryHandle('files', { create: true });
+        let count = 0;
+        if (typeof files.values === 'function') {
+          for await (const shard of files.values()) {
+            if (shard.kind === 'directory' && typeof shard.values === 'function') {
+              for await (const entry of shard.values()) {
+                if (entry.kind === 'file') count++;
+              }
+            }
+          }
+        }
+        return count;
+      } catch {
+        return null;
+      }
+    }
+
+    // Register ./holo-web-service-worker.js cleanly and query OPFS:/v11/ blob count
+    function initHoloServiceWorker() {
+      if (!('serviceWorker' in navigator)) {
+        countOpfsDirect().then((n) => {
+          setOpfsTelemetry(typeof n === 'number' ? 'OPFS:/v11/ ' + n + ' blobs (Direct)' : 'OPFS:/v11/ Direct');
+        });
+        return;
+      }
+
+      navigator.serviceWorker.register('./holo-web-service-worker.js', { scope: './' })
+        .then(async (reg) => {
+          const readyReg = await navigator.serviceWorker.ready;
+          const target = readyReg.active || reg.active || reg.waiting || reg.installing;
+          if (!target) {
+            const n = await countOpfsDirect();
+            setOpfsTelemetry(typeof n === 'number' ? 'OPFS:/v11/ ' + n + ' blobs' : 'OPFS:/v11/ SW Ready');
+            return;
+          }
+
+          const queryStatus = () => {
+            const ch = new MessageChannel();
+            ch.port1.onmessage = (ev) => {
+              const s = ev.data || {};
+              if (typeof s.blobCount === 'number') {
+                setOpfsTelemetry('OPFS:/v11/ ' + s.blobCount + ' blobs · 0 Cache API');
+              } else {
+                setOpfsTelemetry('OPFS:/v11/ SW Active');
+              }
+            };
+            target.postMessage({ type: 'HOLO_SW_STATUS' }, [ch.port2]);
+          };
+
+          queryStatus();
+          // Refresh once more after initial assets settle into OPFS
+          setTimeout(queryStatus, 1500);
+        })
+        .catch(async () => {
+          const n = await countOpfsDirect();
+          setOpfsTelemetry(typeof n === 'number' ? 'OPFS:/v11/ ' + n + ' blobs (Direct)' : 'OPFS:/v11/ Direct');
+        });
+    }
+
+    renderCatalog();
+    updateCoiTelemetry();
+    initHoloServiceWorker();
+  </script>
+</body>
+</html>
