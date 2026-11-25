@@ -20,7 +20,7 @@ const HOLO_WASI_SEED_WASM = new Uint8Array([
   0x07, 0x1c, 0x02,
   0x0d, 0x62, 0x38, 0x67, 0x5f, 0x61, 0x62, 0x69, 0x5f, 0x6d, 0x61, 0x67, 0x69, 0x63, 0x00, 0x00,
   0x08, 0x68, 0x6f, 0x6c, 0x6f, 0x5f, 0x61, 0x64, 0x64, 0x00, 0x01,
-  0x0a, 0x13, 0x02,
+  0x0a, 0x12, 0x02,
   0x08, 0x00, 0x41, 0xc2, 0x8e, 0xd9, 0x9a, 0x03, 0x0b,
   0x07, 0x00, 0x20, 0x00, 0x20, 0x01, 0x6a, 0x0b,
 ]);
@@ -155,7 +155,12 @@ function broadcast(msg) {
 }
 
 async function handleCommand(port, msg) {
-  await ensureWasmBooted();
+  try {
+    await ensureWasmBooted();
+  } catch (err) {
+    port.postMessage({ type: 'boot-error', error: String(err) });
+    return;
+  }
 
   if (msg.type === 'init') {
     const magic = wasmInstance.exports.b8g_abi_magic() >>> 0;
@@ -242,11 +247,11 @@ if (typeof self.onconnect !== 'undefined') {
     ports.add(port);
     port.onmessage = (e) => { handleCommand(port, e.data); };
     port.start();
-    ensureWasmBooted().then(() => handleCommand(port, { type: 'init' }));
+    handleCommand(port, { type: 'init' });
   };
 } else {
   const shimPort = { postMessage: (m) => self.postMessage(m) };
   ports.add(shimPort);
   self.onmessage = (e) => { handleCommand(shimPort, e.data); };
-  ensureWasmBooted().then(() => handleCommand(shimPort, { type: 'init' }));
+  handleCommand(shimPort, { type: 'init' });
 }

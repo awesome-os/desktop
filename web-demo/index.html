@@ -186,9 +186,56 @@
     }
     .dock-btn:hover { background: rgba(56,189,248,0.16); border-color: rgba(56,189,248,0.35); transform: translateY(-2px); }
     .dock-btn .ico { font-size: 16px; font-weight: 700; color: #7dd3fc; }
+
+    /* Loader Bootscreen Overlay */
+    #boot-loader {
+      position: fixed; inset: 0; z-index: 200;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(56,189,248,0.18), transparent 45%),
+        radial-gradient(circle at 50% 60%, rgba(167,139,250,0.14), transparent 50%),
+        #05080f;
+      transition: opacity 280ms ease;
+    }
+    #boot-loader.fade-out { opacity: 0; pointer-events: none; }
+    .boot-ring {
+      width: 68px; height: 68px; border-radius: 50%;
+      border: 3px solid rgba(56,189,248,0.18);
+      border-top-color: #38bdf8; border-right-color: #a78bfa;
+      animation: spin 0.9s linear infinite;
+      display: grid; place-items: center;
+      box-shadow: 0 0 32px rgba(56,189,248,0.25);
+    }
+    .boot-ring-inner {
+      font-weight: 800; font-size: 18px; color: #f8fafc; letter-spacing: -0.04em;
+      animation: spin-rev 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes spin-rev { to { transform: rotate(-360deg); } }
+    .boot-title { font-size: 1.25rem; font-weight: 700; color: #f8fafc; letter-spacing: -0.01em; }
+    .boot-stage {
+      font-family: ui-monospace, Consolas, monospace; font-size: 12px; color: #7dd3fc;
+      min-height: 18px;
+    }
+    .boot-bar-wrap {
+      width: min(360px, 80vw); height: 6px; border-radius: 999px;
+      background: rgba(148,163,184,0.16); overflow: hidden;
+    }
+    .boot-bar {
+      height: 100%; width: 12%; border-radius: 999px;
+      background: linear-gradient(90deg, #38bdf8, #a78bfa, #34d399);
+      transition: width 220ms ease;
+    }
   </style>
 </head>
 <body>
+  <!-- LOADER BOOTSCREEN -->
+  <div id="boot-loader">
+    <div class="boot-ring"><div class="boot-ring-inner">A</div></div>
+    <div id="boot-title" class="boot-title">Awesome-OS · Holo v11 Loader</div>
+    <div class="boot-bar-wrap"><div id="boot-bar" class="boot-bar"></div></div>
+    <div id="boot-stage" class="boot-stage">Initializing B8G_ABI_MAGIC_V3 (0x33564742) + OPFS v11...</div>
+  </div>
   <!-- GREETER SCREEN -->
   <div id="greeter-screen" class="screen">
     <div class="topbar">
@@ -382,15 +429,35 @@
     }
     renderChooser();
 
-    // Connect SharedWorker (or Worker fallback)
+    // Loader Bootscreen controller
+    const bootLoader = document.getElementById('boot-loader');
+    const bootTitle = document.getElementById('boot-title');
+    const bootBar = document.getElementById('boot-bar');
+    const bootStage = document.getElementById('boot-stage');
+
+    function showLoader(title, stage, pct) {
+      bootLoader.classList.remove('hidden', 'fade-out');
+      bootTitle.textContent = title;
+      bootStage.textContent = stage;
+      bootBar.style.width = pct + '%';
+    }
+    function hideLoader() {
+      bootBar.style.width = '100%';
+      setTimeout(() => {
+        bootLoader.classList.add('fade-out');
+        setTimeout(() => bootLoader.classList.add('hidden'), 280);
+      }, 160);
+    }
+
+    // Connect SharedWorker (versioned URL avoids stale worker cache)
     let port;
     if (typeof SharedWorker !== 'undefined') {
-      const sw = new SharedWorker('./wasi-host-worker.js');
+      const sw = new SharedWorker('./wasi-host-worker.js?v=11.1');
       port = sw.port;
       port.start();
       workerPill.textContent = 'SharedWorker';
     } else {
-      port = new Worker('./wasi-host-worker.js');
+      port = new Worker('./wasi-host-worker.js?v=11.1');
       workerPill.textContent = 'WebWorker';
     }
 
@@ -401,16 +468,29 @@
 
     port.onmessage = (ev) => {
       const msg = ev.data;
-      if (msg.type === 'boot-log') {
+      if (msg.type === 'boot-error') {
+        console.error('[wasi-host-worker]', msg.error);
+        abiPill.textContent = 'WASM ERR';
+        appendBoot(['[ERROR] ' + msg.error]);
+        hideLoader();
+      } else if (msg.type === 'boot-log') {
         abiPill.textContent = 'WASM ' + msg.magic;
         appendBoot(msg.lines);
+        bootStage.textContent = 'WASM ' + msg.magic + ' verified · OPFS v11 ready';
+        bootBar.style.width = '80%';
       } else if (msg.type === 'ready') {
         abiPill.textContent = 'WASM ' + msg.magic;
         if (msg.activeSession && msg.activeSession.desktop) {
           showDesktop(msg.activeSession, msg.casCount);
         }
+        hideLoader();
       } else if (msg.type === 'desktop-booted') {
-        showDesktop(msg.session, msg.casCount);
+        bootStage.textContent = 'Projecting ' + msg.session.desktop + ' from OPFS:/v11/files/...';
+        bootBar.style.width = '92%';
+        setTimeout(() => {
+          showDesktop(msg.session, msg.casCount);
+          hideLoader();
+        }, 260);
       } else if (msg.type === 'reboot-greeter') {
         desktopScreen.classList.add('hidden');
         greeterScreen.classList.remove('hidden');
@@ -419,6 +499,8 @@
         termOut.scrollTop = termOut.scrollHeight;
       }
     };
+    // Safety timeout so loader never hangs even if worker is blocked
+    setTimeout(() => { if (!bootLoader.classList.contains('hidden')) hideLoader(); }, 3500);
 
     // Subtle animated grid canvas for live compositor feel
     function startBackdrop() {
@@ -578,6 +660,7 @@
 
     document.getElementById('launch-btn').onclick = () => {
       const d = DESKTOPS[selDesktop];
+      showLoader('Booting ' + d.name, 'holo-project "' + d.uri + '" -> OPFS:/v11/files/', 45);
       port.postMessage({ type: 'boot-desktop', desktop: d.id, greeter: GREETERS[selGreeter], projectUri: d.uri });
     };
     document.getElementById('reboot-btn').onclick = () => {
