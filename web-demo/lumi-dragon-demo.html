@@ -1,0 +1,1981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Awesome-OS v11 — Lumi &amp; The White Dragon (60fps WebGL2 Demoscene)</title>
+<style>
+  :root {
+    --bg: #04060d;
+    --panel: rgba(8, 12, 24, 0.72);
+    --border: rgba(125, 211, 252, 0.24);
+    --accent: #38bdf8;
+    --accent2: #c084fc;
+    --gold: #fbbf24;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-monospace, 'Cascadia Code', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  #stage {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #03050a;
+  }
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  #hudCanvas {
+    pointer-events: none;
+  }
+
+  /* Start Overlay */
+  #startOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: radial-gradient(ellipse at 50% 40%, rgba(20, 32, 68, 0.88) 0%, rgba(4, 6, 14, 0.96) 72%);
+    backdrop-filter: blur(10px);
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+  }
+  #startOverlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .badge {
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    background: rgba(56, 189, 248, 0.08);
+    padding: 6px 14px;
+    border-radius: 999px;
+    margin-bottom: 18px;
+  }
+  .hero-title {
+    font-size: clamp(28px, 5vw, 56px);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-align: center;
+    background: linear-gradient(90deg, #ffffff 0%, #7dd3fc 35%, #e879f9 70%, #fde047 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 40px rgba(56, 189, 248, 0.25);
+    margin-bottom: 10px;
+  }
+  .hero-sub {
+    font-size: clamp(12px, 1.5vw, 15px);
+    color: #cbd5e1;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .greets-strip {
+    max-width: 780px;
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--muted);
+    border-top: 1px solid rgba(148, 163, 184, 0.18);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+    padding: 12px 18px;
+    margin-bottom: 30px;
+    letter-spacing: 0.1em;
+  }
+  .greets-strip strong {
+    color: #f8fafc;
+    font-weight: 700;
+  }
+  .greets-strip .hi {
+    color: var(--gold);
+  }
+  #startBtn {
+    cursor: pointer;
+    border: 1px solid rgba(125, 211, 252, 0.65);
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.28), rgba(168, 85, 247, 0.28));
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 16px 34px;
+    border-radius: 12px;
+    box-shadow: 0 0 32px rgba(56, 189, 248, 0.32), inset 0 0 18px rgba(255, 255, 255, 0.08);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  }
+  #startBtn:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 0 46px rgba(56, 189, 248, 0.55), inset 0 0 24px rgba(255, 255, 255, 0.14);
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.44), rgba(168, 85, 247, 0.44));
+  }
+  .start-hints {
+    margin-top: 20px;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-align: center;
+  }
+
+  /* Minimal Demoscene HUD */
+  #hud {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 14px 18px;
+    transition: opacity 0.35s ease;
+  }
+  #hud.hud-hidden {
+    opacity: 0;
+  }
+  .hud-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .hud-pill {
+    pointer-events: auto;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(8px);
+    border-radius: 10px;
+    padding: 8px 13px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  }
+  .hud-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+  }
+  .hud-brand {
+    color: #fff;
+    font-weight: 700;
+  }
+  .hud-sep { color: rgba(148, 163, 184, 0.4); }
+  .hud-ch-name { color: #7dd3fc; }
+  .hud-metrics { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  .hud-bottom {
+    pointer-events: auto;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+  }
+  .timeline-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .time-label {
+    font-size: 11px;
+    color: #cbd5e1;
+    font-variant-numeric: tabular-nums;
+    min-width: 96px;
+  }
+  #scrubber {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.25);
+    outline: none;
+    cursor: pointer;
+  }
+  #scrubber::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #38bdf8;
+    border: 2px solid #fff;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.85);
+    cursor: pointer;
+  }
+  .controls-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+  .hud-btn {
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: #cbd5e1;
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 7px;
+    padding: 5px 10px;
+    transition: all 0.15s ease;
+  }
+  .hud-btn:hover {
+    color: #fff;
+    border-color: rgba(56, 189, 248, 0.65);
+    background: rgba(30, 41, 59, 0.9);
+  }
+  .hud-btn.active {
+    color: #fff;
+    border-color: #38bdf8;
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.42), rgba(168, 85, 247, 0.35));
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
+  }
+  .ch-btn {
+    min-width: 30px;
+    text-align: center;
+    padding: 5px 8px;
+  }
+  @media (max-width: 720px) {
+    .hud-top { flex-direction: column; }
+    .hud-metrics { display: none; }
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="glCanvas"></canvas>
+  <canvas id="hudCanvas"></canvas>
+</div>
+
+<div id="startOverlay">
+  <div class="badge">AWESOME-OS v11 • REAL-TIME DEMOSCENE</div>
+  <h1 class="hero-title">LUMI &amp; THE WHITE DRAGON</h1>
+  <div class="hero-sub">60FPS WebGL2 GLSL Raymarching + WebAudio Procedural Tracker (20:00)</div>
+  <div class="greets-strip">
+    8-CHAPTER JOURNEY: OBSERVATORY • WHITE DRAGON • v11 CAS VAULT • HARDLINK BRIDGES • B8G_ABI_MAGIC_V3 • SECTIUM PRISM • OMARCHY 25-THEME • CAS Q-SELF FINALE<br />
+    CLASSIC DEMOSCENE GREETS TO <strong class="hi">PARADOX</strong> • <strong class="hi">RAZOR 1911</strong> • <strong>FAIRLIGHT</strong> • <strong>FUTURE CREW</strong> • <strong>FARBRAUSCH</strong> • <strong>CONSPIRACY</strong> • <strong>SCENE.ORG</strong>
+  </div>
+  <button id="startBtn" type="button">&#9654; Start Demoscene (Audio + 60fps GPU)</button>
+  <div class="start-hints">Keys: [1–8] Jump Chapters &nbsp;•&nbsp; [Space] Play/Pause &nbsp;•&nbsp; [M] Mute &nbsp;•&nbsp; [F] Fullscreen &nbsp;•&nbsp; [H] Toggle HUD</div>
+</div>
+
+<div id="hud">
+  <div class="hud-top">
+    <div class="hud-pill">
+      <span class="hud-dot" id="beatDot"></span>
+      <span class="hud-brand">AWESOME-OS v11</span>
+      <span class="hud-sep">|</span>
+      <span class="hud-ch-name" id="hudChapterLabel">CH 01/08 · LUMI'S OBSERVATORY</span>
+    </div>
+    <div class="hud-pill hud-metrics">
+      <span id="hudRenderer">WEBGL2</span>
+      <span class="hud-sep">|</span>
+      <span id="hudFps">60 FPS</span>
+      <span class="hud-sep">|</span>
+      <span id="hudBpm">128 BPM</span>
+    </div>
+  </div>
+
+  <div class="hud-bottom">
+    <div class="timeline-row">
+      <span class="time-label" id="timeLabel">00:00 / 20:00</span>
+      <input id="scrubber" type="range" min="0" max="1200" step="0.1" value="0" aria-label="Demoscene timeline" />
+    </div>
+    <div class="controls-row">
+      <div class="btn-group" id="chapterButtons"></div>
+      <div class="btn-group">
+        <button class="hud-btn" id="btnPlayPause" type="button">Pause</button>
+        <button class="hud-btn" id="btnMute" type="button">Mute</button>
+        <button class="hud-btn" id="btnFullscreen" type="button">Fullscreen</button>
+        <button class="hud-btn" id="btnHideHud" type="button">HUD</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // =========================================================================
+  // 1. CHAPTER METADATA & TIMELINE CONSTANTS (20:00 = 1200s, 150s per chapter)
+  // =========================================================================
+  const TOTAL_DURATION = 1200.0;
+  const CHAPTER_DURATION = 150.0;
+  const CROSSFADE_SEC = 3.0;
+
+  const CHAPTERS = [
+    {
+      id: 1,
+      title: "Lumi's Observatory",
+      subtitle: "Volumetric Moonlight • Prismatic Lumi Orb • Geodesic Brass Projector",
+      short: "1: Observatory",
+      bpm: 118
+    },
+    {
+      id: 2,
+      title: "The White Dragon",
+      subtitle: "Articulated Celestial Dragon • Milky Way • Constellation Nodes",
+      short: "2: White Dragon",
+      bpm: 124
+    },
+    {
+      id: 3,
+      title: "v11 CAS Crystal Vault",
+      subtitle: "Infinite Deduplicated Shard Lattice • Content-Addressed Refraction",
+      short: "3: CAS Vault",
+      bpm: 128
+    },
+    {
+      id: 4,
+      title: "repository:// -> project://",
+      subtitle: "0-Byte Hardlink Light Bridges • Zero-Copy Photon Transfer",
+      short: "4: Hardlinks",
+      bpm: 130
+    },
+    {
+      id: 5,
+      title: "B8G_ABI_MAGIC_V3 (0x33564742)",
+      subtitle: "Glowing Geodesic Core • 64-Byte Aligned SharedArrayBuffer Rings",
+      short: "5: B8G ABI v3",
+      bpm: 132
+    },
+    {
+      id: 6,
+      title: "Sectium Universal Display",
+      subtitle: "5-Beam Chromatic Prism • Pure-Art Appliance Pipeline",
+      short: "6: Sectium",
+      bpm: 126
+    },
+    {
+      id: 7,
+      title: "Omarchy 25-Theme Chromatic Shift",
+      subtitle: "Live Morphing Tokyo Night • Lumi • Gruvbox • Nord • Rose Pine • Hackerman",
+      short: "7: Omarchy",
+      bpm: 128
+    },
+    {
+      id: 8,
+      title: "CAS Q-Self Fixed-Point Finale",
+      subtitle: "Copper-Bar Sine Scroller • Greets to PARADOX & RAZOR 1911",
+      short: "8: Q-Self Finale",
+      bpm: 134
+    }
+  ];
+
+  const OMARCHY_PALETTES = [
+    { name: 'TOKYO NIGHT',    bg: '#1a1b26', c1: '#7aa2f7', c2: '#bb9af7', c3: '#7dcfff' },
+    { name: 'LUMI CHROMATIC', bg: '#070914', c1: '#38bdf8', c2: '#f472b6', c3: '#fde047' },
+    { name: 'GRUVBOX',        bg: '#282828', c1: '#fabd2f', c2: '#fe8019', c3: '#8ec07c' },
+    { name: 'NORD',           bg: '#2e3440', c1: '#88c0d0', c2: '#81a1c1', c3: '#b48ead' },
+    { name: 'ROSE PINE',      bg: '#191724', c1: '#ebbcba', c2: '#c4a7e7', c3: '#9ccfd8' },
+    { name: 'HACKERMAN',      bg: '#020a04', c1: '#00ff41', c2: '#00d9ff', c3: '#aaff00' }
+  ];
+
+  const SCROLLER_TEXT =
+    "   *** AWESOME-OS v11 :: LUMI & THE WHITE DRAGON :: CAS Q-SELF FIXED-POINT FINALE ***   " +
+    "PURE REAL-TIME 60FPS WEBGL2 GLSL + WEBAUDIO TRACKER ENGINE — ZERO EXTERNAL ASSETS —   " +
+    "MEGA DEMOSCENE GREETS & RESPECT TO:   >>> PARADOX <<<   •   >>> RAZOR 1911 <<<   •   " +
+    "FAIRLIGHT   •   FUTURE CREW   •   FARBRAUSCH   •   CONSPIRACY   •   SCENE.ORG   •   " +
+    "AND ALL DEMOSCENE CODERS, MUSICIANS & PIXEL ARTISTS KEEPING REAL-TIME ART ALIVE!   " +
+    "POWERED BY B8G_ABI_MAGIC_V3 (0x33564742) • SECTIUM UNIVERSAL DISPLAY • OMARCHY 25-THEME ENGINE • " +
+    "LUMI'S OBSERVATORY & THE CELESTIAL WHITE DRAGON FLY FOREVER...   *** AWESOME-OS ***   ";
+
+  // =========================================================================
+  // 2. WEBAUDIO PROCEDURAL TRACKER / SYNTHWAVE ENGINE
+  // =========================================================================
+  class TrackerAudioEngine {
+    constructor() {
+      this.ctx = null;
+      this.master = null;
+      this.analyser = null;
+      this.freqData = null;
+      this.noiseBuffer = null;
+      this.muted = false;
+      this.playing = false;
+      this.step = 0;
+      this.nextNoteTime = 0;
+      this.timerId = null;
+      this.currentChapter = 0;
+      this.bpm = 128;
+      this.beatPulse = 0;
+      this.bass = 0;
+      this.mid = 0;
+      this.high = 0;
+    }
+
+    init() {
+      if (this.ctx) {
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+        return;
+      }
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      this.ctx = new AudioCtx();
+
+      this.master = this.ctx.createGain();
+      this.master.gain.value = this.muted ? 0.0 : 0.72;
+
+      const comp = this.ctx.createDynamicsCompressor();
+      comp.threshold.value = -14;
+      comp.knee.value = 18;
+      comp.ratio.value = 4;
+      comp.attack.value = 0.005;
+      comp.release.value = 0.16;
+
+      this.analyser = this.ctx.createAnalyser();
+      this.analyser.fftSize = 256;
+      this.analyser.smoothingTimeConstant = 0.8;
+      this.freqData = new Uint8Array(this.analyser.frequencyBinCount);
+
+      // Stereo delay send for tracker arps & bells
+      this.delayL = this.ctx.createDelay(1.0);
+      this.delayR = this.ctx.createDelay(1.0);
+      this.delayL.delayTime.value = 0.234;
+      this.delayR.delayTime.value = 0.351;
+      const fbL = this.ctx.createGain();
+      const fbR = this.ctx.createGain();
+      fbL.gain.value = 0.34;
+      fbR.gain.value = 0.34;
+      this.fxSend = this.ctx.createGain();
+      this.fxSend.gain.value = 0.32;
+      const fxFilter = this.ctx.createBiquadFilter();
+      fxFilter.type = 'lowpass';
+      fxFilter.frequency.value = 3400;
+
+      this.fxSend.connect(fxFilter);
+      fxFilter.connect(this.delayL);
+      fxFilter.connect(this.delayR);
+      this.delayL.connect(fbL);
+      fbL.connect(this.delayR);
+      this.delayR.connect(fbR);
+      fbR.connect(this.delayL);
+      this.delayL.connect(comp);
+      this.delayR.connect(comp);
+
+      this.bus = this.ctx.createGain();
+      this.bus.connect(comp);
+      comp.connect(this.analyser);
+      this.analyser.connect(this.master);
+      this.master.connect(this.ctx.destination);
+
+      // Pre-generate white noise buffer for snare & hi-hat
+      const len = this.ctx.sampleRate * 1.0;
+      this.noiseBuffer = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+      const data = this.noiseBuffer.getChannelData(0);
+      for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    }
+
+    setChapter(chIdx) {
+      this.currentChapter = chIdx;
+      this.bpm = CHAPTERS[chIdx] ? CHAPTERS[chIdx].bpm : 128;
+    }
+
+    setMuted(m) {
+      this.muted = m;
+      if (this.master && this.ctx) {
+        this.master.gain.setTargetAtTime(m ? 0.0 : 0.72, this.ctx.currentTime, 0.02);
+      }
+    }
+
+    start() {
+      this.init();
+      if (!this.ctx) return;
+      if (this.ctx.state === 'suspended') this.ctx.resume();
+      this.playing = true;
+      this.nextNoteTime = this.ctx.currentTime + 0.04;
+      if (!this.timerId) {
+        this.timerId = setInterval(() => this._scheduler(), 25);
+      }
+    }
+
+    stop() {
+      this.playing = false;
+      if (this.timerId) {
+        clearInterval(this.timerId);
+        this.timerId = null;
+      }
+    }
+
+    _midiToFreq(m) {
+      return 440.0 * Math.pow(2.0, (m - 69) / 12.0);
+    }
+
+    _scheduler() {
+      if (!this.playing || !this.ctx) return;
+      const ahead = 0.12;
+      while (this.nextNoteTime < this.ctx.currentTime + ahead) {
+        this._scheduleStep(this.step, this.nextNoteTime);
+        const sixteenth = 60.0 / this.bpm / 4.0;
+        this.nextNoteTime += sixteenth;
+        this.step = (this.step + 1) % 64;
+      }
+    }
+
+    _scheduleStep(step, t) {
+      const ch = this.currentChapter;
+      const bar = Math.floor(step / 16);
+      const beatStep = step % 16;
+
+      // Chapter-specific chord progressions (MIDI root notes)
+      const progressions = [
+        [48, 44, 46, 43], // Ch1 Observatory: Cm - Ab - Bb - Gm
+        [50, 46, 48, 45], // Ch2 White Dragon: Dm - Bb - C - Am
+        [45, 41, 48, 43], // Ch3 CAS Vault: Am - F - C - G
+        [52, 48, 50, 47], // Ch4 Hardlinks: Em - C - D - Bm
+        [48, 48, 44, 46], // Ch5 B8G ABI: Cm - Cm - Ab - Bb
+        [53, 49, 51, 48], // Ch6 Sectium: Fm - Db - Eb - Cm
+        [47, 43, 45, 42], // Ch7 Omarchy: Bm - G - A - F#m
+        [48, 44, 46, 55]  // Ch8 Q-Self Finale: Cm - Ab - Bb - G
+      ];
+      const prog = progressions[ch % progressions.length];
+      const root = prog[bar % 4];
+      const minorTriad = [0, 3, 7, 12, 15, 19];
+      const majorTriad = [0, 4, 7, 12, 16, 19];
+      const chordIntervals = (bar === 1 || bar === 2) ? majorTriad : minorTriad;
+
+      // 1. Kick drum (4-on-the-floor + demoscene syncopation)
+      const kickPattern = (ch === 0)
+        ? (beatStep === 0 || beatStep === 8)
+        : (beatStep === 0 || beatStep === 4 || beatStep === 8 || beatStep === 12 || (ch >= 4 && beatStep === 14));
+      if (kickPattern) {
+        this._playKick(t, beatStep % 4 === 0 ? 0.85 : 0.52);
+        if (beatStep % 4 === 0) this.beatPulse = 1.0;
+      }
+
+      // 2. Snare / Clap
+      if (beatStep === 4 || beatStep === 12) {
+        this._playSnare(t, ch === 0 ? 0.25 : 0.42);
+      }
+
+      // 3. Hi-Hat
+      if (beatStep % 2 === 0 || (ch >= 2 && beatStep % 2 === 1)) {
+        const open = (beatStep === 2 || beatStep === 10);
+        this._playHat(t, open ? 0.11 : 0.04, open ? 0.16 : 0.07);
+      }
+
+      // 4. Driving Synthwave / Tracker Bass
+      const bassActive = (ch === 0)
+        ? (beatStep === 0 || beatStep === 6 || beatStep === 10)
+        : (beatStep % 2 === 0);
+      if (bassActive) {
+        const octaveJump = (beatStep === 6 || beatStep === 14) ? 12 : 0;
+        this._playBass(t, this._midiToFreq(root - 12 + octaveJump), 0.16, ch);
+      }
+
+      // 5. Classic Amiga/ProTracker 16th-note Arpeggio
+      const arpIdx = (step + ch * 2) % chordIntervals.length;
+      const arpNote = root + 12 + chordIntervals[arpIdx];
+      if (ch !== 0 || beatStep % 2 === 0) {
+        this._playArp(t, this._midiToFreq(arpNote), ch === 7 ? 0.12 : 0.085, ch);
+      }
+
+      // 6. Celestial Pad on bar downbeat
+      if (beatStep === 0) {
+        this._playPad(t, this._midiToFreq(root + 12), 1.8, 0.09);
+        this._playPad(t, this._midiToFreq(root + 12 + chordIntervals[1]), 1.8, 0.07);
+        this._playPad(t, this._midiToFreq(root + 12 + chordIntervals[2]), 1.8, 0.07);
+      }
+
+      // 7. Crystalline Lumi Lead / Bell Melody
+      const melodySteps = [0, 3, 6, 8, 11, 14];
+      if (melodySteps.includes(beatStep) && ((step + ch) % 3 !== 1)) {
+        const deg = chordIntervals[(beatStep + bar + ch) % chordIntervals.length];
+        this._playBell(t, this._midiToFreq(root + 24 + deg), 0.28, ch === 7 ? 0.11 : 0.08);
+      }
+    }
+
+    _playKick(t, gainAmt) {
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(145, t);
+      osc.frequency.exponentialRampToValueAtTime(38, t + 0.11);
+      g.gain.setValueAtTime(gainAmt, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+      osc.connect(g);
+      g.connect(this.bus);
+      osc.start(t);
+      osc.stop(t + 0.23);
+    }
+
+    _playSnare(t, gainAmt) {
+      const src = this.ctx.createBufferSource();
+      src.buffer = this.noiseBuffer;
+      const flt = this.ctx.createBiquadFilter();
+      flt.type = 'bandpass';
+      flt.frequency.value = 1800;
+      flt.Q.value = 0.9;
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(gainAmt, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+      src.connect(flt);
+      flt.connect(g);
+      g.connect(this.bus);
+      g.connect(this.fxSend);
+      src.start(t);
+      src.stop(t + 0.16);
+    }
+
+    _playHat(t, dur, gainAmt) {
+      const src = this.ctx.createBufferSource();
+      src.buffer = this.noiseBuffer;
+      const flt = this.ctx.createBiquadFilter();
+      flt.type = 'highpass';
+      flt.frequency.value = 7200;
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(gainAmt, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      src.connect(flt);
+      flt.connect(g);
+      g.connect(this.bus);
+      src.start(t);
+      src.stop(t + dur + 0.01);
+    }
+
+    _playBass(t, freq, dur, ch) {
+      const osc = this.ctx.createOscillator();
+      osc.type = (ch % 2 === 0) ? 'sawtooth' : 'square';
+      osc.frequency.setValueAtTime(freq, t);
+      const flt = this.ctx.createBiquadFilter();
+      flt.type = 'lowpass';
+      flt.frequency.setValueAtTime(980, t);
+      flt.frequency.exponentialRampToValueAtTime(220, t + dur);
+      flt.Q.value = 3.2;
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(0.24, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur + 0.03);
+      osc.connect(flt);
+      flt.connect(g);
+      g.connect(this.bus);
+      osc.start(t);
+      osc.stop(t + dur + 0.04);
+    }
+
+    _playArp(t, freq, gainAmt, ch) {
+      const osc = this.ctx.createOscillator();
+      osc.type = (ch === 7 || ch === 4) ? 'square' : 'triangle';
+      osc.frequency.setValueAtTime(freq, t);
+      const flt = this.ctx.createBiquadFilter();
+      flt.type = 'lowpass';
+      flt.frequency.setValueAtTime(3200, t);
+      flt.frequency.exponentialRampToValueAtTime(900, t + 0.11);
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(gainAmt, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+      osc.connect(flt);
+      flt.connect(g);
+      g.connect(this.bus);
+      g.connect(this.fxSend);
+      osc.start(t);
+      osc.stop(t + 0.13);
+    }
+
+    _playPad(t, freq, dur, gainAmt) {
+      const osc = this.ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq, t);
+      const flt = this.ctx.createBiquadFilter();
+      flt.type = 'lowpass';
+      flt.frequency.setValueAtTime(600, t);
+      flt.frequency.linearRampToValueAtTime(1400, t + dur * 0.5);
+      flt.frequency.linearRampToValueAtTime(520, t + dur);
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(0.001, t);
+      g.gain.linearRampToValueAtTime(gainAmt, t + 0.25);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      osc.connect(flt);
+      flt.connect(g);
+      g.connect(this.bus);
+      osc.start(t);
+      osc.stop(t + dur + 0.05);
+    }
+
+    _playBell(t, freq, dur, gainAmt) {
+      const osc = this.ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t);
+      const mod = this.ctx.createOscillator();
+      const modGain = this.ctx.createGain();
+      mod.frequency.setValueAtTime(freq * 2.0, t);
+      modGain.gain.setValueAtTime(freq * 0.6, t);
+      modGain.gain.exponentialRampToValueAtTime(1.0, t + dur);
+      mod.connect(modGain);
+      modGain.connect(osc.frequency);
+
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(gainAmt, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      osc.connect(g);
+      g.connect(this.bus);
+      g.connect(this.fxSend);
+      mod.start(t);
+      osc.start(t);
+      mod.stop(t + dur + 0.02);
+      osc.stop(t + dur + 0.02);
+    }
+
+    sampleBands(dt) {
+      this.beatPulse = Math.max(0.0, this.beatPulse - dt * 3.8);
+      if (this.analyser && this.freqData && this.playing && !this.muted) {
+        this.analyser.getByteFrequencyData(this.freqData);
+        let b = 0, m = 0, h = 0;
+        for (let i = 0; i < 10; i++) b += this.freqData[i];
+        for (let i = 10; i < 42; i++) m += this.freqData[i];
+        for (let i = 42; i < 100; i++) h += this.freqData[i];
+        this.bass = (b / (10 * 255));
+        this.mid = (m / (32 * 255));
+        this.high = (h / (58 * 255));
+      } else {
+        // Gentle procedural pulse even when muted or before start
+        const t = performance.now() * 0.001;
+        const beat = Math.pow(0.5 + 0.5 * Math.sin(t * (this.bpm / 60.0) * Math.PI * 2.0), 4.0);
+        this.bass = 0.25 + 0.45 * beat;
+        this.mid = 0.2 + 0.3 * (0.5 + 0.5 * Math.sin(t * 2.7));
+        this.high = 0.18 + 0.25 * (0.5 + 0.5 * Math.cos(t * 5.1));
+        this.beatPulse = Math.max(this.beatPulse, beat * 0.85);
+      }
+    }
+  }
+
+  // =========================================================================
+  // 3. WEBGL2 GLSL SHADER SOURCES (8 FULL REAL-TIME CHAPTERS)
+  // =========================================================================
+  const VERT_SRC = `#version 300 es
+  precision highp float;
+  out vec2 vUv;
+  void main() {
+    vec2 p = vec2((gl_VertexID << 1) & 2, gl_VertexID & 2);
+    vUv = p;
+    gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
+  }`;
+
+  const FRAG_SRC = `#version 300 es
+  precision highp float;
+
+  in vec2 vUv;
+  out vec4 fragColor;
+
+  uniform vec2 uRes;
+  uniform float uTime;
+  uniform float uLocalTime;
+  uniform int uSceneA;
+  uniform int uSceneB;
+  uniform float uMix;
+  uniform float uBass;
+  uniform float uMid;
+  uniform float uHigh;
+  uniform float uBeat;
+
+  const float PI = 3.14159265359;
+  const float TAU = 6.28318530718;
+
+  mat2 rot(float a) {
+    float c = cos(a), s = sin(a);
+    return mat2(c, -s, s, c);
+  }
+
+  float hash11(float p) {
+    p = fract(p * 0.1031);
+    p *= p + 33.33;
+    p *= p + p;
+    return fract(p);
+  }
+
+  float hash21(vec2 p) {
+    vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
+  }
+
+  vec2 hash22(vec2 p) {
+    vec3 p3 = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973));
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.xx + p3.yz) * p3.zy);
+  }
+
+  float noise2(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(
+      mix(hash21(i + vec2(0.0, 0.0)), hash21(i + vec2(1.0, 0.0)), u.x),
+      mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), u.x),
+      u.y
+    );
+  }
+
+  float fbm(vec2 p) {
+    float v = 0.0;
+    float a = 0.5;
+    mat2 m = mat2(0.8, 0.6, -0.6, 0.8);
+    for (int i = 0; i < 4; i++) {
+      v += a * noise2(p);
+      p = m * p * 2.03 + 17.1;
+      a *= 0.5;
+    }
+    return v;
+  }
+
+  vec3 palette(float t, vec3 a, vec3 b, vec3 c, vec3 d) {
+    return a + b * cos(TAU * (c * t + d));
+  }
+
+  float sdSphere(vec3 p, float r) {
+    return length(p) - r;
+  }
+
+  float sdTorus(vec3 p, vec2 t) {
+    vec2 q = vec2(length(p.xz) - t.x, p.y);
+    return length(q) - t.y;
+  }
+
+  float sdBox(vec3 p, vec3 b) {
+    vec3 q = abs(p) - b;
+    return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+  }
+
+  float sdOctahedron(vec3 p, float s) {
+    p = abs(p);
+    return (p.x + p.y + p.z - s) * 0.57735027;
+  }
+
+  float sdCapsule(vec3 p, vec3 a, vec3 b, float r) {
+    vec3 pa = p - a, ba = b - a;
+    float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+    return length(pa - ba * h) - r;
+  }
+
+  float smin(float a, float b, float k) {
+    float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+    return mix(b, a, h) - k * h * (1.0 - h);
+  }
+
+  // =========================================================================
+  // CH 1: LUMI'S OBSERVATORY (Dome, Volumetric Moonlight, Prismatic Lumi Orb, Brass Projector)
+  // =========================================================================
+  vec3 renderObservatory(vec2 uv, float t) {
+    vec3 ro = vec3(sin(t * 0.22) * 1.4, 0.25 + sin(t * 0.35) * 0.15, 4.3);
+    vec3 ta = vec3(0.0, 0.2, 0.0);
+    vec3 ww = normalize(ta - ro);
+    vec3 uu = normalize(cross(ww, vec3(0.0, 1.0, 0.0)));
+    vec3 vv = cross(uu, ww);
+    vec3 rd = normalize(uv.x * uu + uv.y * vv + 1.55 * ww);
+
+    // Night sky background visible through dome slit
+    vec3 col = vec3(0.015, 0.025, 0.06);
+    float starGrid = pow(hash21(floor((rd.xy / (abs(rd.z) + 0.4)) * 180.0)), 22.0);
+    col += vec3(0.75, 0.88, 1.0) * starGrid * 1.6;
+
+    // Raymarch dome ribs, geodesic brass projector, and Lumi orb
+    float dist = 0.0;
+    vec3 glow = vec3(0.0);
+    vec3 hitCol = vec3(0.0);
+    bool hit = false;
+
+    for (int i = 0; i < 64; i++) {
+      vec3 p = ro + rd * dist;
+
+      // 1. Prismatic Lumi Orb floating at center
+      vec3 orbP = p - vec3(0.0, 0.42 + sin(t * 1.6) * 0.14, 0.0);
+      float dOrb = sdSphere(orbP, 0.52 + uBass * 0.06);
+
+      // 2. Geodesic Brass Projector rings around/below Lumi
+      vec3 bp = p - vec3(0.0, -0.75, 0.0);
+      vec3 r1 = bp; r1.xz *= rot(t * 0.55); r1.xy *= rot(0.45);
+      vec3 r2 = bp; r2.xz *= rot(-t * 0.42); r2.yz *= rot(0.65);
+      float dRing1 = sdTorus(r1, vec2(1.15, 0.045));
+      float dRing2 = sdTorus(r2, vec2(0.88, 0.04));
+      float dPedestal = sdBox(bp - vec3(0.0, -0.58, 0.0), vec3(1.2, 0.12, 1.2));
+      float dBrass = min(min(dRing1, dRing2), dPedestal);
+
+      // 3. Observatory Dome shell with slit aperture
+      float domeR = 5.4 - length(p);
+      float slit = abs(p.x - p.y * 0.32 + 0.25) - 0.85;
+      float dDome = max(domeR, -slit);
+      // Ribbed dome arches
+      float ribAngle = atan(p.z, p.x);
+      float ribs = abs(sin(ribAngle * 8.0)) * 0.07;
+      dDome -= ribs;
+
+      float d = min(min(dOrb, dBrass), max(dDome, -0.15));
+
+      // Accumulate volumetric Lumi orb aura
+      glow += vec3(0.28, 0.72, 1.0) * (0.012 / (0.04 + dOrb * dOrb));
+      glow += vec3(0.95, 0.55, 0.95) * (0.006 / (0.08 + dOrb * dOrb)) * (0.6 + 0.4 * sin(t * 2.0 + p.y * 4.0));
+      glow += vec3(0.95, 0.72, 0.30) * (0.0025 / (0.03 + dRing1 * dRing1));
+
+      if (d < 0.004) {
+        hit = true;
+        if (dOrb <= dBrass && dOrb <= dDome + 0.01) {
+          vec3 n = normalize(orbP);
+          float fres = pow(1.0 - max(dot(n, -rd), 0.0), 3.0);
+          vec3 prism = palette(fres * 1.4 + t * 0.25 + n.y * 0.5,
+            vec3(0.65, 0.75, 0.95), vec3(0.35, 0.35, 0.35), vec3(1.0), vec3(0.0, 0.33, 0.67));
+          hitCol = mix(vec3(0.92, 0.98, 1.0), prism, 0.65) * (1.2 + uBeat * 0.6);
+        } else if (dBrass <= dDome + 0.01) {
+          vec3 lightDir = normalize(vec3(0.4, 0.9, 0.5));
+          float diff = clamp(dot(normalize(p + 0.001), lightDir) * 0.5 + 0.5, 0.0, 1.0);
+          hitCol = vec3(0.85, 0.62, 0.24) * (0.35 + 0.85 * diff) + vec3(0.25, 0.45, 0.65) * 0.25;
+        } else {
+          float grid = smoothstep(0.92, 0.99, abs(sin(atan(p.z, p.x) * 8.0)));
+          hitCol = vec3(0.05, 0.08, 0.16) + vec3(0.18, 0.28, 0.45) * grid;
+        }
+        break;
+      }
+      dist += max(d * 0.68, 0.025);
+      if (dist > 11.0) break;
+    }
+
+    if (hit) col = mix(col, hitCol, 0.92);
+
+    // Volumetric diagonal moonlight shaft streaming through the observatory slit
+    vec2 shaftUv = uv;
+    float shaftLine = abs(shaftUv.x - shaftUv.y * 0.42 + 0.12);
+    float dust = fbm(shaftUv * 5.0 + vec2(0.0, -t * 0.22));
+    float shaft = exp(-shaftLine * 5.2) * smoothstep(-0.85, 0.75, shaftUv.y) * (0.65 + 0.55 * dust);
+    col += vec3(0.55, 0.78, 1.0) * shaft * (0.48 + uMid * 0.22);
+
+    // Lumi prismatic flare
+    col += glow * (0.62 + uBass * 0.35);
+    return col;
+  }
+
+  // =========================================================================
+  // CH 2: THE WHITE DRAGON (Articulated Celestial Dragon, Milky Way, Constellations)
+  // =========================================================================
+  vec3 renderWhiteDragon(vec2 uv, float t) {
+    // Deep celestial Milky Way sky
+    vec2 skyUv = uv;
+    vec2 bandUv = skyUv * rot(-0.42);
+    float milky = exp(-bandUv.y * bandUv.y * 4.5);
+    float neb1 = fbm(bandUv * 3.2 + vec2(t * 0.05, 0.0));
+    float neb2 = fbm(bandUv * 6.5 - vec2(t * 0.08, 1.3));
+
+    vec3 col = vec3(0.012, 0.018, 0.048);
+    col += vec3(0.16, 0.25, 0.52) * milky * neb1 * 1.1;
+    col += vec3(0.45, 0.22, 0.58) * milky * pow(neb2, 2.0) * 0.75;
+    col += vec3(0.30, 0.65, 0.95) * milky * smoothstep(0.45, 0.85, neb1 * neb2) * 0.9;
+
+    // Parallax starfield + optical 4-point diffraction spikes
+    for (int layer = 0; layer < 2; layer++) {
+      float scale = (layer == 0) ? 14.0 : 28.0;
+      vec2 gv = uv * scale + vec2(t * (0.18 + float(layer) * 0.14), 0.0);
+      vec2 id = floor(gv);
+      vec2 f = fract(gv) - 0.5;
+      vec2 rnd = hash22(id + float(layer) * 31.7);
+      vec2 sp = f - (rnd - 0.5) * 0.65;
+      float d = length(sp);
+      float bright = step(0.84, rnd.x);
+      float twinkle = 0.65 + 0.35 * sin(t * 4.0 + rnd.y * 25.0);
+      float star = (0.004 / (d * d + 0.0012)) * bright * twinkle;
+      // Diffraction spikes on brightest constellation stars
+      float spike = (exp(-abs(sp.x) * 48.0) * exp(-abs(sp.y) * 6.0) +
+                     exp(-abs(sp.y) * 48.0) * exp(-abs(sp.x) * 6.0)) * step(0.95, rnd.x) * 0.8;
+      col += mix(vec3(0.75, 0.9, 1.0), vec3(1.0, 0.88, 0.72), rnd.y) * (star * 0.22 + spike);
+    }
+
+    // Constellation nodes & glowing connecting lines
+    vec2 cNodes[5];
+    cNodes[0] = vec2(-0.78,  0.34);
+    cNodes[1] = vec2(-0.42,  0.48);
+    cNodes[2] = vec2( 0.05,  0.36);
+    cNodes[3] = vec2( 0.48,  0.52);
+    cNodes[4] = vec2( 0.82,  0.26);
+    for (int i = 0; i < 5; i++) {
+      vec2 np = cNodes[i] + vec2(sin(t * 0.4 + float(i)) * 0.015, cos(t * 0.5 + float(i)) * 0.015);
+      float nd = length(uv - np);
+      col += vec3(0.65, 0.90, 1.0) * (0.0022 / (nd * nd + 0.0005));
+      if (i < 4) {
+        vec2 nNext = cNodes[i + 1] + vec2(sin(t * 0.4 + float(i + 1)) * 0.015, cos(t * 0.5 + float(i + 1)) * 0.015);
+        vec2 pa = uv - np, ba = nNext - np;
+        float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+        float ld = length(pa - ba * h);
+        col += vec3(0.35, 0.68, 1.0) * smoothstep(0.006, 0.001, ld) * 0.28;
+      }
+    }
+
+    // Articulated Luminous White Dragon soaring across the sky
+    vec3 dragonGlow = vec3(0.0);
+    vec2 headPos = vec2(0.28 * cos(t * 0.45) + 0.12, 0.05 + 0.16 * sin(t * 0.95));
+    vec2 prevPos = headPos;
+
+    for (int i = 0; i < 18; i++) {
+      float fi = float(i);
+      float phase = t * 2.6 - fi * 0.34;
+      vec2 segPos = vec2(
+        headPos.x - fi * 0.068,
+        headPos.y + sin(phase) * (0.09 + fi * 0.004) - fi * 0.004
+      );
+      float radius = mix(0.052, 0.010, fi / 17.0);
+      if (i == 0) radius = 0.068;
+
+      // Spine capsule glow
+      vec2 pa = uv - prevPos;
+      vec2 ba = segPos - prevPos;
+      float denom = max(dot(ba, ba), 0.0001);
+      float h = clamp(dot(pa, ba) / denom, 0.0, 1.0);
+      float dSeg = length(pa - ba * h) - radius;
+
+      float core = smoothstep(0.018, -0.012, dSeg);
+      float aura = 0.0032 / (max(dSeg, 0.0) * max(dSeg, 0.0) + 0.0018);
+
+      vec3 scaleTint = mix(vec3(1.0, 0.99, 0.96), vec3(0.62, 0.88, 1.0), fi / 18.0);
+      dragonGlow += scaleTint * core * 0.42;
+      dragonGlow += vec3(0.70, 0.90, 1.0) * aura * (0.22 + uBass * 0.12);
+
+      // Sweeping Celestial Wings attached around segments 3..6
+      if (i == 3 || i == 4) {
+        float flap = sin(t * 3.4 - fi * 0.4) * 0.24;
+        for (int s = -1; s <= 1; s += 2) {
+          float fs = float(s);
+          vec2 wingTip = segPos + vec2(-0.18 - fi * 0.02, fs * (0.34 + flap));
+          vec2 wpa = uv - segPos, wba = wingTip - segPos;
+          float wh = clamp(dot(wpa, wba) / max(dot(wba, wba), 0.0001), 0.0, 1.0);
+          float wd = length(wpa - wba * wh) - mix(0.032, 0.005, wh);
+          dragonGlow += vec3(0.82, 0.94, 1.0) * (0.0025 / (max(wd, 0.0) * max(wd, 0.0) + 0.0012)) * 0.55;
+        }
+      }
+      prevPos = segPos;
+    }
+
+    // Dragon glowing cyan-gold eyes & horns
+    float eyeD = length(uv - (headPos + vec2(0.024, 0.016)));
+    dragonGlow += vec3(0.35, 0.95, 1.0) * (0.0015 / (eyeD * eyeD + 0.0002));
+    // Horn sweep
+    vec2 hornEnd = headPos + vec2(-0.075, 0.085);
+    vec2 hpa = uv - headPos, hba = hornEnd - headPos;
+    float hh = clamp(dot(hpa, hba) / dot(hba, hba), 0.0, 1.0);
+    float hd = length(hpa - hba * hh);
+    dragonGlow += vec3(1.0, 0.88, 0.55) * smoothstep(0.012, 0.002, hd) * 0.9;
+
+    col += dragonGlow;
+    return col;
+  }
+
+  // =========================================================================
+  // CH 3: v11 CAS CRYSTAL VAULT (Infinite Deduplicated Shard Lattice)
+  // =========================================================================
+  vec3 renderCasVault(vec2 uv, float t) {
+    vec3 ro = vec3(sin(t * 0.4) * 0.8, cos(t * 0.3) * 0.6, t * 2.6);
+    vec3 rd = normalize(vec3(uv, 1.35));
+    rd.xy *= rot(sin(t * 0.25) * 0.25);
+
+    vec3 col = vec3(0.015, 0.02, 0.05);
+    vec3 acc = vec3(0.0);
+    float dist = 0.0;
+
+    for (int i = 0; i < 60; i++) {
+      vec3 p = ro + rd * dist;
+      vec3 cell = floor(p / 2.6);
+      vec3 q = mod(p, 2.6) - 1.3;
+
+      float cellHash = hash11(dot(cell, vec3(12.9898, 78.233, 37.719)));
+      q.xz *= rot(t * 0.7 + cellHash * TAU);
+      q.xy *= rot(t * 0.45 + cellHash * 3.14);
+
+      float dShard = sdOctahedron(q, 0.46 + 0.10 * sin(t * 2.0 + cellHash * TAU) + uBass * 0.06);
+      // Deduplicated connecting CAS hash beams
+      float dBeam = min(length(q.xy) - 0.025, length(q.yz) - 0.025);
+      float d = min(dShard, dBeam);
+
+      vec3 shardCol = palette(cellHash + t * 0.08 + dist * 0.04,
+        vec3(0.5, 0.6, 0.8), vec3(0.45, 0.4, 0.5), vec3(1.0), vec3(0.0, 0.28, 0.62));
+      acc += shardCol * (0.012 / (0.025 + abs(dShard) * 2.5));
+      acc += vec3(0.25, 0.85, 1.0) * (0.003 / (0.02 + abs(dBeam) * 4.0)) * (0.5 + uHigh);
+
+      if (d < 0.008) {
+        float fog = exp(-dist * 0.075);
+        col = mix(col, shardCol * 1.15 + vec3(0.8, 0.95, 1.0) * 0.35, fog);
+        break;
+      }
+      dist += max(d * 0.65, 0.04);
+      if (dist > 28.0) break;
+    }
+
+    col += acc * (0.42 + uBeat * 0.25);
+    return col;
+  }
+
+  // =========================================================================
+  // CH 4: repository:// -> project:// (0-Byte Hardlink Light Bridges)
+  // =========================================================================
+  vec3 renderHardlinkBridges(vec2 uv, float t) {
+    vec3 col = mix(vec3(0.01, 0.02, 0.05), vec3(0.03, 0.06, 0.14), smoothstep(-0.6, 0.6, uv.y));
+
+    // Perspective floor grid
+    if (uv.y < -0.05) {
+      float py = -0.35 / (uv.y - 0.02);
+      float px = uv.x * py;
+      vec2 gp = vec2(px, py - t * 2.2);
+      vec2 grid = abs(fract(gp - 0.5) - 0.5) / fwidth(gp);
+      float line = 1.0 - min(min(grid.x, grid.y), 1.0);
+      float fade = exp(-py * 0.14);
+      col += vec3(0.12, 0.48, 0.85) * line * fade * 0.55;
+    }
+
+    // Left Tower: repository:// (Golden-Cyan Vault)
+    vec2 leftPos = vec2(-0.62, 0.04);
+    float dLeft = length((uv - leftPos) * vec2(1.4, 0.55));
+    col += vec3(0.95, 0.72, 0.25) * (0.014 / (dLeft * dLeft + 0.008));
+
+    // Right Tower: project:// (Prismatic Workspace)
+    vec2 rightPos = vec2(0.62, 0.04);
+    float dRight = length((uv - rightPos) * vec2(1.4, 0.55));
+    col += vec3(0.28, 0.88, 1.0) * (0.014 / (dRight * dRight + 0.008));
+
+    // 7 Zero-Byte Hardlink Light Bridges arcing from repository:// -> project://
+    for (int i = 0; i < 7; i++) {
+      float fi = float(i);
+      float archH = 0.14 + fi * 0.072;
+      float xNorm = clamp((uv.x - leftPos.x) / (rightPos.x - leftPos.x), 0.0, 1.0);
+      float inSpan = step(leftPos.x, uv.x) * step(uv.x, rightPos.x);
+      float curveY = leftPos.y + sin(xNorm * PI) * archH + sin(xNorm * 10.0 - t * 4.0 + fi) * 0.008;
+      float dArc = abs(uv.y - curveY);
+
+      // Zero-copy photon packet racing left -> right
+      float packetPos = fract(t * (0.55 + fi * 0.09) + fi * 0.17);
+      float dPacket = length(vec2((xNorm - packetPos) * 1.4, (uv.y - curveY) * 2.2));
+
+      vec3 bridgeCol = mix(vec3(1.0, 0.76, 0.28), vec3(0.25, 0.92, 1.0), xNorm);
+      col += bridgeCol * (0.0022 / (dArc * dArc + 0.0005)) * inSpan * 0.45;
+      col += vec3(1.0, 0.98, 0.95) * (0.004 / (dPacket * dPacket + 0.0008)) * inSpan * (0.85 + uBass * 0.7);
+    }
+
+    return col;
+  }
+
+  // =========================================================================
+  // CH 5: B8G_ABI_MAGIC_V3 (0x33564742 Geodesic Core + SharedArrayBuffer Rings)
+  // =========================================================================
+  vec3 renderB8gAbiCore(vec2 uv, float t) {
+    vec3 ro = vec3(0.0, 0.15, 4.2);
+    vec3 rd = normalize(vec3(uv, -1.55));
+    vec3 col = vec3(0.012, 0.015, 0.04);
+    vec3 glow = vec3(0.0);
+
+    float dist = 0.0;
+    for (int i = 0; i < 56; i++) {
+      vec3 p = ro + rd * dist;
+
+      // Geodesic Core
+      vec3 cp = p;
+      cp.xz *= rot(t * 0.75);
+      cp.xy *= rot(t * 0.52);
+      float dCore = sdOctahedron(cp, 0.85 + uBass * 0.12);
+      float dInner = sdSphere(cp, 0.62 + uBeat * 0.08);
+      float dGeo = max(dCore, -dInner + 0.15);
+
+      // 3 Concentric 64-byte-aligned SharedArrayBuffer Rings
+      vec3 r1 = p; r1.xy *= rot(t * 0.65); r1.yz *= rot(0.85);
+      vec3 r2 = p; r2.xz *= rot(-t * 0.50); r2.xy *= rot(1.15);
+      vec3 r3 = p; r3.yz *= rot(t * 0.40); r3.xz *= rot(0.55);
+
+      float dR1 = sdTorus(r1, vec2(1.45, 0.04));
+      float dR2 = sdTorus(r2, vec2(1.85, 0.035));
+      float dR3 = sdTorus(r3, vec2(2.25, 0.03));
+
+      // Segmented memory slots along rings
+      float seg1 = step(0.15, sin(atan(r1.z, r1.x) * 16.0 + t * 4.0));
+      float seg2 = step(0.15, sin(atan(r2.z, r2.x) * 24.0 - t * 3.0));
+
+      glow += vec3(0.22, 0.85, 1.0) * (0.014 / (0.03 + abs(dGeo) * 2.0));
+      glow += vec3(0.95, 0.32, 0.85) * (0.006 / (0.02 + dR1 * dR1)) * (0.4 + 0.6 * seg1);
+      glow += vec3(0.30, 0.95, 0.75) * (0.005 / (0.02 + dR2 * dR2)) * (0.4 + 0.6 * seg2);
+      glow += vec3(1.0, 0.78, 0.25) * (0.004 / (0.02 + dR3 * dR3));
+
+      float d = min(min(dGeo, dR1), min(dR2, dR3));
+      if (d < 0.005) {
+        col += vec3(0.85, 0.96, 1.0) * 0.45;
+        break;
+      }
+      dist += max(d * 0.7, 0.035);
+      if (dist > 10.0) break;
+    }
+
+    col += glow * (0.48 + uMid * 0.25);
+    return col;
+  }
+
+  // =========================================================================
+  // CH 6: SECTIUM UNIVERSAL DISPLAY (5-Beam Chromatic Prism)
+  // =========================================================================
+  vec3 renderSectiumPrism(vec2 uv, float t) {
+    vec3 col = vec3(0.012, 0.014, 0.028);
+
+    // Subtle scanline phosphor texture
+    col *= 0.92 + 0.08 * sin(uv.y * uRes.y * 0.5);
+
+    // Triangular crystalline prism centered at origin
+    vec2 p = uv * rot(sin(t * 0.45) * 0.12);
+    float k = sqrt(3.0);
+    vec2 q = p;
+    q.x = abs(q.x) - 0.34;
+    q.y = q.y + 0.34 / k;
+    if (q.x + k * q.y > 0.0) q = vec2(q.x - k * q.y, -k * q.x - q.y) / 2.0;
+    q.x -= clamp(q.x, -0.68, 0.0);
+    float dTri = -length(q) * sign(q.y);
+
+    // Incoming pure white master beam from left
+    float inLine = abs(uv.y - (uv.x * 0.22 + 0.05));
+    float inMask = smoothstep(0.05, -0.18, uv.x);
+    col += vec3(0.95, 0.98, 1.0) * (0.0028 / (inLine * inLine + 0.0005)) * inMask * (0.9 + uBass * 0.4);
+
+    // 5 Chromatic Dispersion Beams exiting to the right
+    vec3 beamCols[5];
+    beamCols[0] = vec3(1.00, 0.22, 0.32); // Ruby
+    beamCols[1] = vec3(1.00, 0.72, 0.18); // Amber
+    beamCols[2] = vec3(0.22, 0.95, 0.52); // Emerald
+    beamCols[3] = vec3(0.18, 0.82, 1.00); // Cyan
+    beamCols[4] = vec3(0.75, 0.36, 1.00); // Violet
+
+    float outMask = smoothstep(-0.04, 0.22, uv.x);
+    for (int i = 0; i < 5; i++) {
+      float fi = float(i) - 2.0;
+      float slope = -0.06 + fi * 0.145 + sin(t * 1.2 + fi) * 0.015;
+      float beamY = 0.02 + uv.x * slope;
+      float dBeam = abs(uv.y - beamY);
+      float pulse = 0.75 + 0.35 * sin(uv.x * 12.0 - t * 6.0 + fi);
+      col += beamCols[i] * (0.0024 / (dBeam * dBeam + 0.00055)) * outMask * pulse * (0.85 + uMid * 0.4);
+    }
+
+    // Prism glass body & glowing specular edge
+    float edge = exp(-abs(dTri) * 75.0);
+    float inside = smoothstep(0.01, -0.01, dTri);
+    vec3 prismInner = mix(vec3(0.12, 0.18, 0.32), vec3(0.45, 0.65, 0.95), 0.5 + 0.5 * sin(uv.x * 8.0 - uv.y * 6.0 + t));
+    col = mix(col, col + prismInner * 0.55, inside);
+    col += vec3(0.88, 0.96, 1.0) * edge * (1.2 + uBeat * 0.5);
+
+    return col;
+  }
+
+  // =========================================================================
+  // CH 7: OMARCHY 25-THEME CHROMATIC SHIFT (Live Morphing Palettes)
+  // =========================================================================
+  void getOmarchyTheme(int idx, out vec3 bg, out vec3 c1, out vec3 c2, out vec3 c3) {
+    if (idx == 0) { // Tokyo Night
+      bg = vec3(0.10, 0.11, 0.15); c1 = vec3(0.48, 0.64, 0.97); c2 = vec3(0.73, 0.60, 0.97); c3 = vec3(0.49, 0.81, 1.00);
+    } else if (idx == 1) { // Lumi Chromatic
+      bg = vec3(0.03, 0.04, 0.08); c1 = vec3(0.22, 0.74, 0.97); c2 = vec3(0.96, 0.45, 0.71); c3 = vec3(0.99, 0.88, 0.28);
+    } else if (idx == 2) { // Gruvbox
+      bg = vec3(0.16, 0.16, 0.16); c1 = vec3(0.98, 0.74, 0.18); c2 = vec3(1.00, 0.50, 0.10); c3 = vec3(0.56, 0.75, 0.49);
+    } else if (idx == 3) { // Nord
+      bg = vec3(0.18, 0.20, 0.25); c1 = vec3(0.53, 0.75, 0.82); c2 = vec3(0.51, 0.63, 0.76); c3 = vec3(0.71, 0.56, 0.68);
+    } else if (idx == 4) { // Rose Pine
+      bg = vec3(0.10, 0.09, 0.14); c1 = vec3(0.92, 0.74, 0.73); c2 = vec3(0.77, 0.65, 0.91); c3 = vec3(0.61, 0.81, 0.85);
+    } else { // Hackerman
+      bg = vec3(0.01, 0.04, 0.02); c1 = vec3(0.00, 1.00, 0.25); c2 = vec3(0.00, 0.85, 1.00); c3 = vec3(0.67, 1.00, 0.00);
+    }
+  }
+
+  vec3 renderOmarchy(vec2 uv, float t) {
+    float cycle = t * 0.28;
+    int idxA = int(mod(floor(cycle), 6.0));
+    int idxB = int(mod(floor(cycle) + 1.0, 6.0));
+    float blend = smoothstep(0.65, 1.0, fract(cycle));
+
+    vec3 bgA, c1A, c2A, c3A;
+    vec3 bgB, c1B, c2B, c3B;
+    getOmarchyTheme(idxA, bgA, c1A, c2A, c3A);
+    getOmarchyTheme(idxB, bgB, c1B, c2B, c3B);
+
+    vec3 bg = mix(bgA, bgB, blend);
+    vec3 c1 = mix(c1A, c1B, blend);
+    vec3 c2 = mix(c2A, c2B, blend);
+    vec3 c3 = mix(c3A, c3B, blend);
+
+    // Hypnotic polar tunnel + iridescent liquid crystal waves
+    float r = length(uv);
+    float a = atan(uv.y, uv.x);
+    vec2 p = vec2(1.0 / (r + 0.18) - t * 1.2, a / PI * 3.0);
+
+    float w1 = sin(p.x * 3.5 + sin(p.y * 4.0 + t));
+    float w2 = cos(p.y * 6.0 - t * 1.6 + w1 * 1.4);
+    float pattern = 0.5 + 0.5 * sin(w1 * 2.2 + w2 * 2.2);
+    float rings = smoothstep(0.72, 0.98, abs(sin(p.x * 4.5 + uBass * 1.5)));
+
+    vec3 col = bg;
+    col = mix(col, c1, pattern * 0.72);
+    col = mix(col, c2, smoothstep(0.35, 0.9, w2 * 0.5 + 0.5) * 0.65);
+    col += c3 * rings * (0.45 + uBeat * 0.45) * smoothstep(0.05, 0.45, r);
+    // Center radiant aperture
+    col += mix(c1, c3, 0.5) * (0.04 / (r * r + 0.04));
+
+    return col;
+  }
+
+  // =========================================================================
+  // CH 8: CAS Q-SELF FIXED-POINT FINALE (Self-Similar Fractal + Starburst)
+  // =========================================================================
+  vec3 renderQSelfFinale(vec2 uv, float t) {
+    // Kaleidoscopic fixed-point Julia / self-similar convergence
+    vec2 z = uv * (1.25 - 0.15 * sin(t * 0.5));
+    z *= rot(t * 0.18);
+    vec2 c = vec2(-0.74 + 0.12 * cos(t * 0.42), 0.18 + 0.12 * sin(t * 0.37));
+
+    float iter = 0.0;
+    float minTrap = 1e5;
+    for (int i = 0; i < 36; i++) {
+      z = vec2(z.x * z.x - z.y * z.y, 2.0 * z.x * z.y) + c;
+      float m2 = dot(z, z);
+      minTrap = min(minTrap, abs(length(z) - 0.85));
+      if (m2 > 16.0) break;
+      iter += 1.0;
+    }
+
+    float nIter = iter / 36.0;
+    vec3 col = palette(nIter * 1.6 + t * 0.12,
+      vec3(0.08, 0.10, 0.22), vec3(0.45, 0.42, 0.55), vec3(1.0, 0.9, 0.8), vec3(0.05, 0.35, 0.68));
+    col += vec3(0.45, 0.88, 1.0) * (0.015 / (minTrap + 0.018)) * (0.65 + uBass * 0.55);
+
+    // Radiant golden fixed-point emblem at center
+    float r = length(uv);
+    float rays = 0.5 + 0.5 * cos(atan(uv.y, uv.x) * 12.0 - t * 2.0);
+    col += vec3(1.0, 0.86, 0.45) * (0.025 / (r * r + 0.03)) * (0.6 + 0.4 * rays) * (0.8 + uBeat * 0.5);
+
+    return col;
+  }
+
+  vec3 evalScene(int idx, vec2 uv, float t) {
+    if (idx == 0) return renderObservatory(uv, t);
+    if (idx == 1) return renderWhiteDragon(uv, t);
+    if (idx == 2) return renderCasVault(uv, t);
+    if (idx == 3) return renderHardlinkBridges(uv, t);
+    if (idx == 4) return renderB8gAbiCore(uv, t);
+    if (idx == 5) return renderSectiumPrism(uv, t);
+    if (idx == 6) return renderOmarchy(uv, t);
+    return renderQSelfFinale(uv, t);
+  }
+
+  void main() {
+    vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
+
+    vec3 colA = evalScene(uSceneA, uv, uLocalTime);
+    vec3 col = colA;
+    if (uMix > 0.001 && uSceneB != uSceneA) {
+      vec3 colB = evalScene(uSceneB, uv, uLocalTime);
+      col = mix(colA, colB, uMix);
+    }
+
+    // Subtle filmic tone mapping & vignette
+    col = col / (1.0 + col * 0.65);
+    col = pow(max(col, 0.0), vec3(0.92));
+    float vig = 1.0 - dot(uv * 0.62, uv * 0.62);
+    col *= clamp(vig, 0.25, 1.0);
+
+    fragColor = vec4(col, 1.0);
+  }`;
+
+  // =========================================================================
+  // 4. WEBGL2 INITIALIZATION (WITH CLEAN 2D CANVAS FALLBACK)
+  // =========================================================================
+  const glCanvas = document.getElementById('glCanvas');
+  const hudCanvas = document.getElementById('hudCanvas');
+  const hudCtx = hudCanvas.getContext('2d');
+
+  let gl = null;
+  let glProg = null;
+  let uniforms = {};
+  let useWebGL2 = false;
+
+  function initWebGL2() {
+    try {
+      gl = glCanvas.getContext('webgl2', { antialias: false, powerPreference: 'high-performance' });
+      if (!gl) return false;
+
+      const compile = (type, src) => {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+          console.error('GLSL compile error:', gl.getShaderInfoLog(s));
+          return null;
+        }
+        return s;
+      };
+
+      const vs = compile(gl.VERTEX_SHADER, VERT_SRC);
+      const fs = compile(gl.FRAGMENT_SHADER, FRAG_SRC);
+      if (!vs || !fs) return false;
+
+      glProg = gl.createProgram();
+      gl.attachShader(glProg, vs);
+      gl.attachShader(glProg, fs);
+      gl.linkProgram(glProg);
+      if (!gl.getProgramParameter(glProg, gl.LINK_STATUS)) {
+        console.error('GLSL link error:', gl.getProgramInfoLog(glProg));
+        return false;
+      }
+
+      uniforms = {
+        uRes: gl.getUniformLocation(glProg, 'uRes'),
+        uTime: gl.getUniformLocation(glProg, 'uTime'),
+        uLocalTime: gl.getUniformLocation(glProg, 'uLocalTime'),
+        uSceneA: gl.getUniformLocation(glProg, 'uSceneA'),
+        uSceneB: gl.getUniformLocation(glProg, 'uSceneB'),
+        uMix: gl.getUniformLocation(glProg, 'uMix'),
+        uBass: gl.getUniformLocation(glProg, 'uBass'),
+        uMid: gl.getUniformLocation(glProg, 'uMid'),
+        uHigh: gl.getUniformLocation(glProg, 'uHigh'),
+        uBeat: gl.getUniformLocation(glProg, 'uBeat')
+      };
+      return true;
+    } catch (err) {
+      console.warn('WebGL2 unavailable, falling back to 2D Canvas:', err);
+      return false;
+    }
+  }
+
+  useWebGL2 = initWebGL2();
+  document.getElementById('hudRenderer').textContent = useWebGL2 ? 'WEBGL2 GLSL' : '2D FALLBACK';
+
+  // =========================================================================
+  // 5. CLEAN 2D CANVAS FALLBACK RENDERER (ALL 8 CHAPTERS)
+  // =========================================================================
+  function render2DFallback(ctx, w, h, chIdx, t, bass, beat) {
+    const cx = w * 0.5;
+    const cy = h * 0.5;
+    const minDim = Math.min(w, h);
+
+    ctx.fillStyle = '#040712';
+    ctx.fillRect(0, 0, w, h);
+
+    if (chIdx === 0) {
+      // Ch 1: Observatory dome, moonlight shaft, Lumi orb, brass rings
+      const grad = ctx.createLinearGradient(cx - minDim * 0.3, 0, cx + minDim * 0.25, h);
+      grad.addColorStop(0, 'rgba(125,211,252,0.34)');
+      grad.addColorStop(1, 'rgba(56,189,248,0.0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(cx - minDim * 0.14, 0);
+      ctx.lineTo(cx + minDim * 0.08, 0);
+      ctx.lineTo(cx + minDim * 0.34, h);
+      ctx.lineTo(cx - minDim * 0.26, h);
+      ctx.closePath();
+      ctx.fill();
+
+      // Brass geodesic rings
+      ctx.strokeStyle = 'rgba(251,191,36,0.75)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + minDim * 0.18, minDim * 0.22, minDim * 0.07, Math.sin(t) * 0.2, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Lumi Orb
+      const orbR = minDim * (0.11 + bass * 0.025);
+      const orbG = ctx.createRadialGradient(cx, cy - minDim * 0.05, orbR * 0.1, cx, cy - minDim * 0.05, orbR * 1.9);
+      orbG.addColorStop(0, '#ffffff');
+      orbG.addColorStop(0.35, '#7dd3fc');
+      orbG.addColorStop(0.7, 'rgba(192,132,252,0.45)');
+      orbG.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = orbG;
+      ctx.beginPath();
+      ctx.arc(cx, cy - minDim * 0.05, orbR * 1.9, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (chIdx === 1) {
+      // Ch 2: White Dragon & starry sky
+      for (let i = 0; i < 90; i++) {
+        const sx = ((i * 197.3 + t * 24) % w);
+        const sy = ((i * 353.7) % h);
+        ctx.fillStyle = i % 5 === 0 ? '#7dd3fc' : '#ffffff';
+        ctx.fillRect(sx, sy, 2, 2);
+      }
+      ctx.strokeStyle = '#ffffff';
+      ctx.shadowColor = '#7dd3fc';
+      ctx.shadowBlur = 18;
+      for (let i = 0; i < 16; i++) {
+        const x = cx + minDim * 0.25 - i * (minDim * 0.042);
+        const y = cy + Math.sin(t * 3.0 - i * 0.4) * minDim * 0.09;
+        const r = Math.max(4, (18 - i) * (minDim / 600));
+        ctx.fillStyle = i === 0 ? '#ffffff' : 'rgba(224,242,254,0.88)';
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+    } else if (chIdx === 2) {
+      // Ch 3: CAS Crystal Vault
+      ctx.strokeStyle = 'rgba(56,189,248,0.65)';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 14; i++) {
+        const z = ((i / 14) + (t * 0.25) % 1) % 1;
+        const sz = z * minDim * 0.7;
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(t * 0.4 + i * 0.3);
+        ctx.strokeRect(-sz * 0.5, -sz * 0.5, sz, sz);
+        ctx.restore();
+      }
+    } else if (chIdx === 3) {
+      // Ch 4: Hardlink Light Bridges
+      const lx = w * 0.22, rx = w * 0.78;
+      for (let i = 0; i < 7; i++) {
+        ctx.strokeStyle = i % 2 === 0 ? '#fbbf24' : '#38bdf8';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(lx, cy);
+        ctx.quadraticCurveTo(cx, cy - (60 + i * 32), rx, cy);
+        ctx.stroke();
+      }
+    } else if (chIdx === 4) {
+      // Ch 5: B8G_ABI_MAGIC_V3 Geodesic Core + SharedArrayBuffer Rings
+      for (let r = 1; r <= 3; r++) {
+        ctx.strokeStyle = r === 1 ? '#e879f9' : r === 2 ? '#34d399' : '#fbbf24';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, minDim * 0.12 * r, minDim * 0.05 * r, t * (r % 2 ? 0.8 : -0.6), 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath();
+      ctx.arc(cx, cy, minDim * (0.08 + beat * 0.02), 0, Math.PI * 2);
+      ctx.fill();
+    } else if (chIdx === 5) {
+      // Ch 6: Sectium 5-Beam Prism
+      const beamColors = ['#ff3852', '#ffb82e', '#38f284', '#2ed1ff', '#bf5cff'];
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(0, cy + 40);
+      ctx.lineTo(cx, cy);
+      ctx.stroke();
+      beamColors.forEach((c, i) => {
+        ctx.strokeStyle = c;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(w, cy + (i - 2) * minDim * 0.14);
+        ctx.stroke();
+      });
+      ctx.strokeStyle = '#e0f2fe';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - minDim * 0.16);
+      ctx.lineTo(cx + minDim * 0.14, cy + minDim * 0.12);
+      ctx.lineTo(cx - minDim * 0.14, cy + minDim * 0.12);
+      ctx.closePath();
+      ctx.stroke();
+    } else if (chIdx === 6) {
+      // Ch 7: Omarchy 25-Theme Chromatic Shift
+      const pal = OMARCHY_PALETTES[Math.floor(t * 0.28) % OMARCHY_PALETTES.length];
+      ctx.fillStyle = pal.bg;
+      ctx.fillRect(0, 0, w, h);
+      for (let i = 0; i < 12; i++) {
+        ctx.strokeStyle = i % 3 === 0 ? pal.c1 : i % 3 === 1 ? pal.c2 : pal.c3;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(cx, cy, ((i * 42 + t * 80) % (minDim * 0.65)), 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    } else {
+      // Ch 8: Q-Self Finale background
+      const grad = ctx.createRadialGradient(cx, cy, 10, cx, cy, minDim * 0.65);
+      grad.addColorStop(0, '#fde047');
+      grad.addColorStop(0.35, '#38bdf8');
+      grad.addColorStop(0.75, '#581c87');
+      grad.addColorStop(1, '#04060d');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+    }
+  }
+
+  // =========================================================================
+  // 6. 2D DEMOSCENE OVERLAY (CHAPTER CARDS, OMARCHY BADGE, CH 8 COPPER-BAR SINE SCROLLER)
+  // =========================================================================
+  function renderOverlay(ctx, w, h, chIdx, localTime, globalTime, audio) {
+    if (useWebGL2) {
+      ctx.clearRect(0, 0, w, h);
+    } else {
+      render2DFallback(ctx, w, h, chIdx, localTime, audio.bass, audio.beatPulse);
+    }
+
+    // Chapter Title Card (fades in smoothly during first 7 seconds of each chapter)
+    if (localTime < 7.5) {
+      const alpha = localTime < 1.0
+        ? localTime
+        : (localTime > 5.5 ? Math.max(0, (7.5 - localTime) / 2.0) : 1.0);
+      const ch = CHAPTERS[chIdx];
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.95)';
+      ctx.font = '700 13px ui-monospace, Consolas, monospace';
+      ctx.fillText('CHAPTER 0' + ch.id + ' / 08', w * 0.5, h * 0.17);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = 'rgba(56, 189, 248, 0.75)';
+      ctx.shadowBlur = 18;
+      ctx.font = '800 ' + Math.round(Math.min(44, Math.max(22, w * 0.036))) + 'px ui-monospace, Consolas, monospace';
+      ctx.fillText(ch.title.toUpperCase(), w * 0.5, h * 0.22);
+
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#cbd5e1';
+      ctx.font = '500 13px ui-monospace, Consolas, monospace';
+      ctx.fillText(ch.subtitle, w * 0.5, h * 0.26);
+      ctx.restore();
+    }
+
+    // Chapter 5: B8G_ABI_MAGIC_V3 Hex Telemetry Badge
+    if (chIdx === 4) {
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(125, 211, 252, 0.9)';
+      ctx.font = '700 14px ui-monospace, Consolas, monospace';
+      ctx.fillText('MAGIC: 0x33564742  •  B8G_ARENA_V1 (64-BYTE ALIGNED)  •  ZERO-COPY SAB', w * 0.5, h * 0.80);
+      ctx.restore();
+    }
+
+    // Chapter 7: Live Omarchy Palette Swatch Indicator
+    if (chIdx === 6) {
+      const idx = Math.floor(localTime * 0.28) % OMARCHY_PALETTES.length;
+      const pal = OMARCHY_PALETTES[idx];
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '700 15px ui-monospace, Consolas, monospace';
+      ctx.fillText('OMARCHY ACTIVE SHADER PALETTE: ' + pal.name, w * 0.5, h * 0.79);
+      const swatches = [pal.bg, pal.c1, pal.c2, pal.c3];
+      const sw = 26, gap = 10;
+      const startX = w * 0.5 - (swatches.length * (sw + gap) - gap) * 0.5;
+      swatches.forEach((col, i) => {
+        ctx.fillStyle = col;
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+        ctx.lineWidth = 1.5;
+        ctx.fillRect(startX + i * (sw + gap), h * 0.81, sw, 12);
+        ctx.strokeRect(startX + i * (sw + gap), h * 0.81, sw, 12);
+      });
+      ctx.restore();
+    }
+
+    // Chapter 8: CLASSIC DEMOSCENE COPPER BARS + SINE-WAVE SCROLLER (PARADOX & RAZOR 1911)
+    if (chIdx === 7) {
+      ctx.save();
+      // 5 Glowing Amiga-style Raster Copper Bars
+      const barColors = [
+        ['#1e1b4b', '#38bdf8', '#ffffff', '#38bdf8', '#1e1b4b'],
+        ['#3b0764', '#e879f9', '#ffffff', '#e879f9', '#3b0764'],
+        ['#451a03', '#fbbf24', '#ffffff', '#fbbf24', '#451a03'],
+        ['#064e3b', '#34d399', '#ffffff', '#34d399', '#064e3b'],
+        ['#4c0519', '#fb7185', '#ffffff', '#fb7185', '#4c0519']
+      ];
+      const barBaseY = h * 0.58;
+      const barH = 18;
+      for (let b = 0; b < 5; b++) {
+        const by = barBaseY + Math.sin(globalTime * 2.4 + b * 0.65) * 62;
+        const g = ctx.createLinearGradient(0, by - barH * 0.5, 0, by + barH * 0.5);
+        g.addColorStop(0.0, barColors[b][0]);
+        g.addColorStop(0.28, barColors[b][1]);
+        g.addColorStop(0.50, barColors[b][2]);
+        g.addColorStop(0.72, barColors[b][3]);
+        g.addColorStop(1.0, barColors[b][4]);
+        ctx.globalAlpha = 0.82;
+        ctx.fillStyle = g;
+        ctx.fillRect(0, by - barH * 0.5, w, barH);
+      }
+
+      // Classic Greets Crest above scroller
+      ctx.globalAlpha = 1.0;
+      ctx.textAlign = 'center';
+      ctx.font = '800 ' + Math.round(Math.min(34, Math.max(18, w * 0.028))) + 'px ui-monospace, Consolas, monospace';
+      ctx.fillStyle = '#fde047';
+      ctx.shadowColor = 'rgba(251, 191, 36, 0.85)';
+      ctx.shadowBlur = 16;
+      ctx.fillText('GREETS TO PARADOX  •  RAZOR 1911  •  AWESOME-OS v11', w * 0.5, h * 0.34);
+      ctx.shadowBlur = 0;
+
+      // Chrome-Gradient Sine-Wave Scroller
+      const fontSize = Math.round(Math.min(42, Math.max(24, w * 0.032)));
+      ctx.font = '900 ' + fontSize + 'px ui-monospace, Consolas, monospace';
+      ctx.textAlign = 'left';
+      const charW = fontSize * 0.64;
+      const totalW = SCROLLER_TEXT.length * charW;
+      const speed = 155;
+      const scrollX = -((globalTime * speed) % (totalW + w)) + w;
+      const baseY = h * 0.60;
+
+      const textGrad = ctx.createLinearGradient(0, baseY - 35, 0, baseY + 35);
+      textGrad.addColorStop(0.0, '#ffffff');
+      textGrad.addColorStop(0.35, '#7dd3fc');
+      textGrad.addColorStop(0.52, '#f8fafc');
+      textGrad.addColorStop(0.72, '#c084fc');
+      textGrad.addColorStop(1.0, '#fde047');
+
+      for (let i = 0; i < SCROLLER_TEXT.length; i++) {
+        const cxChar = scrollX + i * charW;
+        if (cxChar < -charW || cxChar > w + charW) continue;
+        const sy = baseY + Math.sin(cxChar * 0.012 + globalTime * 4.2) * (24 + audio.bass * 14);
+        const chChar = SCROLLER_TEXT[i];
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.72)';
+        ctx.fillText(chChar, cxChar + 3, sy + 3);
+        ctx.fillStyle = textGrad;
+        ctx.fillText(chChar, cxChar, sy);
+      }
+      ctx.restore();
+    }
+
+    // Minimal Audio Spectrum Bar along bottom edge
+    if (audio.freqData && audio.playing && !audio.muted) {
+      ctx.save();
+      const bars = 48;
+      const bw = w / bars;
+      for (let i = 0; i < bars; i++) {
+        const v = audio.freqData[i] / 255.0;
+        const bh = v * 28;
+        ctx.fillStyle = 'rgba(56, 189, 248, ' + (0.16 + v * 0.45).toFixed(2) + ')';
+        ctx.fillRect(i * bw + 1, h - bh, Math.max(1, bw - 2), bh);
+      }
+      ctx.restore();
+    }
+  }
+
+  // =========================================================================
+  // 7. STATE, HUD CONTROLS & MAIN 60FPS ANIMATION LOOP
+  // =========================================================================
+  const audio = new TrackerAudioEngine();
+  let started = false;
+  let playing = true;
+  let timelineSec = 0.0;
+  let lastFrameMs = performance.now();
+  let fpsAccum = 0;
+  let fpsFrames = 0;
+  let hudHidden = false;
+
+  const startOverlay = document.getElementById('startOverlay');
+  const startBtn = document.getElementById('startBtn');
+  const hudEl = document.getElementById('hud');
+  const hudChapterLabel = document.getElementById('hudChapterLabel');
+  const hudFps = document.getElementById('hudFps');
+  const hudBpm = document.getElementById('hudBpm');
+  const beatDot = document.getElementById('beatDot');
+  const timeLabel = document.getElementById('timeLabel');
+  const scrubber = document.getElementById('scrubber');
+  const chapterButtonsEl = document.getElementById('chapterButtons');
+  const btnPlayPause = document.getElementById('btnPlayPause');
+  const btnMute = document.getElementById('btnMute');
+  const btnFullscreen = document.getElementById('btnFullscreen');
+  const btnHideHud = document.getElementById('btnHideHud');
+
+  // Build chapter 1..8 buttons
+  const chBtnEls = CHAPTERS.map((ch, idx) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'hud-btn ch-btn' + (idx === 0 ? ' active' : '');
+    b.textContent = String(ch.id);
+    b.title = ch.short + ' — ' + ch.title;
+    b.addEventListener('click', () => jumpToChapter(idx));
+    chapterButtonsEl.appendChild(b);
+    return b;
+  });
+
+  function formatTime(sec) {
+    const s = Math.max(0, Math.floor(sec));
+    const mm = String(Math.floor(s / 60)).padStart(2, '0');
+    const ss = String(s % 60).padStart(2, '0');
+    return mm + ':' + ss;
+  }
+
+  function jumpToChapter(idx) {
+    const clamped = Math.max(0, Math.min(CHAPTERS.length - 1, idx));
+    timelineSec = clamped * CHAPTER_DURATION + 0.05;
+    audio.setChapter(clamped);
+    updateHudChapter(clamped);
+  }
+
+  function updateHudChapter(idx) {
+    const ch = CHAPTERS[idx];
+    hudChapterLabel.textContent = 'CH 0' + ch.id + '/08 · ' + ch.title.toUpperCase();
+    hudBpm.textContent = ch.bpm + ' BPM';
+    chBtnEls.forEach((el, i) => el.classList.toggle('active', i === idx));
+  }
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const w = Math.floor(window.innerWidth * dpr);
+    const h = Math.floor(window.innerHeight * dpr);
+    glCanvas.width = w;
+    glCanvas.height = h;
+    hudCanvas.width = window.innerWidth;
+    hudCanvas.height = window.innerHeight;
+    if (gl) gl.viewport(0, 0, w, h);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function startDemo() {
+    if (!started) {
+      started = true;
+      startOverlay.classList.add('hidden');
+      playing = true;
+      btnPlayPause.textContent = 'Pause';
+      audio.setChapter(Math.floor(timelineSec / CHAPTER_DURATION) % CHAPTERS.length);
+      audio.start();
+    }
+  }
+
+  startBtn.addEventListener('click', startDemo);
+
+  btnPlayPause.addEventListener('click', () => {
+    if (!started) { startDemo(); return; }
+    playing = !playing;
+    btnPlayPause.textContent = playing ? 'Pause' : 'Play';
+    if (playing) audio.start();
+    else audio.stop();
+  });
+
+  btnMute.addEventListener('click', () => {
+    audio.setMuted(!audio.muted);
+    btnMute.textContent = audio.muted ? 'Unmute' : 'Mute';
+    btnMute.classList.toggle('active', audio.muted);
+  });
+
+  btnFullscreen.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+    } else {
+      document.exitFullscreen?.().catch(() => {});
+    }
+  });
+
+  btnHideHud.addEventListener('click', () => {
+    hudHidden = !hudHidden;
+    hudEl.classList.toggle('hud-hidden', hudHidden);
+  });
+
+  scrubber.addEventListener('input', () => {
+    timelineSec = parseFloat(scrubber.value) || 0;
+    const idx = Math.min(CHAPTERS.length - 1, Math.floor(timelineSec / CHAPTER_DURATION));
+    audio.setChapter(idx);
+    updateHudChapter(idx);
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key >= '1' && e.key <= '8') {
+      if (!started) startDemo();
+      jumpToChapter(parseInt(e.key, 10) - 1);
+    } else if (e.code === 'Space') {
+      e.preventDefault();
+      if (!started) startDemo();
+      else btnPlayPause.click();
+    } else if (e.key === 'm' || e.key === 'M') {
+      btnMute.click();
+    } else if (e.key === 'f' || e.key === 'F') {
+      btnFullscreen.click();
+    } else if (e.key === 'h' || e.key === 'H') {
+      btnHideHud.click();
+    }
+  });
+
+  let lastChapterIdx = -1;
+
+  function frame(nowMs) {
+    const dt = Math.min(0.05, Math.max(0.001, (nowMs - lastFrameMs) * 0.001));
+    lastFrameMs = nowMs;
+
+    if (started && playing) {
+      timelineSec += dt;
+      if (timelineSec >= TOTAL_DURATION) timelineSec -= TOTAL_DURATION;
+    }
+
+    const chIdx = Math.min(CHAPTERS.length - 1, Math.floor(timelineSec / CHAPTER_DURATION));
+    const localTime = timelineSec - chIdx * CHAPTER_DURATION;
+    const nextIdx = (chIdx + 1) % CHAPTERS.length;
+    const mixAmt = localTime > (CHAPTER_DURATION - CROSSFADE_SEC)
+      ? (localTime - (CHAPTER_DURATION - CROSSFADE_SEC)) / CROSSFADE_SEC
+      : 0.0;
+
+    if (chIdx !== lastChapterIdx) {
+      lastChapterIdx = chIdx;
+      audio.setChapter(chIdx);
+      updateHudChapter(chIdx);
+    }
+
+    audio.sampleBands(dt);
+
+    // Beat dot pulse
+    const scale = 1.0 + audio.beatPulse * 0.55;
+    beatDot.style.transform = 'scale(' + scale.toFixed(2) + ')';
+
+    // Update scrubber & time label
+    scrubber.value = timelineSec.toFixed(1);
+    timeLabel.textContent = formatTime(timelineSec) + ' / 20:00';
+
+    // FPS counter
+    fpsAccum += dt;
+    fpsFrames++;
+    if (fpsAccum >= 0.5) {
+      hudFps.textContent = Math.round(fpsFrames / fpsAccum) + ' FPS';
+      fpsAccum = 0;
+      fpsFrames = 0;
+    }
+
+    // Render WebGL2 pass
+    const renderTime = started ? timelineSec : nowMs * 0.001;
+    const renderLocal = started ? localTime : nowMs * 0.001;
+    if (useWebGL2 && gl && glProg) {
+      gl.useProgram(glProg);
+      gl.uniform2f(uniforms.uRes, glCanvas.width, glCanvas.height);
+      gl.uniform1f(uniforms.uTime, renderTime);
+      gl.uniform1f(uniforms.uLocalTime, renderLocal);
+      gl.uniform1i(uniforms.uSceneA, chIdx);
+      gl.uniform1i(uniforms.uSceneB, nextIdx);
+      gl.uniform1f(uniforms.uMix, mixAmt);
+      gl.uniform1f(uniforms.uBass, audio.bass);
+      gl.uniform1f(uniforms.uMid, audio.mid);
+      gl.uniform1f(uniforms.uHigh, audio.high);
+      gl.uniform1f(uniforms.uBeat, audio.beatPulse);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
+
+    // Render 2D HUD / Fallback / Chapter 8 Copper-Bar Sine Scroller
+    renderOverlay(hudCtx, hudCanvas.width, hudCanvas.height, chIdx, renderLocal, renderTime, audio);
+
+    requestAnimationFrame(frame);
+  }
+
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
