@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CAS Q-SELF // Awesome-OS v11 — PARADOX &amp; RAZOR 1911 Scene Intro</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      background: #04060d; color: #f8fafc;
+      font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+      user-select: none;
+    }
+    canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+    #gl-canvas { z-index: 1; }
+    #ov-canvas { z-index: 2; pointer-events: none; }
+
+    /* Start Gate (WebAudio autoplay unlock) */
+    #gate {
+      position: fixed; inset: 0; z-index: 40;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+      background: radial-gradient(circle at 50% 44%, rgba(56,189,248,0.22), rgba(167,139,250,0.14) 38%, #04060d 72%);
+      transition: opacity 320ms ease;
+    }
+    #gate.gone { opacity: 0; pointer-events: none; }
+    .badge {
+      padding: 4px 12px; border-radius: 999px; font-size: 11px; letter-spacing: 0.14em;
+      background: rgba(56,189,248,0.14); border: 1px solid rgba(56,189,248,0.45); color: #7dd3fc;
+    }
+    h1 {
+      font-size: clamp(1.9rem, 5vw, 3.4rem); letter-spacing: 0.08em; text-align: center;
+      background: linear-gradient(90deg, #38bdf8, #c084fc, #f472b6, #facc15, #34d399);
+      -webkit-background-clip: text; color: transparent;
+      text-shadow: 0 0 40px rgba(56,189,248,0.25);
+    }
+    .sub { color: #94a3b8; font-size: 13px; text-align: center; max-width: 560px; line-height: 1.6; }
+    .start-btn {
+      padding: 14px 32px; border-radius: 12px; border: 2px solid #38bdf8;
+      background: linear-gradient(135deg, #0284c7, #7c3aed); color: #fff;
+      font-family: inherit; font-weight: 800; font-size: 15px; letter-spacing: 0.08em;
+      cursor: pointer; box-shadow: 0 0 36px rgba(56,189,248,0.35);
+      transition: transform 140ms ease, filter 140ms ease;
+    }
+    .start-btn:hover { transform: scale(1.04); filter: brightness(1.12); }
+
+    /* Minimal Corner HUD */
+    .hud {
+      position: fixed; top: 12px; right: 14px; z-index: 20;
+      display: flex; gap: 8px; align-items: center;
+      opacity: 0.78; transition: opacity 160ms ease;
+    }
+    .hud:hover { opacity: 1; }
+    .hud button, .hud a {
+      padding: 5px 10px; border-radius: 7px; font-size: 11px; font-family: inherit;
+      background: rgba(9, 13, 24, 0.78); border: 1px solid rgba(148,163,184,0.28);
+      color: #e2e8f0; cursor: pointer; text-decoration: none; backdrop-filter: blur(8px);
+    }
+    .hud button:hover, .hud a:hover { border-color: #38bdf8; color: #7dd3fc; }
+  </style>
+</head>
+<body>
+  <canvas id="gl-canvas"></canvas>
+  <canvas id="ov-canvas"></canvas>
+
+  <div class="hud">
+    <span id="fps-lbl" style="font-size:11px;color:#6ee7b7;padding:4px 8px;background:rgba(9,13,24,0.72);border-radius:6px">60 FPS</span>
+    <button id="mute-btn">Audio: ON</button>
+    <button id="fs-btn">Fullscreen</button>
+    <a href="./lumi-dragon-demo.html">Full 8-Ch Demo</a>
+    <a href="./">Desktop</a>
+  </div>
+
+  <div id="gate">
+    <div class="badge">AWESOME-OS v11 · B8G_ABI_MAGIC_V3 (0x33564742)</div>
+    <h1>CAS Q-SELF // SCENE INTRO</h1>
+    <div class="sub">
+      Independent 60fps WebGL2 Fixed-Point Tunnel (<code>Q(self) = self</code>) + Lumi &amp; White Dragon +
+      Amiga/PC ProTracker Chiptune Synth.<br />
+      Respect &amp; Greets to <strong>PARADOX</strong> &middot; <strong>RAZOR 1911</strong> &middot; Fairlight &middot; Future Crew &middot; Farbrausch &middot; Conspiracy.
+    </div>
+    <button id="start-btn" class="start-btn">&#9654; LAUNCH CAS Q-SELF INTRO</button>
+  </div>
+
+  <script>
+    const glCanvas = document.getElementById('gl-canvas');
+    const ovCanvas = document.getElementById('ov-canvas');
+    const ov = ovCanvas.getContext('2d');
+
+    let W = window.innerWidth, H = window.innerHeight;
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = window.innerWidth; H = window.innerHeight;
+      glCanvas.width = Math.floor(W * dpr);
+      glCanvas.height = Math.floor(H * dpr);
+      ovCanvas.width = Math.floor(W * dpr);
+      ovCanvas.height = Math.floor(H * dpr);
+      ov.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // --- WebGL2 CAS Q-Self Fixed-Point Starlight Tunnel + Julia Fractal Shader ---
+    const gl = glCanvas.getContext('webgl2', { antialias: false, alpha: false });
+    let prog = null, uTime = null, uRes = null, uBass = null, uHigh = null;
+
+    if (gl) {
+      const vsSrc = `#version 300 es
+        const vec2 P[3] = vec2[3](vec2(-1.0,-1.0), vec2(3.0,-1.0), vec2(-1.0,3.0));
+        void main() { gl_Position = vec4(P[gl_VertexID], 0.0, 1.0); }`;
+
+      const fsSrc = `#version 300 es
+        precision highp float;
+        uniform float uTime;
+        uniform vec2 uRes;
+        uniform float uBass;
+        uniform float uHigh;
+        out vec4 fragColor;
+
+        mat2 rot(float a) { float c = cos(a), s = sin(a); return mat2(c, -s, s, c); }
+
+        vec3 palette(float t) {
+          vec3 a = vec3(0.45, 0.50, 0.62);
+          vec3 b = vec3(0.45, 0.42, 0.48);
+          vec3 c = vec3(1.0, 1.0, 1.0);
+          vec3 d = vec3(0.05, 0.28, 0.58);
+          return a + b * cos(6.28318 * (c * t + d));
+        }
+
+        void main() {
+          vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / min(uRes.x, uRes.y);
+          float t = uTime;
+
+          // Subtle beat zoom
+          uv *= 1.0 - 0.055 * uBass;
+
+          // Polar starlight tunnel (Q(self) = self)
+          float r = length(uv) + 1e-4;
+          float a = atan(uv.y, uv.x);
+          float invR = 1.0 / (r + 0.08);
+          float z = invR * 0.62 + t * 1.15;
+
+          // Spiral ribs + fixed-point rings
+          float spiral = sin(a * 6.0 + z * 3.2 - t * 1.4) * 0.5 + 0.5;
+          float rings = sin(z * 9.0) * 0.5 + 0.5;
+          float tunnelGrid = pow(spiral, 5.0) * 0.65 + pow(rings, 7.0) * 0.55;
+
+          // Self-similar Julia fixed-point bloom in the core
+          vec2 jz = rot(t * 0.28) * (uv * 1.45);
+          vec2 jc = vec2(-0.76 + 0.08 * sin(t * 0.43), 0.14 + 0.06 * cos(t * 0.37));
+          float jTrap = 1e6;
+          for (int i = 0; i < 14; i++) {
+            jz = vec2(jz.x * jz.x - jz.y * jz.y, 2.0 * jz.x * jz.y) + jc;
+            jTrap = min(jTrap, dot(jz, jz));
+            if (dot(jz, jz) > 16.0) break;
+          }
+          float juliaGlow = exp(-sqrt(jTrap) * 2.8) * (0.65 + 0.45 * uHigh);
+
+          // Chromatic tunnel color
+          vec3 col = vec3(0.02, 0.035, 0.08);
+          vec3 tunCol = palette(z * 0.12 + a * 0.159 + t * 0.05);
+          col += tunCol * tunnelGrid * smoothstep(0.05, 0.65, r) * (0.65 + 0.45 * uBass);
+          col += vec3(0.25, 0.85, 1.0) * juliaGlow * 0.85;
+          col += vec3(0.75, 0.45, 1.0) * exp(-r * 3.6) * (0.75 + 0.5 * uBass);
+
+          // Starlight warp streaks
+          float sector = floor((a + 3.14159) / 0.19635);
+          float h = fract(sin(sector * 91.37) * 43758.5453);
+          float streak = pow(max(0.0, 1.0 - abs(fract(a / 0.19635) - 0.5) * 14.0), 3.0);
+          float pulse = pow(max(0.0, sin(invR * 4.5 + t * (4.0 + h * 4.0) + h * 20.0)), 14.0);
+          col += vec3(0.85, 0.96, 1.0) * streak * pulse * smoothstep(0.08, 0.5, r) * 1.4;
+
+          // Lumi orbiting chromatic orb
+          vec2 lumiPos = vec2(cos(t * 0.95) * 0.34, sin(t * 1.35) * 0.22);
+          float dl = length(uv - lumiPos);
+          col += vec3(0.55, 0.92, 1.0) * (0.018 / (dl * dl + 0.0045));
+          col += vec3(0.82, 0.52, 1.0) * (0.012 / (dl + 0.04));
+
+          // Vignette & tone-map
+          col *= 1.0 - 0.28 * dot(uv, uv);
+          col = col / (1.0 + col * 0.65);
+          fragColor = vec4(pow(clamp(col, 0.0, 1.0), vec3(0.92)), 1.0);
+        }`;
+
+      const compile = (type, src) => {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        return s;
+      };
+      prog = gl.createProgram();
+      gl.attachShader(prog, compile(gl.VERTEX_SHADER, vsSrc));
+      gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fsSrc));
+      gl.linkProgram(prog);
+      uTime = gl.getUniformLocation(prog, 'uTime');
+      uRes = gl.getUniformLocation(prog, 'uRes');
+      uBass = gl.getUniformLocation(prog, 'uBass');
+      uHigh = gl.getUniformLocation(prog, 'uHigh');
+    }
+
+    // --- WebAudio Heroic PARADOX / RAZOR 1911 Chiptune Tracker Synth ---
+    let audioCtx = null, masterGain = null, analyser = null, freqData = null;
+    let muted = false, running = false, startTime = 0, stepIdx = 0;
+
+    // Cmaj7 -> Gadd9 -> Am9 -> Fmaj7 heroic demoscene progression
+    const CHORDS = [
+      [60, 64, 67, 71], // Cmaj7
+      [55, 59, 62, 69], // Gadd9
+      [57, 60, 64, 67], // Am7
+      [53, 57, 60, 64], // Fmaj7
+    ];
+    const BASS_ROOTS = [36, 31, 33, 29];
+    const LEAD_MELODY = [
+      72, -1, 76, 79,  83, -1, 79, 76,  74, -1, 79, 81,  79, -1, 74, -1,
+      76, -1, 79, 84,  83, -1, 79, 76,  72, -1, 76, 79,  76, -1, 72, -1,
+    ];
+
+    function midiToHz(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+
+    function initAudio() {
+      if (audioCtx) return;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AC();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0.28;
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 128;
+      freqData = new Uint8Array(analyser.frequencyBinCount);
+      masterGain.connect(analyser);
+      analyser.connect(audioCtx.destination);
+
+      const stepMs = (60 / 132 / 4) * 1000; // 132 BPM 16th-note ProTracker tick
+      setInterval(() => {
+        if (!running || muted || !audioCtx || audioCtx.state !== 'running') return;
+        const now = audioCtx.currentTime;
+        const bar = Math.floor(stepIdx / 16) % 4;
+        const step = stepIdx % 16;
+        const chord = CHORDS[bar];
+
+        // Kick on 0, 4, 8, 12
+        if (step % 4 === 0) {
+          const o = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          o.type = 'sine';
+          o.frequency.setValueAtTime(150, now);
+          o.frequency.exponentialRampToValueAtTime(42, now + 0.11);
+          g.gain.setValueAtTime(0.65, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+          o.connect(g); g.connect(masterGain);
+          o.start(now); o.stop(now + 0.16);
+        }
+
+        // Snare on 4, 12
+        if (step === 4 || step === 12) {
+          const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.12, audioCtx.sampleRate);
+          const d = buf.getChannelData(0);
+          for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (d.length * 0.25));
+          const n = audioCtx.createBufferSource();
+          n.buffer = buf;
+          const hp = audioCtx.createBiquadFilter();
+          hp.type = 'highpass'; hp.frequency.value = 1100;
+          const g = audioCtx.createGain();
+          g.gain.setValueAtTime(0.28, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+          n.connect(hp); hp.connect(g); g.connect(masterGain);
+          n.start(now);
+        }
+
+        // Driving octave synthwave bass
+        const bassNote = BASS_ROOTS[bar] + (step % 2 === 1 ? 12 : 0);
+        {
+          const o = audioCtx.createOscillator();
+          const f = audioCtx.createBiquadFilter();
+          const g = audioCtx.createGain();
+          o.type = 'sawtooth';
+          o.frequency.setValueAtTime(midiToHz(bassNote), now);
+          f.type = 'lowpass'; f.frequency.setValueAtTime(680, now);
+          g.gain.setValueAtTime(0.26, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+          o.connect(f); f.connect(g); g.connect(masterGain);
+          o.start(now); o.stop(now + 0.13);
+        }
+
+        // Classic Amiga fast 3-note chip arpeggio
+        const arpNote = chord[step % chord.length] + 12;
+        {
+          const o = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          o.type = 'square';
+          o.frequency.setValueAtTime(midiToHz(arpNote), now);
+          g.gain.setValueAtTime(0.075, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.085);
+          o.connect(g); g.connect(masterGain);
+          o.start(now); o.stop(now + 0.09);
+        }
+
+        // Heroic chiptune lead
+        const lead = LEAD_MELODY[stepIdx % LEAD_MELODY.length];
+        if (lead > 0) {
+          const o = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          o.type = 'triangle';
+          o.frequency.setValueAtTime(midiToHz(lead), now);
+          g.gain.setValueAtTime(0.22, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+          o.connect(g); g.connect(masterGain);
+          o.start(now); o.stop(now + 0.25);
+        }
+
+        stepIdx++;
+      }, stepMs);
+    }
+
+    // --- 2D Overlay: White Dragon Constellation Spiral + Copper Bars + Rainbow Sine Scroller ---
+    const SCROLL_TEXT =
+      '    AWESOME-OS v11  ***  CAS Q-SELF FIXED-POINT PROOF: Q(SELF) = SELF  ***  ' +
+      'LUMI & WHITE DRAGON  ***  MASSIVE RESPECT & GREETS TO THE SCENE:  ' +
+      'PARADOX  *  RAZOR 1911  *  FAIRLIGHT  *  FUTURE CREW  *  FARBRAUSCH  *  CONSPIRACY  *  SCENE.ORG  ***  ' +
+      'B8G_ABI_MAGIC_V3 (0x33564742)  *  OPFS v11 CAS  *  ZERO BLOAT - PURE PROCEDURAL CODE!    ';
+
+    // Compute live self-hash proof of this very page!
+    let selfHash = 'computing SHA-512(self)...';
+    if (crypto && crypto.subtle) {
+      crypto.subtle.digest('SHA-512', new TextEncoder().encode(document.documentElement.outerHTML)).then((buf) => {
+        const hex = Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+        selfHash = `Q(self) = sha512:${hex.slice(0, 32)}... (VERIFIED)`;
+      });
+    }
+
+    let lastFpsT = performance.now(), frames = 0;
+
+    function render(now) {
+      requestAnimationFrame(render);
+      const t = running ? (now - startTime) * 0.001 : now * 0.0005;
+
+      frames++;
+      if (now - lastFpsT > 500) {
+        document.getElementById('fps-lbl').textContent = Math.round(frames * 1000 / (now - lastFpsT)) + ' FPS';
+        frames = 0; lastFpsT = now;
+      }
+
+      let bass = 0.25 + 0.15 * Math.sin(t * 4.4);
+      let high = 0.3 + 0.2 * Math.cos(t * 6.0);
+      if (analyser && freqData && running && !muted) {
+        analyser.getByteFrequencyData(freqData);
+        bass = (freqData[0] + freqData[1] + freqData[2] + freqData[3]) / (4 * 255);
+        high = (freqData[20] + freqData[24] + freqData[28] + freqData[32]) / (4 * 255);
+      }
+
+      // 1. WebGL2 tunnel pass
+      if (gl && prog) {
+        gl.viewport(0, 0, glCanvas.width, glCanvas.height);
+        gl.useProgram(prog);
+        gl.uniform1f(uTime, t);
+        gl.uniform2f(uRes, glCanvas.width, glCanvas.height);
+        gl.uniform1f(uBass, bass);
+        gl.uniform1f(uHigh, high);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      }
+
+      // 2. 2D Canvas Overlay: White Dragon spiral + Header + Copper Bars + Rainbow Sine Scroller
+      ov.clearRect(0, 0, W, H);
+
+      // Articulated White Dragon constellation spiraling around the fixed-point core
+      const cx = W * 0.5, cy = H * 0.45;
+      const pts = [];
+      for (let i = 0; i < 20; i++) {
+        const ang = t * 1.15 - i * 0.22;
+        const rad = Math.min(W, H) * (0.24 + 0.04 * Math.sin(t * 2.0 + i * 0.4));
+        const px = cx + Math.cos(ang) * rad * 1.25;
+        const py = cy + Math.sin(ang * 1.1) * rad * 0.62;
+        pts.push({ x: px, y: py });
+      }
+      ov.save();
+      ov.strokeStyle = 'rgba(224, 242, 254, 0.85)';
+      ov.lineWidth = 2.2;
+      ov.shadowColor = '#38bdf8';
+      ov.shadowBlur = 14;
+      ov.beginPath();
+      pts.forEach((p, i) => (i === 0 ? ov.moveTo(p.x, p.y) : ov.lineTo(p.x, p.y)));
+      ov.stroke();
+
+      // Dragon crystalline wings off segments 4..8
+      const wingFlap = Math.sin(t * 5.2) * 34;
+      const wBase = pts[5], wBack = pts[9];
+      const wTip1 = { x: wBase.x - 48, y: wBase.y - 78 + wingFlap };
+      const wTip2 = { x: wBase.x + 56, y: wBase.y - 64 - wingFlap * 0.7 };
+      ov.fillStyle = 'rgba(186, 230, 253, 0.22)';
+      ov.beginPath(); ov.moveTo(wBase.x, wBase.y); ov.lineTo(wTip1.x, wTip1.y); ov.lineTo(wBack.x, wBack.y); ov.closePath(); ov.fill(); ov.stroke();
+      ov.beginPath(); ov.moveTo(wBase.x, wBase.y); ov.lineTo(wTip2.x, wTip2.y); ov.lineTo(wBack.x, wBack.y); ov.closePath(); ov.fill(); ov.stroke();
+
+      // Star-spike nodes along spine
+      for (let i = 0; i < pts.length; i += 3) {
+        const p = pts[i];
+        const sz = i === 0 ? 14 : 7;
+        ov.fillStyle = '#ffffff';
+        ov.beginPath(); ov.arc(p.x, p.y, i === 0 ? 4 : 2.2, 0, Math.PI * 2); ov.fill();
+        ov.strokeStyle = 'rgba(255,255,255,0.85)';
+        ov.lineWidth = 1.2;
+        ov.beginPath();
+        ov.moveTo(p.x - sz, p.y); ov.lineTo(p.x + sz, p.y);
+        ov.moveTo(p.x, p.y - sz); ov.lineTo(p.x, p.y + sz);
+        ov.stroke();
+      }
+      ov.restore();
+
+      // Top-left title + live Q(self) hash
+      ov.save();
+      ov.fillStyle = 'rgba(6, 10, 20, 0.62)';
+      ov.fillRect(14, 12, 470, 50);
+      ov.fillStyle = '#38bdf8';
+      ov.fillRect(14, 12, 4, 50);
+      ov.font = 'bold 16px ui-monospace, Consolas, monospace';
+      ov.fillStyle = '#f8fafc';
+      ov.fillText('CAS Q-SELF // LUMI & WHITE DRAGON', 28, 33);
+      ov.font = '11.5px ui-monospace, Consolas, monospace';
+      ov.fillStyle = '#6ee7b7';
+      ov.fillText(selfHash, 28, 52);
+      ov.restore();
+
+      // Classic Amiga Copper Bars (bottom band)
+      const bandH = 92;
+      const bandY = H - bandH - 18;
+      ov.fillStyle = 'rgba(4, 7, 15, 0.72)';
+      ov.fillRect(0, bandY, W, bandH);
+
+      for (let b = 0; b < 3; b++) {
+        const cyBar = bandY + bandH * 0.5 + Math.sin(t * 2.6 + b * 2.09) * 26;
+        const grad = ov.createLinearGradient(0, cyBar - 12, 0, cyBar + 12);
+        const hue = (t * 60 + b * 120) % 360;
+        grad.addColorStop(0, 'transparent');
+        grad.addColorStop(0.5, `hsla(${hue}, 95%, 64%, 0.55)`);
+        grad.addColorStop(1, 'transparent');
+        ov.fillStyle = grad;
+        ov.fillRect(0, cyBar - 12, W, 24);
+      }
+
+      // Rainbow border lines
+      const rg = ov.createLinearGradient(0, 0, W, 0);
+      rg.addColorStop(0, '#38bdf8'); rg.addColorStop(0.25, '#a78bfa');
+      rg.addColorStop(0.5, '#f472b6'); rg.addColorStop(0.75, '#facc15'); rg.addColorStop(1, '#34d399');
+      ov.fillStyle = rg;
+      ov.fillRect(0, bandY, W, 2);
+      ov.fillRect(0, bandY + bandH - 2, W, 2);
+
+      // Classic Rainbow Sine-Wave Scroller
+      ov.save();
+      ov.font = 'bold 30px ui-monospace, Consolas, monospace';
+      ov.textBaseline = 'middle';
+      const charW = 21;
+      const totalPx = SCROLL_TEXT.length * charW;
+      const offset = (t * 175) % totalPx;
+      for (let i = 0; i < SCROLL_TEXT.length; i++) {
+        let x = W + i * charW - offset;
+        if (x < -charW) x += totalPx;
+        if (x > W + charW) continue;
+        const y = bandY + bandH * 0.5 + Math.sin(x * 0.014 + t * 5.2) * 16;
+        const hue = (x * 0.4 + t * 140) % 360;
+        ov.fillStyle = 'rgba(0,0,0,0.8)';
+        ov.fillText(SCROLL_TEXT[i], x + 2, y + 2);
+        ov.fillStyle = `hsl(${hue}, 95%, 70%)`;
+        ov.fillText(SCROLL_TEXT[i], x, y);
+      }
+      ov.restore();
+    }
+
+    document.getElementById('start-btn').onclick = () => {
+      initAudio();
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      running = true;
+      startTime = performance.now();
+      document.getElementById('gate').classList.add('gone');
+    };
+    document.getElementById('mute-btn').onclick = () => {
+      muted = !muted;
+      if (masterGain) masterGain.gain.value = muted ? 0 : 0.28;
+      document.getElementById('mute-btn').textContent = muted ? 'Audio: OFF' : 'Audio: ON';
+    };
+    document.getElementById('fs-btn').onclick = () => {
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      else document.documentElement.requestFullscreen().catch(() => {});
+    };
+
+    requestAnimationFrame(render);
+  </script>
+</body>
+</html>
