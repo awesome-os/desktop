@@ -123,6 +123,7 @@
       <div><strong>Awesome-OS Desktop</strong> · Live WASM SharedWorker Boot</div>
       <div class="pills">
         <span id="abi-pill" class="pill">booting wasm...</span>
+        <span id="sw-pill" class="pill green">SW: OPFS v11</span>
         <span id="worker-pill" class="pill green">SharedWorker</span>
         <a href="/docs/">/docs/</a>
       </div>
@@ -131,7 +132,7 @@
     <div class="greeter-main">
       <div class="hero">
         <h1>Boot Awesome-OS Desktop in Browser (WASM + SharedWorker)</h1>
-        <p>Powered by <code>wasi-host-web</code> running <code>B8G_ABI_MAGIC_V3</code> WebAssembly inside a SharedWorker with an in-memory <code>v11</code> CAS.</p>
+        <p>Powered by <code>wasi-host-web</code> + <code>holo-web-service-worker.js</code> bypassing the ServiceWorker Cache API via persistent <code>OPFS:/v11/files/</code> CAS &amp; COOP/COEP <code>SharedArrayBuffer</code>.</p>
       </div>
 
       <div id="bootlog" class="bootlog">[0.00 ms] connecting to wasi-host-worker.js...</div>
@@ -195,7 +196,33 @@
     const desktopScreen = document.getElementById('desktop-screen');
     const bootlog = document.getElementById('bootlog');
     const abiPill = document.getElementById('abi-pill');
+    const swPill = document.getElementById('sw-pill');
     const workerPill = document.getElementById('worker-pill');
+
+    // Register direct holo-web-service-worker (OPFS v11 CAS, bypasses Cache API)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./holo-web-service-worker.js', { scope: './' })
+        .then(async (reg) => {
+          const sw = reg.active || reg.waiting || reg.installing;
+          const coi = self.crossOriginIsolated ? 'COI/SAB' : 'SW';
+          swPill.textContent = coi + ': OPFS v11 (0 Cache API)';
+          const readyReg = await navigator.serviceWorker.ready;
+          const target = readyReg.active || sw;
+          if (target) {
+            const ch = new MessageChannel();
+            ch.port1.onmessage = (e) => {
+              const s = e.data || {};
+              if (typeof s.blobCount === 'number') {
+                swPill.textContent = (self.crossOriginIsolated ? 'COI/SAB' : 'SW') + ': OPFS v11 (' + s.blobCount + ' blobs · 0 Cache API)';
+              }
+            };
+            target.postMessage({ type: 'HOLO_SW_STATUS' }, [ch.port2]);
+          }
+        })
+        .catch(() => { swPill.textContent = 'OPFS v11 (Direct)'; });
+    } else {
+      swPill.textContent = 'OPFS v11 (Direct)';
+    }
     const grid = document.getElementById('desktop-grid');
     const gRow = document.getElementById('greeter-row');
     const uriBox = document.getElementById('uri-box');
