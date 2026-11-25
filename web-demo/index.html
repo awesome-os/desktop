@@ -3,62 +3,73 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Awesome-OS Desktop — Live WASM SharedWorker Boot Demo</title>
+  <title>Awesome-OS Desktop — Live WASM + OPFS v11 Browser OS</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
       width: 100%; height: 100%; overflow: hidden;
-      background: #070a10; color: #e2e8f0;
+      background: #060911; color: #e2e8f0;
       font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      user-select: none;
     }
     .screen { position: fixed; inset: 0; display: flex; flex-direction: column; }
     .hidden { display: none !important; }
 
-    /* Top Status Bar */
+    /* Top Bar */
     .topbar {
-      height: 36px; display: flex; align-items: center; justify-content: space-between;
-      padding: 0 14px; background: #0d121d; border-bottom: 1px solid rgba(148,163,184,0.15);
-      font-size: 12px; color: #94a3b8; flex-shrink: 0;
+      height: 34px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 12px; background: rgba(11, 15, 25, 0.88); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(148,163,184,0.16);
+      font-size: 12px; color: #94a3b8; flex-shrink: 0; z-index: 50;
     }
+    .topbar-left, .pills { display: flex; gap: 8px; align-items: center; }
     .topbar strong { color: #f8fafc; }
-    .pills { display: flex; gap: 8px; align-items: center; }
     .pill {
       padding: 2px 8px; border-radius: 999px; font-size: 11px;
       background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.3); color: #7dd3fc;
       font-family: ui-monospace, Consolas, monospace;
     }
     .pill.green { background: rgba(16,185,129,0.14); border-color: rgba(16,185,129,0.35); color: #6ee7b7; }
+    .pill.purple { background: rgba(167,139,250,0.14); border-color: rgba(167,139,250,0.35); color: #ddd6fe; }
     .topbar a, .topbar button {
       color: #7dd3fc; background: transparent; border: none; cursor: pointer;
-      font-size: 12px; text-decoration: none;
+      font-size: 12px; text-decoration: none; padding: 2px 6px; border-radius: 6px;
     }
+    .topbar button:hover, .topbar a:hover { background: rgba(56,189,248,0.14); }
 
     /* Greeter Screen */
+    #greeter-screen {
+      background:
+        radial-gradient(circle at 20% 20%, rgba(56,189,248,0.18), transparent 45%),
+        radial-gradient(circle at 80% 80%, rgba(167,139,250,0.18), transparent 45%),
+        #070a10;
+    }
     .greeter-main {
       flex: 1; display: flex; flex-direction: column; justify-content: center;
-      max-width: 980px; width: 100%; margin: 0 auto; padding: 24px; gap: 18px;
+      max-width: 980px; width: 100%; margin: 0 auto; padding: 24px; gap: 16px;
     }
-    .hero h1 { font-size: 1.9rem; color: #f8fafc; margin-bottom: 4px; }
-    .hero p { color: #94a3b8; font-size: 14px; }
+    .hero h1 { font-size: 1.85rem; color: #f8fafc; margin-bottom: 4px; letter-spacing: -0.02em; }
+    .hero p { color: #94a3b8; font-size: 13.5px; }
+    .hero code { color: #7dd3fc; font-family: ui-monospace, Consolas, monospace; }
     .bootlog {
-      background: #0b101b; border: 1px solid rgba(148,163,184,0.18); border-radius: 10px;
+      background: rgba(10,15,26,0.85); border: 1px solid rgba(148,163,184,0.18); border-radius: 10px;
       padding: 10px 14px; font-family: ui-monospace, Consolas, monospace; font-size: 12px;
-      color: #6ee7b7; max-height: 110px; overflow-y: auto; line-height: 1.5;
+      color: #6ee7b7; max-height: 104px; overflow-y: auto; line-height: 1.5; user-select: text;
     }
     .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
     @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
     .card {
-      background: #101624; border: 2px solid rgba(148,163,184,0.16); border-radius: 12px;
-      padding: 16px; cursor: pointer; transition: border-color 120ms ease, background 120ms ease;
+      background: rgba(16,22,36,0.85); border: 2px solid rgba(148,163,184,0.16); border-radius: 12px;
+      padding: 16px; cursor: pointer; transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
     }
-    .card:hover { border-color: rgba(56,189,248,0.5); }
-    .card.selected { background: #13253b; border-color: #38bdf8; }
+    .card:hover { border-color: rgba(56,189,248,0.5); transform: translateY(-1px); }
+    .card.selected { background: rgba(19,37,59,0.92); border-color: #38bdf8; }
     .card h3 { font-size: 15px; color: #f8fafc; margin-bottom: 4px; }
     .card p { font-size: 12px; color: #94a3b8; }
     .greeter-row { display: flex; gap: 10px; flex-wrap: wrap; }
     .g-pill {
       flex: 1; min-width: 170px; padding: 9px 12px; border-radius: 10px; text-align: center;
-      background: #101624; border: 1px solid rgba(148,163,184,0.2); color: #94a3b8;
+      background: rgba(16,22,36,0.85); border: 1px solid rgba(148,163,184,0.2); color: #94a3b8;
       cursor: pointer; font-size: 12px; font-weight: 600;
     }
     .g-pill.selected { background: #261a3f; border-color: #a78bfa; color: #f3e8ff; }
@@ -67,76 +78,137 @@
       flex: 1; padding: 10px 14px; border-radius: 10px; background: #0b101b;
       border: 1px solid rgba(148,163,184,0.2); font-family: ui-monospace, Consolas, monospace;
       font-size: 12px; color: #7dd3fc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      user-select: text;
     }
     .launch-btn {
-      padding: 11px 22px; border-radius: 10px; border: 1px solid #38bdf8;
-      background: #0284c7; color: #fff; font-weight: 700; font-size: 14px; cursor: pointer;
+      padding: 11px 24px; border-radius: 10px; border: 1px solid #38bdf8;
+      background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff;
+      font-weight: 700; font-size: 14px; cursor: pointer;
     }
-    .launch-btn:hover { background: #0369a1; }
+    .launch-btn:hover { filter: brightness(1.12); }
 
-    /* Live Desktop Session Screen */
-    .desktop-body { flex: 1; display: flex; min-height: 0; }
-    .rail {
-      width: 52px; background: #0d1320; border-right: 1px solid rgba(148,163,184,0.14);
-      display: flex; flex-direction: column; align-items: center; padding: 10px 0; gap: 10px;
+    /* Visual Desktop Surface */
+    #desktop-screen.theme-sectium-desktop {
+      background:
+        radial-gradient(circle at 18% 22%, rgba(56,189,248,0.28), transparent 45%),
+        radial-gradient(circle at 82% 78%, rgba(167,139,250,0.26), transparent 48%),
+        linear-gradient(145deg, #070b14 0%, #0d1629 52%, #090d18 100%);
     }
-    .rail-ico {
-      width: 34px; height: 34px; border-radius: 8px; background: rgba(56,189,248,0.14);
-      border: 1px solid rgba(56,189,248,0.3); color: #7dd3fc; display: grid; place-items: center;
-      font-weight: 700; font-size: 13px; cursor: pointer;
+    #desktop-screen.theme-omarchy-hyprland {
+      background:
+        radial-gradient(circle at 75% 20%, rgba(16,185,129,0.24), transparent 42%),
+        linear-gradient(135deg, #071110 0%, #0b1b1d 50%, #070c12 100%);
     }
-    .split-area { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px; background: #070a10; min-height: 0; }
-    @media (max-width: 820px) { .split-area { grid-template-columns: 1fr; } }
-    .pane {
-      background: #0e1422; border: 1px solid rgba(148,163,184,0.18); border-radius: 10px;
-      display: flex; flex-direction: column; overflow: hidden; min-height: 0;
+    #desktop-screen.theme-noctalia-shell {
+      background:
+        radial-gradient(circle at 25% 75%, rgba(236,72,153,0.24), transparent 45%),
+        radial-gradient(circle at 80% 25%, rgba(139,92,246,0.28), transparent 45%),
+        linear-gradient(145deg, #10081c 0%, #190e2e 55%, #0a0714 100%);
     }
-    .pane-hdr {
-      height: 32px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between;
-      background: #121a2b; border-bottom: 1px solid rgba(148,163,184,0.14); font-size: 12px; color: #cbd5e1;
+    #desktop-screen.theme-kitty-ink-tui {
+      background: #05070b;
     }
+
+    .desktop-stage {
+      flex: 1; position: relative; overflow: hidden;
+    }
+    #bg-canvas {
+      position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0.45;
+    }
+
+    /* Desktop Windows */
+    .win {
+      position: absolute; display: flex; flex-direction: column;
+      background: rgba(13, 19, 32, 0.92); backdrop-filter: blur(14px);
+      border: 1px solid rgba(148,163,184,0.24); border-radius: 12px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.55); overflow: hidden;
+      min-width: 320px; min-height: 220px;
+    }
+    .win.focused { border-color: rgba(56,189,248,0.65); box-shadow: 0 24px 60px rgba(2,132,199,0.22); }
+    .win-titlebar {
+      height: 34px; padding: 0 10px; display: flex; align-items: center; justify-content: space-between;
+      background: rgba(18, 26, 43, 0.95); border-bottom: 1px solid rgba(148,163,184,0.16);
+      cursor: move; font-size: 12px; color: #e2e8f0; flex-shrink: 0;
+    }
+    .win-dots { display: flex; gap: 6px; align-items: center; }
+    .dot { width: 11px; height: 11px; border-radius: 50%; border: none; cursor: pointer; }
+    .dot.close { background: #ef4444; }
+    .dot.min { background: #f59e0b; }
+    .dot.max { background: #10b981; }
+    .win-body { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; user-select: text; }
+
+    /* Terminal inside Window */
     .term-out {
       flex: 1; padding: 12px; overflow-y: auto; font-family: ui-monospace, Consolas, monospace;
       font-size: 12.5px; line-height: 1.55; white-space: pre-wrap; color: #e2e8f0;
     }
     .term-form {
-      display: flex; border-top: 1px solid rgba(148,163,184,0.14); background: #0a0f1a;
+      display: flex; border-top: 1px solid rgba(148,163,184,0.14); background: rgba(8,12,22,0.9);
     }
     .term-prompt {
-      padding: 10px 8px 10px 12px; font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; color: #38bdf8;
+      padding: 9px 8px 9px 12px; font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; color: #38bdf8;
     }
     .term-in {
       flex: 1; background: transparent; border: none; outline: none; color: #f8fafc;
-      font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; padding: 10px 12px 10px 0;
+      font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; padding: 9px 12px 9px 0;
     }
-    .info-pane { padding: 16px; overflow-y: auto; font-size: 13px; color: #cbd5e1; line-height: 1.6; }
-    .info-pane code {
-      font-family: ui-monospace, Consolas, monospace; background: rgba(148,163,184,0.14);
-      padding: 1px 5px; border-radius: 4px; color: #7dd3fc;
+
+    /* Sectium Browser Window */
+    .browser-bar {
+      display: flex; gap: 6px; padding: 6px 8px; background: #0b111e;
+      border-bottom: 1px solid rgba(148,163,184,0.14);
     }
+    .browser-bar button {
+      padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(148,163,184,0.2);
+      background: #131c2e; color: #cbd5e1; font-size: 11.5px; cursor: pointer;
+    }
+    .browser-bar button.active { border-color: #38bdf8; color: #fff; background: rgba(56,189,248,0.18); }
+    .browser-frame { flex: 1; width: 100%; border: none; background: #0b0e14; }
+
+    /* OPFS CAS Window */
+    .cas-body { padding: 14px; overflow-y: auto; font-size: 12.5px; line-height: 1.6; color: #cbd5e1; }
+    .cas-body code { font-family: ui-monospace, Consolas, monospace; color: #7dd3fc; background: rgba(148,163,184,0.12); padding: 1px 5px; border-radius: 4px; }
+    .cas-list { margin-top: 10px; font-family: ui-monospace, Consolas, monospace; font-size: 11.5px; color: #6ee7b7; background: #080d17; padding: 10px; border-radius: 8px; border: 1px solid rgba(148,163,184,0.16); max-height: 180px; overflow-y: auto; }
+
+    /* Bottom Dock */
+    .dock-wrap {
+      position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 10px; padding: 8px 14px; border-radius: 16px;
+      background: rgba(13, 19, 32, 0.82); backdrop-filter: blur(16px);
+      border: 1px solid rgba(148,163,184,0.22); box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+      z-index: 60;
+    }
+    .dock-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      padding: 6px 12px; border-radius: 10px; border: 1px solid transparent;
+      background: transparent; color: #e2e8f0; cursor: pointer; font-size: 11px;
+      transition: background 120ms ease, transform 120ms ease;
+    }
+    .dock-btn:hover { background: rgba(56,189,248,0.16); border-color: rgba(56,189,248,0.35); transform: translateY(-2px); }
+    .dock-btn .ico { font-size: 16px; font-weight: 700; color: #7dd3fc; }
   </style>
 </head>
 <body>
   <!-- GREETER SCREEN -->
   <div id="greeter-screen" class="screen">
     <div class="topbar">
-      <div><strong>Awesome-OS Desktop</strong> · Live WASM SharedWorker Boot</div>
+      <div class="topbar-left"><strong>Awesome-OS Desktop</strong> · Startup Greeter</div>
       <div class="pills">
         <span id="abi-pill" class="pill">booting wasm...</span>
         <span id="sw-pill" class="pill green">SW: OPFS v11</span>
-        <span id="worker-pill" class="pill green">SharedWorker</span>
+        <span id="worker-pill" class="pill purple">SharedWorker</span>
+        <a href="/">Home</a>
         <a href="/docs/">/docs/</a>
       </div>
     </div>
 
     <div class="greeter-main">
       <div class="hero">
-        <h1>Boot Awesome-OS Desktop in Browser (WASM + SharedWorker)</h1>
-        <p>Powered by <code>wasi-host-web</code> + <code>holo-web-service-worker.js</code> bypassing the ServiceWorker Cache API via persistent <code>OPFS:/v11/files/</code> CAS &amp; COOP/COEP <code>SharedArrayBuffer</code>.</p>
+        <h1>Awesome-OS Desktop — Live Browser Boot (WASM + OPFS v11)</h1>
+        <p>Powered by <code>wasi-host-web</code> + <code>holo-web-service-worker.js</code> bypassing the ServiceWorker Cache API via <code>OPFS:/v11/files/</code> &amp; COOP/COEP <code>SharedArrayBuffer</code>.</p>
       </div>
 
       <div id="bootlog" class="bootlog">[0.00 ms] connecting to wasi-host-worker.js...</div>
-
       <div id="desktop-grid" class="grid"></div>
       <div id="greeter-row" class="greeter-row"></div>
 
@@ -147,42 +219,91 @@
     </div>
   </div>
 
-  <!-- LIVE DESKTOP SESSION SCREEN -->
-  <div id="desktop-screen" class="screen hidden">
+  <!-- LIVE VISUAL DESKTOP SCREEN -->
+  <div id="desktop-screen" class="screen hidden theme-sectium-desktop">
     <div class="topbar">
-      <div><strong id="active-desktop-title">Sectium Desktop</strong> · <span id="active-greeter-tag">lumi-chromatic-greeter</span></div>
+      <div class="topbar-left">
+        <strong id="active-desktop-title">Sectium Pure-Art Desktop</strong>
+        <span class="pill purple" id="active-greeter-tag">lumi-chromatic-greeter</span>
+      </div>
       <div class="pills">
-        <span id="session-cas-pill" class="pill green">v11 CAS</span>
-        <button id="reboot-btn">&#8635; Switch Desktop / Greeter</button>
+        <span id="session-cas-pill" class="pill green">OPFS v11 CAS</span>
+        <span id="clock-pill" class="pill">00:00</span>
+        <button id="reboot-btn">&#8635; Switch Desktop</button>
       </div>
     </div>
 
-    <div class="desktop-body">
-      <div class="rail">
-        <div class="rail-ico" title="Sectium">S</div>
-        <div class="rail-ico" title="Terminal">&gt;_</div>
-        <div class="rail-ico" title="v11 CAS">v11</div>
-      </div>
-      <div class="split-area">
-        <div class="pane">
-          <div class="pane-hdr"><span>wasi-host-web Interactive Terminal (SharedWorker WASM)</span><span>ttyS0</span></div>
+    <div id="desktop-stage" class="desktop-stage">
+      <canvas id="bg-canvas"></canvas>
+
+      <!-- Window 1: wasi-host-web Terminal -->
+      <div class="win focused" id="win-term" style="left: 24px; top: 24px; width: 520px; height: 390px; z-index: 12;">
+        <div class="win-titlebar" data-drag="win-term">
+          <span><strong>wasi-host-web Terminal</strong> · SharedWorker WASM (ttyS0)</span>
+          <div class="win-dots">
+            <button class="dot min" onclick="toggleWin('win-term')"></button>
+            <button class="dot max" onclick="maxWin('win-term')"></button>
+            <button class="dot close" onclick="toggleWin('win-term')"></button>
+          </div>
+        </div>
+        <div class="win-body">
           <div id="term-out" class="term-out"></div>
           <form id="term-form" class="term-form">
             <span class="term-prompt">holo@awesome-os:~$</span>
-            <input id="term-in" class="term-in" placeholder="Type help, uname -a, wasm-check, holo-pm status, reboot..." autocomplete="off" />
+            <input id="term-in" class="term-in" placeholder="help | uname -a | wasm-check | holo-pm status | reboot" autocomplete="off" />
           </form>
         </div>
-        <div class="pane">
-          <div class="pane-hdr"><span>Sectium Surface · Live Projection State</span><span>0x33564742</span></div>
-          <div id="info-pane" class="info-pane"></div>
+      </div>
+
+      <!-- Window 2: Sectium Browser / Emukit Viewport -->
+      <div class="win" id="win-browser" style="left: 564px; top: 24px; width: 560px; height: 430px; z-index: 11;">
+        <div class="win-titlebar" data-drag="win-browser">
+          <span><strong>Sectium Browser</strong> · Pure-Art / Emukit Surface</span>
+          <div class="win-dots">
+            <button class="dot min" onclick="toggleWin('win-browser')"></button>
+            <button class="dot max" onclick="maxWin('win-browser')"></button>
+            <button class="dot close" onclick="toggleWin('win-browser')"></button>
+          </div>
         </div>
+        <div class="win-body">
+          <div class="browser-bar">
+            <button class="active" onclick="navBrowser('/emukit.html', this)">B8G WebGPU Emukit</button>
+            <button onclick="navBrowser('/docs/', this)">Awesome-OS Docs</button>
+            <button onclick="navBrowser('/docs/greeter.html', this)">Greeter Spec</button>
+          </div>
+          <iframe id="browser-frame" class="browser-frame" src="about:blank"></iframe>
+        </div>
+      </div>
+
+      <!-- Window 3: OPFS v11 CAS Inspector -->
+      <div class="win hidden" id="win-cas" style="left: 140px; top: 90px; width: 540px; height: 340px; z-index: 13;">
+        <div class="win-titlebar" data-drag="win-cas">
+          <span><strong>OPFS v11 CAS Explorer</strong> · Zero Cache API</span>
+          <div class="win-dots">
+            <button class="dot min" onclick="toggleWin('win-cas')"></button>
+            <button class="dot max" onclick="maxWin('win-cas')"></button>
+            <button class="dot close" onclick="toggleWin('win-cas')"></button>
+          </div>
+        </div>
+        <div class="win-body">
+          <div id="cas-info" class="cas-body"></div>
+        </div>
+      </div>
+
+      <!-- Bottom Dock -->
+      <div class="dock-wrap">
+        <button class="dock-btn" onclick="openWin('win-term')"><span class="ico">&gt;_</span><span>Terminal</span></button>
+        <button class="dock-btn" onclick="openWin('win-browser', '/emukit.html')"><span class="ico">&#9670;</span><span>Emukit</span></button>
+        <button class="dock-btn" onclick="openWin('win-browser', '/docs/')"><span class="ico">S</span><span>Sectium</span></button>
+        <button class="dock-btn" onclick="openWin('win-cas')"><span class="ico">v11</span><span>OPFS CAS</span></button>
+        <button class="dock-btn" onclick="document.getElementById('reboot-btn').click()"><span class="ico">&#8635;</span><span>Greeter</span></button>
       </div>
     </div>
   </div>
 
   <script>
     const DESKTOPS = [
-      { id: 'sectium-desktop', name: 'Sectium Pure-Art Desktop', desc: 'Sectium Universal Display Driver (Skia / Dawn / Blink) + Code - OSS', uri: 'project://node/sectium-desktop?from=repository://github.com/awesome-os/sectium@main' },
+      { id: 'sectium-desktop', name: 'Sectium Pure-Art Desktop', desc: 'Sectium Universal Display Driver (Skia / Dawn WebGPU / Blink) + Code - OSS', uri: 'project://node/sectium-desktop?from=repository://github.com/awesome-os/sectium@main' },
       { id: 'omarchy-hyprland', name: 'Omarchy Hyprland / Wayland', desc: 'holo-display-wayland + static musl awesome-os/coreutils', uri: 'project://coreutils/omarchy?from=repository://github.com/awesome-os/t2desktop-omarchy@main' },
       { id: 'noctalia-shell', name: 'Noctalia Shell / Quickshell', desc: 'holo-display-qt prismatic desktop projected from v11 CAS', uri: 'project://coreutils/noctalia?from=repository://github.com/awesome-os/t2desktop-noctalia@main' },
       { id: 'kitty-ink-tui', name: 'Kitty-Ink DevOps TUI', desc: 'Zero-GPU holo-display-tty terminal shell', uri: 'project://node/kitty-ink?from=repository://github.com/awesome-os/awesome-os@main' },
@@ -191,6 +312,7 @@
 
     let selDesktop = 0;
     let selGreeter = 0;
+    let topZ = 20;
 
     const greeterScreen = document.getElementById('greeter-screen');
     const desktopScreen = document.getElementById('desktop-screen');
@@ -198,22 +320,37 @@
     const abiPill = document.getElementById('abi-pill');
     const swPill = document.getElementById('sw-pill');
     const workerPill = document.getElementById('worker-pill');
+    const grid = document.getElementById('desktop-grid');
+    const gRow = document.getElementById('greeter-row');
+    const uriBox = document.getElementById('uri-box');
+    const termOut = document.getElementById('term-out');
+    const termIn = document.getElementById('term-in');
+    const casInfo = document.getElementById('cas-info');
+    const browserFrame = document.getElementById('browser-frame');
+
+    // Clock
+    function tickClock() {
+      const d = new Date();
+      document.getElementById('clock-pill').textContent =
+        d.toTimeString().slice(0, 5);
+    }
+    tickClock();
+    setInterval(tickClock, 15000);
 
     // Register direct holo-web-service-worker (OPFS v11 CAS, bypasses Cache API)
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./holo-web-service-worker.js', { scope: './' })
         .then(async (reg) => {
-          const sw = reg.active || reg.waiting || reg.installing;
           const coi = self.crossOriginIsolated ? 'COI/SAB' : 'SW';
           swPill.textContent = coi + ': OPFS v11 (0 Cache API)';
           const readyReg = await navigator.serviceWorker.ready;
-          const target = readyReg.active || sw;
+          const target = readyReg.active || reg.active || reg.waiting || reg.installing;
           if (target) {
             const ch = new MessageChannel();
             ch.port1.onmessage = (e) => {
               const s = e.data || {};
               if (typeof s.blobCount === 'number') {
-                swPill.textContent = (self.crossOriginIsolated ? 'COI/SAB' : 'SW') + ': OPFS v11 (' + s.blobCount + ' blobs · 0 Cache API)';
+                swPill.textContent = coi + ': OPFS v11 (' + s.blobCount + ' blobs · 0 Cache API)';
               }
             };
             target.postMessage({ type: 'HOLO_SW_STATUS' }, [ch.port2]);
@@ -223,12 +360,6 @@
     } else {
       swPill.textContent = 'OPFS v11 (Direct)';
     }
-    const grid = document.getElementById('desktop-grid');
-    const gRow = document.getElementById('greeter-row');
-    const uriBox = document.getElementById('uri-box');
-    const termOut = document.getElementById('term-out');
-    const termIn = document.getElementById('term-in');
-    const infoPane = document.getElementById('info-pane');
 
     function renderChooser() {
       grid.innerHTML = '';
@@ -251,13 +382,13 @@
     }
     renderChooser();
 
-    // Connect to SharedWorker (with Worker fallback for browsers without SharedWorker)
+    // Connect SharedWorker (or Worker fallback)
     let port;
     if (typeof SharedWorker !== 'undefined') {
       const sw = new SharedWorker('./wasi-host-worker.js');
       port = sw.port;
       port.start();
-      workerPill.textContent = 'SharedWorker (Multi-Tab)';
+      workerPill.textContent = 'SharedWorker';
     } else {
       port = new Worker('./wasi-host-worker.js');
       workerPill.textContent = 'WebWorker';
@@ -289,23 +420,160 @@
       }
     };
 
+    // Subtle animated grid canvas for live compositor feel
+    function startBackdrop() {
+      const canvas = document.getElementById('bg-canvas');
+      const ctx = canvas.getContext('2d');
+      function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+      resize();
+      window.addEventListener('resize', resize);
+      let t = 0;
+      function frame() {
+        t += 0.008;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.14)';
+        ctx.lineWidth = 1;
+        const step = 48;
+        const off = (t * 20) % step;
+        for (let x = off; x < canvas.width; x += step) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+        }
+        for (let y = off; y < canvas.height; y += step) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+        }
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    }
+    startBackdrop();
+
+    // Window management (focus, drag, toggle, maximize)
+    function focusWin(id) {
+      document.querySelectorAll('.win').forEach((w) => w.classList.remove('focused'));
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.remove('hidden');
+        el.classList.add('focused');
+        el.style.zIndex = String(++topZ);
+      }
+    }
+    window.toggleWin = (id) => {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle('hidden');
+    };
+    window.maxWin = (id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (el.dataset.max === '1') {
+        el.style.left = el.dataset.ol; el.style.top = el.dataset.ot;
+        el.style.width = el.dataset.ow; el.style.height = el.dataset.oh;
+        el.dataset.max = '0';
+      } else {
+        el.dataset.ol = el.style.left; el.dataset.ot = el.style.top;
+        el.dataset.ow = el.style.width; el.dataset.oh = el.style.height;
+        el.style.left = '8px'; el.style.top = '8px';
+        el.style.width = 'calc(100% - 16px)'; el.style.height = 'calc(100% - 82px)';
+        el.dataset.max = '1';
+      }
+      focusWin(id);
+    };
+    window.openWin = (id, url) => {
+      focusWin(id);
+      if (id === 'win-browser' && url) {
+        browserFrame.src = url;
+      }
+      if (id === 'win-cas') refreshOpfsExplorer();
+    };
+    window.navBrowser = (url, btn) => {
+      browserFrame.src = url;
+      document.querySelectorAll('.browser-bar button').forEach((b) => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+    };
+
+    document.querySelectorAll('.win').forEach((w) => {
+      w.addEventListener('mousedown', () => focusWin(w.id));
+    });
+    document.querySelectorAll('[data-drag]').forEach((bar) => {
+      bar.addEventListener('mousedown', (e) => {
+        if (e.target.tagName === 'BUTTON') return;
+        const win = document.getElementById(bar.dataset.drag);
+        focusWin(win.id);
+        const sx = e.clientX, sy = e.clientY;
+        const ox = win.offsetLeft, oy = win.offsetTop;
+        function move(ev) {
+          win.style.left = Math.max(0, ox + (ev.clientX - sx)) + 'px';
+          win.style.top = Math.max(0, oy + (ev.clientY - sy)) + 'px';
+        }
+        function up() {
+          window.removeEventListener('mousemove', move);
+          window.removeEventListener('mouseup', up);
+        }
+        window.addEventListener('mousemove', move);
+        window.addEventListener('mouseup', up);
+      });
+    });
+
+    async function refreshOpfsExplorer() {
+      let entries = [];
+      try {
+        const root = await navigator.storage.getDirectory();
+        const v11 = await root.getDirectoryHandle('v11', { create: true });
+        const files = await v11.getDirectoryHandle('files', { create: true });
+        for await (const shard of files.values()) {
+          if (shard.kind === 'directory') {
+            for await (const f of shard.values()) {
+              if (f.kind === 'file') {
+                const file = await f.getFile();
+                entries.push(`OPFS:/v11/files/${shard.name}/${f.name.slice(0, 24)}... (${file.size} B)`);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        entries.push('OPFS listing unavailable: ' + err);
+      }
+      casInfo.innerHTML =
+        '<p><strong>Storage Backend:</strong> <code>OPFS:/v11/files/</code> (ServiceWorker Cache API bypassed)</p>' +
+        '<p><strong>Cross-Origin Isolated:</strong> <code>' + String(self.crossOriginIsolated) + '</code></p>' +
+        '<p><strong>Blobs Stored:</strong> ' + entries.length + '</p>' +
+        '<div class="cas-list">' + (entries.length ? entries.join('\n') : 'No blobs written yet.') + '</div>';
+    }
+
     function showDesktop(session, casCount) {
       greeterScreen.classList.add('hidden');
       desktopScreen.classList.remove('hidden');
+      desktopScreen.className = 'screen theme-' + (session.desktop || 'sectium-desktop');
+
       const d = DESKTOPS.find((x) => x.id === session.desktop) || DESKTOPS[0];
       document.getElementById('active-desktop-title').textContent = d.name;
       document.getElementById('active-greeter-tag').textContent = session.greeter;
-      document.getElementById('session-cas-pill').textContent = 'v11 CAS (' + casCount + ' blobs · ' + (session.casHit ? 'HIT' : session.bootMs + 'ms') + ')';
-      infoPane.innerHTML =
-        '<p><strong>Active Desktop:</strong> ' + d.name + '</p>' +
-        '<p><strong>Projection URI:</strong> <code>' + session.projectUri + '</code></p>' +
-        '<p><strong>v11 Blob:</strong> <code>' + session.blobPath + '</code></p>' +
-        '<p><strong>Boot Time:</strong> ' + session.bootMs + ' ms (' + (session.casHit ? 'warm SharedWorker CAS hit' : 'hydrated into v11') + ')</p>' +
-        '<hr style="border:0;border-top:1px solid rgba(148,163,184,0.2);margin:14px 0" />' +
-        '<p>This session is shared across browser tabs via <code>SharedWorker</code> running live <code>B8G_ABI_MAGIC_V3 (0x33564742)</code> WebAssembly.</p>' +
-        '<p style="margin-top:8px">Try running <code>wasm-check</code>, <code>holo-pm status</code>, or <code>uname -a</code> in the left terminal.</p>';
-      termOut.textContent = 'Booted ' + d.name + ' via wasi-host-web SharedWorker (' + session.bootMs + ' ms).\nType "help" or "wasm-check".\n\n';
+      document.getElementById('session-cas-pill').textContent =
+        'OPFS v11 (' + casCount + ' blobs · ' + (session.casHit ? 'HIT' : session.bootMs + 'ms') + ')';
+
+      // Auto-load B8G WebGPU Emukit in the Sectium Browser window if still blank
+      if (!browserFrame.src || browserFrame.src === 'about:blank') {
+        browserFrame.src = '/emukit.html';
+      }
+
+      // Position windows cleanly for current viewport
+      const stageW = window.innerWidth;
+      const winTerm = document.getElementById('win-term');
+      const winBrowser = document.getElementById('win-browser');
+      if (stageW >= 960) {
+        const half = Math.floor((stageW - 48) / 2);
+        winTerm.style.left = '16px'; winTerm.style.top = '16px';
+        winTerm.style.width = half + 'px'; winTerm.style.height = 'calc(100% - 96px)';
+        winBrowser.style.left = (half + 32) + 'px'; winBrowser.style.top = '16px';
+        winBrowser.style.width = half + 'px'; winBrowser.style.height = 'calc(100% - 96px)';
+      }
+
+      termOut.textContent =
+        'Booted ' + d.name + ' via wasi-host-web SharedWorker (' + session.bootMs + ' ms).\n' +
+        'Projection: ' + session.projectUri + '\n' +
+        'OPFS Blob:  ' + session.blobPath.slice(0, 48) + '...\n' +
+        'Type "help", "wasm-check", or "holo-pm status".\n\n';
       termIn.focus();
+      refreshOpfsExplorer();
     }
 
     document.getElementById('launch-btn').onclick = () => {
