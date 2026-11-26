@@ -18,7 +18,7 @@ describe('awesome-os/desktop — Unified Cross-Platform OS Foundation', () => {
     assert.equal(m.schema, 'awesome-os-desktop-manifest-v1');
     assert.equal(m.abiMagic, '0x33564742');
     assert.equal(m.casLayout, 'v11');
-    assert.equal(m.desktops.length, 5);
+    assert.equal(m.desktops.length, 7);
     assert.equal(m.greeters.length, 3);
     assert.deepEqual(m.devices?.localities, ['local', 'remote']);
     assert.deepEqual(m.devices?.surfaces, ['terminal', 'desktop']);

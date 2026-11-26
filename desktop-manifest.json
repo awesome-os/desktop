@@ -67,6 +67,40 @@
       "casProjectionBytes": 0
     },
     {
+      "id": "gnome-wayland",
+      "name": "GNOME Wayland (Debloated)",
+      "summary": "Wayland-only Mutter + GNOME Shell (Xorg/Tracker/Evolution excluded, GDM/Software remapped to Awesome-OS)",
+      "projectUri": "project://coreutils/gnome?from=repository://github.com/awesome-os/desktop@main",
+      "runtime": "coreutils",
+      "compositor": "mutter-wayland",
+      "surface": "desktop",
+      "defaultGreeter": "lumi-chromatic-greeter",
+      "exclude": ["xorg-server", "gnome-software", "tracker-miner-fs", "evolution-data-server", "epiphany"],
+      "remap": {
+        "gdm": "awesome-os/desktop#greeter",
+        "gnome-software": "awesome-os/holo-pm",
+        "epiphany": "awesome-os/sectium-browser"
+      },
+      "casProjectionBytes": 0
+    },
+    {
+      "id": "kde-plasma",
+      "name": "KDE Plasma Wayland (Debloated)",
+      "summary": "Wayland-only KWin + Plasma + shared Qt6 v11 CAS (Xorg/Baloo/Akonadi/Discover excluded & remapped)",
+      "projectUri": "project://coreutils/kde-plasma?from=repository://github.com/awesome-os/desktop@main",
+      "runtime": "coreutils",
+      "compositor": "kwin-wayland",
+      "surface": "desktop",
+      "defaultGreeter": "lumi-chromatic-greeter",
+      "exclude": ["xorg-server", "baloo", "discover", "akonadi", "drkonqi"],
+      "remap": {
+        "sddm": "awesome-os/desktop#greeter",
+        "discover": "awesome-os/holo-pm",
+        "display": "holo-display-qt"
+      },
+      "casProjectionBytes": 0
+    },
+    {
       "id": "kitty-ink-tui",
       "name": "Kitty-Ink Terminal",
       "summary": "Zero-GPU ANSI / Serial / SSH Terminal Device Surface",
