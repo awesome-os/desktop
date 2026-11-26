@@ -2,6 +2,26 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+export type DeviceLocality = 'local' | 'remote';
+export type DeviceSurface = 'terminal' | 'desktop';
+
+export interface DeviceEndpoint {
+  readonly locality: DeviceLocality;
+  readonly host: string;
+  readonly surface: DeviceSurface;
+  readonly systemUri: string;
+  readonly remoteDeployable: boolean;
+}
+
+export interface BootFoundation {
+  readonly init: string;
+  readonly limineConfig: string;
+  readonly systemDefinition: string;
+  readonly netbootIpxe: string;
+  readonly hypervLauncher: string;
+  readonly qemuLauncher: string;
+}
+
 export interface DesktopEntry {
   readonly id: string;
   readonly name: string;
@@ -9,6 +29,7 @@ export interface DesktopEntry {
   readonly projectUri: string;
   readonly runtime: string;
   readonly compositor: string;
+  readonly surface?: DeviceSurface;
   readonly defaultGreeter: string;
   readonly casProjectionBytes: number;
 }
@@ -27,6 +48,16 @@ export interface DesktopManifest {
   readonly casLayout: 'v11';
   readonly defaultDesktop: string;
   readonly defaultGreeter: string;
+  readonly boot?: BootFoundation;
+  readonly devices?: {
+    readonly localities: readonly DeviceLocality[];
+    readonly surfaces: readonly DeviceSurface[];
+    readonly management: {
+      readonly protocol: 'system://';
+      readonly transports: readonly string[];
+      readonly remoteDeployable: boolean;
+    };
+  };
   readonly desktops: readonly DesktopEntry[];
   readonly greeters: readonly GreeterEntry[];
 }
@@ -34,6 +65,7 @@ export interface DesktopManifest {
 export interface LaunchPlan {
   readonly desktop: DesktopEntry;
   readonly greeter: GreeterEntry;
+  readonly device: DeviceEndpoint;
   readonly command: string;
   readonly abiMagic: string;
   readonly casLayout: string;
@@ -84,6 +116,21 @@ export function resolveGreeter(
   return greeter;
 }
 
+export function resolveDeviceSession(
+  locality: DeviceLocality,
+  surface: DeviceSurface,
+  targetId: string,
+  host: string = locality === 'local' ? 'local' : 'remote',
+): DeviceEndpoint {
+  return {
+    locality,
+    host,
+    surface,
+    systemUri: `system://${host}/${surface}/${targetId}`,
+    remoteDeployable: true,
+  };
+}
+
 export function buildLaunchCommand(
   desktopId: string,
   greeterId?: string,
@@ -98,15 +145,20 @@ export function buildLaunchCommand(
 export function createLaunchPlan(
   desktopId: string,
   greeterId?: string,
+  locality: DeviceLocality = 'local',
+  host?: string,
   manifest: DesktopManifest = loadDesktopManifest(),
 ): LaunchPlan {
   const desktop = resolveDesktop(desktopId, manifest);
   const effectiveGreeterId = greeterId ?? desktop.defaultGreeter ?? manifest.defaultGreeter;
   const greeter = resolveGreeter(effectiveGreeterId, manifest);
+  const surface: DeviceSurface = desktop.surface ?? (desktop.id === 'kitty-ink-tui' ? 'terminal' : 'desktop');
+  const device = resolveDeviceSession(locality, surface, desktop.id, host);
   return {
     desktop,
     greeter,
-    command: `holo-project "${desktop.projectUri}" --greeter=${greeter.id}`,
+    device,
+    command: `holo-project "${desktop.projectUri}" --greeter=${greeter.id} --device=${device.systemUri}`,
     abiMagic: manifest.abiMagic,
     casLayout: manifest.casLayout,
   };

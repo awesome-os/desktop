@@ -4,6 +4,23 @@
   "casLayout": "v11",
   "defaultDesktop": "sectium-desktop",
   "defaultGreeter": "lumi-chromatic-greeter",
+  "boot": {
+    "init": "./boot/src/init.c",
+    "limineConfig": "./boot/config/limine.conf",
+    "systemDefinition": "./boot/config/system.json",
+    "netbootIpxe": "./boot/netboot/boot.ipxe",
+    "hypervLauncher": "./boot/scripts/run-hyperv.ps1",
+    "qemuLauncher": "./boot/scripts/run-qemu.ps1"
+  },
+  "devices": {
+    "localities": ["local", "remote"],
+    "surfaces": ["terminal", "desktop"],
+    "management": {
+      "protocol": "system://",
+      "transports": ["pipe", "unix-socket", "mtls-tcp", "web-sw-opfs"],
+      "remoteDeployable": true
+    }
+  },
   "desktops": [
     {
       "id": "sectium-desktop",
@@ -12,36 +29,51 @@
       "projectUri": "project://node/sectium-desktop?from=repository://github.com/awesome-os/sectium-browser@main",
       "runtime": "node",
       "compositor": "sectium-canvas",
+      "surface": "desktop",
       "defaultGreeter": "lumi-chromatic-greeter",
       "casProjectionBytes": 0
     },
     {
       "id": "omarchy-hyprland",
       "name": "Omarchy Hyprland",
-      "summary": "Omarchy Hyprland/Wayland",
-      "projectUri": "project://coreutils/omarchy?from=repository://github.com/awesome-os/t2desktop-omarchy@main",
+      "summary": "Omarchy Hyprland/Wayland BSP Tiling + 25 Cascading Themes",
+      "projectUri": "project://coreutils/omarchy?from=repository://github.com/awesome-os/desktop-omarchy@main",
       "runtime": "coreutils",
       "compositor": "hyprland-wayland",
+      "surface": "desktop",
       "defaultGreeter": "lumi-chromatic-greeter",
       "casProjectionBytes": 0
     },
     {
       "id": "noctalia-shell",
       "name": "Noctalia Shell",
-      "summary": "Noctalia Shell / Quickshell",
-      "projectUri": "project://coreutils/noctalia?from=repository://github.com/awesome-os/t2desktop-noctalia@main",
+      "summary": "Noctalia C++23 Native Wayland Shell & Miller Explorer",
+      "projectUri": "project://coreutils/noctalia?from=repository://github.com/awesome-os/noctalia@main",
       "runtime": "coreutils",
-      "compositor": "quickshell-wayland",
+      "compositor": "noctalia-wayland",
+      "surface": "desktop",
+      "defaultGreeter": "lumi-chromatic-greeter",
+      "casProjectionBytes": 0
+    },
+    {
+      "id": "chonkstep-wayland",
+      "name": "ChonkStep Wayland",
+      "summary": "Smithay 0.7.0 Floating Wayland (BeOS / OS2 / System7 / Modern)",
+      "projectUri": "project://coreutils/chonkstep?from=repository://github.com/awesome-os/desktop@main",
+      "runtime": "coreutils",
+      "compositor": "smithay-wayland",
+      "surface": "desktop",
       "defaultGreeter": "lumi-chromatic-greeter",
       "casProjectionBytes": 0
     },
     {
       "id": "kitty-ink-tui",
-      "name": "Kitty-Ink TUI",
-      "summary": "Headless Kitty-Ink DevOps TUI",
-      "projectUri": "project://node/kitty-ink?from=repository://github.com/awesome-os/awesome-os@main",
+      "name": "Kitty-Ink Terminal",
+      "summary": "Zero-GPU ANSI / Serial / SSH Terminal Device Surface",
+      "projectUri": "project://node/kitty-ink?from=repository://github.com/awesome-os/desktop@main",
       "runtime": "node",
       "compositor": "kitty-ink-ansi",
+      "surface": "terminal",
       "defaultGreeter": "tty-ink-greeter",
       "casProjectionBytes": 0
     }
@@ -57,7 +89,7 @@
     {
       "id": "tty-ink-greeter",
       "name": "TTY-Ink Greeter",
-      "summary": "Zero-GPU Kitty-Ink / ANSI Terminal Greeter",
+      "summary": "Zero-GPU Kitty-Ink / ANSI Terminal Greeter (tty0 + ttyS0)",
       "mode": "tty-ansi"
     },
     {

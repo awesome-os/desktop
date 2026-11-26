@@ -1,0 +1,38 @@
+{
+  "schema": "awesome-os.system-definition.v1",
+  "abiMagic": "0x33564742",
+  "systemUri": "system://local/appliance/awesome-os-desktop",
+  "casRoot": "/var/lib/b8g/cas",
+  "v11Registry": "repository://github.com/awesome-os/holo-v11@main",
+  "devices": {
+    "local": ["terminal", "desktop"],
+    "remote": ["terminal", "desktop"]
+  },
+  "resources": [
+    {
+      "uri": "system://local/terminal/coreutils",
+      "from": "repository://github.com/awesome-os/coreutils@main",
+      "tags": ["terminal-app", "local"]
+    },
+    {
+      "uri": "system://local/desktop/wayland",
+      "from": "repository://github.com/awesome-os/desktop@main",
+      "tags": ["device", "monitor", "keyboard", "local"]
+    },
+    {
+      "uri": "system://local/desktop/omarchy?kvm=2",
+      "from": "repository://github.com/awesome-os/desktop-omarchy@main",
+      "tags": ["monitor", "keyboard", "local"]
+    },
+    {
+      "uri": "system://local/desktop/noctalia?kvm=3",
+      "from": "repository://github.com/awesome-os/noctalia@main",
+      "tags": ["monitor", "keyboard", "local"]
+    },
+    {
+      "uri": "system://local/device/holo-kvm-switch",
+      "from": "repository://github.com/awesome-os/sectium@main",
+      "tags": ["device", "monitor", "keyboard", "local"]
+    }
+  ]
+}
