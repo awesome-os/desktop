@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Awesome-OS — Sovereign Enterprise Operating System &amp; Fleet Platform</title>
+<style>
+  :root { --bg:#060a14; --s1:#0f172a; --s2:#17233b; --bd:#233554; --tx:#f8fafc; --mu:#94a3b8; --ac:#38bdf8; --ok:#34d399; --gold:#fbbf24; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:radial-gradient(circle at 50% -10%,#172554 0%,var(--bg) 55%); color:var(--tx); }
+  header { display:flex; justify-content:space-between; align-items:center; padding:18px 32px; border-bottom:1px solid var(--bd); background:rgba(6,10,20,.88); backdrop-filter:blur(12px); position:sticky; top:0; z-index:10; }
+  .brand { font-weight:800; font-size:18px; letter-spacing:.4px; color:#fff; text-decoration:none; }
+  .brand span { color:var(--ac); }
+  nav { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  nav a { color:var(--tx); text-decoration:none; font-size:13px; font-weight:600; padding:8px 14px; border-radius:999px; border:1px solid transparent; }
+  nav a:hover { border-color:var(--bd); background:var(--s1); }
+  nav a.cta { background:#2563eb; border-color:#3b82f6; color:#fff; }
+  main { max-width:1200px; margin:0 auto; padding:64px 24px 96px; }
+  .hero { text-align:center; max-width:860px; margin:0 auto 56px; }
+  .kicker { display:inline-block; font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--ok); background:rgba(52,211,153,.12); border:1px solid rgba(52,211,153,.35); padding:5px 14px; border-radius:999px; }
+  h1 { font-size:clamp(36px,6vw,60px); line-height:1.06; margin:18px 0 18px; letter-spacing:-.5px; }
+  .hero p { font-size:19px; color:var(--mu); line-height:1.6; margin:0 0 28px; }
+  .cta-row { display:flex; justify-content:center; gap:14px; flex-wrap:wrap; }
+  .btn { text-decoration:none; padding:13px 24px; border-radius:12px; font-weight:700; font-size:15px; border:1px solid var(--bd); color:#fff; background:var(--s1); }
+  .btn.primary { background:linear-gradient(135deg,#2563eb,#0ea5e9); border-color:#38bdf8; }
+  .metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:16px; margin-bottom:56px; }
+  .m { background:var(--s1); border:1px solid var(--bd); border-radius:16px; padding:22px; text-align:center; }
+  .m .v { font-size:34px; font-weight:800; color:#fff; }
+  .m .k { font-size:12px; color:var(--mu); margin-top:6px; text-transform:uppercase; letter-spacing:.6px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:18px; }
+  .card { background:var(--s1); border:1px solid var(--bd); border-radius:18px; padding:26px; }
+  .card h2 { margin:0 0 10px; font-size:19px; }
+  .card p { margin:0; font-size:14px; color:var(--mu); line-height:1.6; }
+  .split { margin-top:56px; background:linear-gradient(135deg,#0f172a,#172554); border:1px solid var(--ac); border-radius:20px; padding:36px; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:24px; }
+  .split h2 { margin:0 0 8px; font-size:26px; }
+  .split p { margin:0; color:var(--mu); max-width:620px; line-height:1.55; }
+  footer { max-width:1200px; margin:56px auto 0; padding:24px; border-top:1px solid var(--bd); color:var(--mu); font-size:13px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+  footer a { color:var(--ac); text-decoration:none; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="/">AWESOME<span>-OS</span></a>
+  <nav>
+    <a href="/cloud/">Enterprise Cloud</a>
+    <a href="https://b8g.app/">Workstations (b8g.app)</a>
+    <a href="https://b8g.dev/awesome-os/">Developers (b8g.dev)</a>
+    <a class="cta" href="/cloud/">View Enterprise Offers</a>
+  </nav>
+</header>
+<main>
+  <section class="hero">
+    <span class="kicker">Sovereign Enterprise OS &middot; Immutable v11 CAS &middot; Zero Vendor Lock-In</span>
+    <h1>One Immutable OS Platform for Workstations, Edge &amp; Rack Fleets.</h1>
+    <p>Deploy verified, zero-duplication workstations and headless servers in seconds. Built with ChromeOS-grade A/B atomic rollback, 1-click Powerwash, auditable driver governance, and <strong>7.7&times; lower memory footprint</strong>.</p>
+    <div class="cta-row">
+      <a class="btn primary" href="/cloud/">Explore Enterprise &amp; Cloud Offers</a>
+      <a class="btn" href="https://b8g.app/">Try Workstation Hub (b8g.app)</a>
+      <a class="btn" href="https://b8g.dev/awesome-os/">Developer Portal (b8g.dev)</a>
+    </div>
+  </section>
+
+  <section class="metrics">
+    <div class="m"><div class="v">7.7&times;</div><div class="k">Less RAM (587 MB IDE + Browser)</div></div>
+    <div class="m"><div class="v">0.14s</div><div class="k">Bare-Metal UEFI Boot to Desktop</div></div>
+    <div class="m"><div class="v">O(1)</div><div class="k">Verified A/B Slot Atomic Rollback</div></div>
+    <div class="m"><div class="v">0 B</div><div class="k">Duplicated Runtimes via v11 CAS</div></div>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <h2>Zero-Touch Fleet Management</h2>
+      <p>Enroll bare-metal PCs, Hyper-V/Proxmox VMs, and 19&quot; rack blades via stateless HTTPS iPXE netboot. Manage <code>local</code> &amp; <code>remote</code> <code>terminal</code> and <code>desktop</code> surfaces from one unified Host Manager.</p>
+    </div>
+    <div class="card">
+      <h2>Auditable Driver &amp; Supply Chain Governance</h2>
+      <p>Every kernel module, firmware blob, and binary is SHA-512 verified in <code>v11</code> CAS. Pin hardware to audited driver tracks (<code>pinned-v1</code>, <code>open-foss</code>, <code>proprietary</code>) with automatic A/B rollback on probe failure.</p>
+    </div>
+    <div class="card">
+      <h2>Hardware Longevity (1998–2026)</h2>
+      <p>Minimal 31 MB base OS with selectable <strong>+ Advanced Graphics</strong> (Wayland + WebGPU + default rootless <code>Xwayland</code>) — extend the lifecycle of existing corporate PC fleets without Xorg security debt.</p>
+    </div>
+  </section>
+
+  <section class="split">
+    <div>
+      <h2>Ready for Enterprise Cloud &amp; Private Fleet Deployment?</h2>
+      <p>Private <code>v11</code> CAS mirrors, custom workstation profiles (Omarchy, GNOME, KDE, Sectium, Kiosk), dedicated SLA, and on-prem 19&quot; rack netboot appliances.</p>
+    </div>
+    <a class="btn primary" href="/cloud/">See /cloud/ Enterprise Offers &rarr;</a>
+  </section>
+</main>
+<footer>
+  <div>Awesome-OS Enterprise &mdash; Sovereign BSD-3 / MIT Operating System Platform</div>
+  <div><a href="/cloud/">/cloud/</a> &middot; <a href="https://b8g.app/">b8g.app</a> &middot; <a href="https://b8g.dev/awesome-os/">b8g.dev</a> &middot; <a href="https://github.com/awesome-os">GitHub</a></div>
+</footer>
+</body>
+</html>

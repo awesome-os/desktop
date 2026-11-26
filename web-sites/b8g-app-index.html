@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>b8g.app — Awesome-OS Workstations &amp; Instant Apps</title>
+<style>
+  :root { --bg:#0b1120; --s1:#131c31; --bd:#263759; --tx:#f1f5f9; --mu:#94a3b8; --ac:#60a5fa; --ok:#34d399; --pink:#f472b6; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,sans-serif; background:radial-gradient(circle at 80% 0%,#1e1b4b 0%,var(--bg) 60%); color:var(--tx); }
+  header { display:flex; justify-content:space-between; align-items:center; padding:16px 28px; border-bottom:1px solid var(--bd); background:rgba(11,17,32,.85); backdrop-filter:blur(12px); position:sticky; top:0; }
+  .brand { font-weight:800; font-size:17px; color:#fff; text-decoration:none; letter-spacing:.2px; }
+  .brand span { color:var(--ok); }
+  nav { display:flex; gap:10px; flex-wrap:wrap; }
+  nav a { color:var(--tx); text-decoration:none; font-size:13px; padding:7px 12px; border-radius:999px; border:1px solid var(--bd); background:var(--s1); }
+  nav a:hover { border-color:var(--ok); }
+  main { max-width:1180px; margin:0 auto; padding:44px 24px 80px; }
+  .pill { display:inline-block; font-size:12px; font-weight:600; padding:4px 12px; border-radius:999px; background:rgba(52,211,153,.14); border:1px solid rgba(52,211,153,.4); color:#6ee7b7; }
+  h1 { font-size:clamp(32px,5vw,52px); margin:14px 0 14px; line-height:1.08; }
+  .lead { font-size:18px; color:var(--mu); max-width:740px; line-height:1.6; }
+  .cta-row { display:flex; flex-wrap:wrap; gap:12px; margin:26px 0 38px; }
+  .btn { text-decoration:none; padding:12px 20px; border-radius:12px; font-weight:700; font-size:14px; border:1px solid var(--bd); color:#fff; background:var(--s1); }
+  .btn.primary { background:linear-gradient(135deg,#2563eb,#0ea5e9); border-color:#38bdf8; }
+  .btn:hover { filter:brightness(1.1); }
+  h2.sec { font-size:20px; margin:34px 0 14px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; }
+  .card { background:var(--s1); border:1px solid var(--bd); border-radius:16px; padding:20px; text-decoration:none; color:inherit; display:flex; flex-direction:column; gap:8px; transition:border-color .15s,transform .15s; }
+  .card:hover { border-color:var(--ac); transform:translateY(-2px); }
+  .card h3 { margin:0; font-size:16px; }
+  .card p { margin:0; font-size:13px; color:var(--mu); line-height:1.5; }
+  .badge { font-size:11px; color:#93c5fd; font-weight:600; }
+  .install-box { background:#090e1c; border:1px solid var(--bd); border-radius:16px; padding:20px; margin-top:32px; }
+  .install-box code { display:block; font-family:var(--mono); font-size:13px; color:#6ee7b7; margin-top:8px; overflow-x:auto; }
+  footer { max-width:1180px; margin:48px auto 0; padding:20px 24px; border-top:1px solid var(--bd); color:var(--mu); font-size:12px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+  footer a { color:var(--ac); text-decoration:none; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="/">b8g<span>.app</span></a>
+  <nav>
+    <a href="/apps/desktop.html">Try Live Desktop</a>
+    <a href="/apps/vtuber.html">White Dragon VTuber</a>
+    <a href="https://b8g.dev/awesome-os/">Developers (b8g.dev)</a>
+    <a href="https://awesome-os.com/cloud/">Enterprise</a>
+  </nav>
+</header>
+<main>
+  <span class="pill">Fast &middot; Lightweight &middot; Zero Bloat &middot; Works on Any PC</span>
+  <h1>Your Workstation, Your Style — Instant &amp; Clean.</h1>
+  <p class="lead">Pick your favorite desktop look, launch pro apps with <strong>7.7&times; less RAM</strong>, and switch themes or roll back updates in one click. Built for everyday users, creators, gamers, and power users.</p>
+  <div class="cta-row">
+    <a class="btn primary" href="/apps/desktop.html">Launch Live Desktop Greeter</a>
+    <a class="btn" href="/apps/omarchy.html">Try Omarchy Hyprland</a>
+    <a class="btn" href="/apps/vtuber.html">Open White Dragon VTuber Studio</a>
+  </div>
+
+  <h2 class="sec">Pick Your Workstation Desktop</h2>
+  <section class="grid">
+    <a class="card" href="/apps/omarchy.html">
+      <span class="badge">TILING &middot; 25 THEMES</span>
+      <h3>Omarchy Hyprland</h3>
+      <p>Fast keyboard-first BSP tiling with 25 authentic themes (Tokyo Night, Catppuccin, Nord, Gruvbox, Rose Pine).</p>
+    </a>
+    <a class="card" href="/apps/noctalia.html">
+      <span class="badge">SLEEK WAYLAND</span>
+      <h3>Noctalia Shell</h3>
+      <p>Modern floating dock, pill bar, and Miller-column file explorer — crisp and distraction-free.</p>
+    </a>
+    <a class="card" href="/apps/chonkstep.html">
+      <span class="badge">RETRO-MODERN</span>
+      <h3>ChonkStep Wayland</h3>
+      <p>Classic BeOS / System7 / OS2 chunky titlebar charm running on a modern Wayland compositor.</p>
+    </a>
+    <a class="card" href="/apps/sectium.html">
+      <span class="badge">PURE ART + IDE</span>
+      <h3>Sectium Workstation</h3>
+      <p>Pure-art canvas with Sectium Browser &amp; Code-OSS running together in just 587 MB of RAM.</p>
+    </a>
+  </section>
+
+  <h2 class="sec">Creator &amp; Power-User Apps (Zero-Duplication Installs)</h2>
+  <section class="grid">
+    <a class="card" href="/apps/vtuber.html">
+      <span class="badge">3D STUDIO &middot; OBS READY</span>
+      <h3>White Dragon 3D VTuber Studio</h3>
+      <p>Chromatic 3D White Dragon with live mic lip-sync, expressions, transparent OBS mode, and scriptable rig.</p>
+    </a>
+    <a class="card" href="https://github.com/awesome-os/obs/releases" target="_blank" rel="noopener">
+      <span class="badge">STREAMING</span>
+      <h3>OBS Studio + Native Vertical Canvas</h3>
+      <p>Built-in 1-click Twitch / TikTok / Shorts / Reels multistreaming + crash-proof dock guardian.</p>
+    </a>
+    <a class="card" href="https://github.com/awesome-os/sectium-browser/releases" target="_blank" rel="noopener">
+      <span class="badge">BROWSER</span>
+      <h3>Sectium Browser</h3>
+      <p>Clean vertical tabs, zero telemetry, 110 MB RAM footprint, and pure-art New Tab.</p>
+    </a>
+    <a class="card" href="https://github.com/awesome-os/code-oss/releases" target="_blank" rel="noopener">
+      <span class="badge">EDITOR</span>
+      <h3>Awesome-OS Code - OSS</h3>
+      <p>Telemetry-free MIT editor sharing one runtime with Sectium Browser — zero bloated duplicate Electron copies.</p>
+    </a>
+  </section>
+
+  <div class="install-box">
+    <strong>1-Line Install on Windows, Linux, or macOS</strong>
+    <code>Windows (PowerShell): irm https://awesome-os.com/install.ps1 | iex</code>
+    <code>Linux / macOS:        curl -fsSL https://awesome-os.com/install.sh | sh</code>
+  </div>
+</main>
+<footer>
+  <div>b8g.app &mdash; Awesome-OS Workstation &amp; Apps Hub</div>
+  <div><a href="https://b8g.dev/awesome-os/">b8g.dev (Developers)</a> &middot; <a href="https://awesome-os.com/">awesome-os.com (Enterprise)</a></div>
+</footer>
+</body>
+</html>

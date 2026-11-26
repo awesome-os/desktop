@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>b8g.dev — Awesome-OS Developer &amp; Systems Engineering Portal</title>
+<style>
+  :root { --bg:#090d16; --s1:#111827; --s2:#1e293b; --bd:#263554; --tx:#e6eefc; --mu:#94a3b8; --ac:#38bdf8; --ok:#34d399; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,sans-serif; background:radial-gradient(circle at 20% 0%,#172554 0%,var(--bg) 60%); color:var(--tx); }
+  header { display:flex; justify-content:space-between; align-items:center; padding:16px 28px; border-bottom:1px solid var(--bd); background:rgba(9,13,22,.85); backdrop-filter:blur(12px); position:sticky; top:0; }
+  .brand { font-family:var(--mono); font-weight:800; font-size:16px; color:#fff; text-decoration:none; }
+  .brand span { color:var(--ac); }
+  nav { display:flex; gap:10px; flex-wrap:wrap; }
+  nav a { color:var(--tx); text-decoration:none; font-size:13px; padding:7px 12px; border-radius:999px; border:1px solid var(--bd); background:var(--s1); }
+  nav a:hover { border-color:var(--ac); }
+  main { max-width:1180px; margin:0 auto; padding:42px 24px 80px; }
+  .eyebrow { font-family:var(--mono); font-size:12px; color:var(--ok); letter-spacing:.8px; text-transform:uppercase; }
+  h1 { font-size:clamp(30px,5vw,48px); margin:10px 0 14px; line-height:1.1; }
+  .lead { font-size:17px; color:var(--mu); max-width:780px; line-height:1.6; }
+  .cmd { font-family:var(--mono); font-size:13px; background:#060911; border:1px solid var(--bd); border-radius:12px; padding:14px 18px; margin:22px 0 32px; color:#7dd3fc; overflow-x:auto; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; }
+  .card { background:var(--s1); border:1px solid var(--bd); border-radius:16px; padding:20px; display:flex; flex-direction:column; gap:10px; text-decoration:none; color:inherit; transition:border-color .15s,transform .15s; }
+  .card:hover { border-color:var(--ac); transform:translateY(-2px); }
+  .tag { display:inline-block; width:fit-content; font-family:var(--mono); font-size:11px; padding:3px 8px; border-radius:999px; background:rgba(56,189,248,.14); color:#7dd3fc; border:1px solid rgba(56,189,248,.35); }
+  .card h2 { margin:0; font-size:17px; }
+  .card p { margin:0; font-size:13px; color:var(--mu); line-height:1.5; }
+  footer { max-width:1180px; margin:48px auto 0; padding:20px 24px; border-top:1px solid var(--bd); color:var(--mu); font-size:12px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+  footer a { color:var(--ac); text-decoration:none; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="/">b8g<span>.dev</span> / awesome-os</a>
+  <nav>
+    <a href="/awesome-os/">Awesome-OS Dev Home</a>
+    <a href="/awesome-os/apps/host-manager.html">Host Manager</a>
+    <a href="/awesome-os/apps/gitlab.html">GitLab Holo</a>
+    <a href="https://b8g.app/">Workstation Users (b8g.app)</a>
+    <a href="https://awesome-os.com/cloud/">Enterprise Cloud</a>
+  </nav>
+</header>
+<main>
+  <div class="eyebrow">B8G_ABI_MAGIC_V3 (0x33564742) &middot; v11 CAS &middot; Zero-X11 Engineering</div>
+  <h1>Build, Cross-Compile &amp; Inspect Awesome-OS</h1>
+  <p class="lead">The developer &amp; systems engineering portal for <code>holo-compiler</code>, <code>awesome-os/desktop</code>, <code>awesome-os/posix</code>, <code>awesome-os/t2linux-baseline</code> (6,947-package radar), and <code>awesome-os/host-manager</code>.</p>
+  <div class="cmd">curl -fsSL https://awesome-os.com/install.sh | sh &nbsp;&nbsp;# Linux / macOS &nbsp;|&nbsp; irm https://awesome-os.com/install.ps1 | iex &nbsp;&nbsp;# Windows</div>
+
+  <section class="grid">
+    <a class="card" href="/awesome-os/">
+      <span class="tag">CORE LAB</span>
+      <h2>Awesome-OS Dev Portal</h2>
+      <p>Full migrated developer home, interactive microkernel docs, EmuKit (x64 / RISC-V / PPC), and direct OPFS v11 CAS Service Worker.</p>
+    </a>
+    <a class="card" href="/awesome-os/apps/host-manager.html">
+      <span class="tag">FLEET &amp; DRIVERS</span>
+      <h2>Host Manager Control Plane</h2>
+      <p>ChromeOS/Fuchsia-grade ZTE, A/B verified slots, 1-click Powerwash, <code>modalias</code> v11 driver hydrator, and auditable <code>system://driver-set/*</code> tracks.</p>
+    </a>
+    <a class="card" href="/awesome-os/apps/gitlab.html">
+      <span class="tag">FORGE</span>
+      <h2>Dismantled GitLab Holo API</h2>
+      <p>Zero Rails/Postgres/Redis — full Git Smart-HTTP + <code>/api/v4/*</code> served directly from OPFS v11 CAS.</p>
+    </a>
+    <a class="card" href="/awesome-os/apps/rack.html">
+      <span class="tag">INFRA</span>
+      <h2>19&quot; Server Rack &amp; Virtual KVM</h2>
+      <p>Multi-host blade telemetry, serial <code>ttyS0</code> consoles, and zero-duplication KVM switching.</p>
+    </a>
+    <a class="card" href="https://github.com/awesome-os/t2linux-baseline" target="_blank" rel="noopener">
+      <span class="tag">6,947 PACKAGES</span>
+      <h2>T2Linux Baseline &amp; v11 Universe</h2>
+      <p>Real upstream T2 SDE tooling + 5,070 clean <code>CROSS</code> packages, 885 frozen <code>packages-legacy</code>, and Linux FHS materialization guide.</p>
+    </a>
+    <a class="card" href="https://github.com/awesome-os/desktop/blob/main/docs/WHY-NO-X11.md" target="_blank" rel="noopener">
+      <span class="tag">ARCHITECTURE</span>
+      <h2>Why X11 Is Never Needed</h2>
+      <p>5-tier display ladder from 2026 WebGPU/Wayland down to 1998 <code>/dev/fb0</code> and 1978 VT100 — plus selectable <code>+ Advanced Graphics</code> with default rootless <code>Xwayland</code>.</p>
+    </a>
+  </section>
+</main>
+<footer>
+  <div>b8g.dev &mdash; Developer &amp; Systems Engineering Portal</div>
+  <div><a href="https://b8g.app/">b8g.app (Workstation Users)</a> &middot; <a href="https://awesome-os.com/">awesome-os.com (Enterprise)</a> &middot; <a href="https://github.com/awesome-os">GitHub</a></div>
+</footer>
+</body>
+</html>
