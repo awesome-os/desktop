@@ -1,112 +1,93 @@
 /**
- * Awesome-OS Zero-Asset Procedural 3D VTuber Rig (Three.js)
- * ---------------------------------------------------------
+ * Awesome-OS Zero-Asset Procedural 3D White Dragon VTuber Rig (Three.js)
+ * ----------------------------------------------------------------------
  * 100% procedural geometry + CanvasTexture (zero .glb / .vrm / .png assets).
- * Edit CHARACTER_PRESETS below to restyle or script your own VTuber character!
+ * Edit CHARACTER_PRESETS below to customize your White Dragon VTuber!
  */
 
 export const CHARACTER_PRESETS = {
-  lumi: {
-    name: 'Lumi Chromatic',
-    skin: '#ffe0c8',
-    blush: '#ff8da1',
-    hairPrimary: '#38bdf8',
-    hairAccent: '#818cf8',
-    eyeIris: '#34d399',
-    eyeHighlight: '#ffffff',
-    outfitPrimary: '#1e293b',
-    outfitTrim: '#38bdf8',
-    scarfColor: '#f43f5e',
-    dragonPrimary: '#f8fafc',
-    dragonAccent: '#38bdf8',
-    headphones: true,
-    catEars: true,
-    haloRing: true,
-  },
-  omarchy: {
-    name: 'Omarchy Cyber',
-    skin: '#fde2cf',
-    blush: '#f7768e',
-    hairPrimary: '#7aa2f7',
-    hairAccent: '#bb9af7',
-    eyeIris: '#9ece6a',
-    eyeHighlight: '#ffffff',
-    outfitPrimary: '#1a1b26',
-    outfitTrim: '#7aa2f7',
-    scarfColor: '#e0af68',
-    dragonPrimary: '#c0caf5',
-    dragonAccent: '#bb9af7',
-    headphones: true,
-    catEars: false,
-    haloRing: true,
-  },
-  dragon: {
-    name: 'White Dragon Spirit',
-    skin: '#fff1e6',
+  whiteDragon: {
+    name: 'White Dragon (Lumi)',
+    scales: '#f8fafc',
+    belly: '#dbeafe',
+    accent: '#38bdf8',
+    wingMembrane: '#7dd3fc',
+    horn: '#f59e0b',
+    eyeIris: '#10b981',
     blush: '#fda4af',
-    hairPrimary: '#f8fafc',
-    hairAccent: '#60a5fa',
-    eyeIris: '#f59e0b',
-    eyeHighlight: '#ffffff',
-    outfitPrimary: '#0f172a',
-    outfitTrim: '#34d399',
-    scarfColor: '#38bdf8',
-    dragonPrimary: '#ffffff',
-    dragonAccent: '#34d399',
-    headphones: false,
-    catEars: true,
+    scarf: '#0ea5e9',
     haloRing: true,
+    headphones: false,
+  },
+  cyberDragon: {
+    name: 'Omarchy Cyber Dragon',
+    scales: '#e2e8f0',
+    belly: '#c7d2fe',
+    accent: '#818cf8',
+    wingMembrane: '#a78bfa',
+    horn: '#38bdf8',
+    eyeIris: '#34d399',
+    blush: '#f472b6',
+    scarf: '#1e1b4b',
+    haloRing: true,
+    headphones: true,
+  },
+  goldDragon: {
+    name: 'Celestial Gold Dragon',
+    scales: '#fffbeb',
+    belly: '#fef3c7',
+    accent: '#f59e0b',
+    wingMembrane: '#fcd34d',
+    horn: '#d97706',
+    eyeIris: '#06b6d4',
+    blush: '#fb7185',
+    scarf: '#b45309',
+    haloRing: true,
+    headphones: false,
   },
 };
 
-/** Procedural CanvasTexture for glossy anime eyes (zero .png assets) */
-function createEyeTexture(THREE, irisHex, highlightHex) {
+/** Procedural CanvasTexture for glossy expressive dragon eyes (zero .png assets) */
+function createDragonEyeTexture(THREE, irisHex) {
   const c = document.createElement('canvas');
   c.width = 256;
   c.height = 256;
   const ctx = c.getContext('2d');
 
-  // Sclera
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, 256, 256);
 
-  // Upper eyelid soft shadow
-  const shadow = ctx.createLinearGradient(0, 0, 0, 120);
-  shadow.addColorStop(0, 'rgba(30,41,59,0.28)');
-  shadow.addColorStop(1, 'rgba(30,41,59,0)');
-  ctx.fillStyle = shadow;
-  ctx.fillRect(0, 0, 256, 120);
+  // Soft upper eyelid shadow
+  const sh = ctx.createLinearGradient(0, 0, 0, 110);
+  sh.addColorStop(0, 'rgba(15,23,42,0.28)');
+  sh.addColorStop(1, 'rgba(15,23,42,0)');
+  ctx.fillStyle = sh;
+  ctx.fillRect(0, 0, 256, 110);
 
-  // Outer iris gradient
-  const grad = ctx.createRadialGradient(128, 134, 18, 128, 128, 86);
-  grad.addColorStop(0, '#0f172a');
-  grad.addColorStop(0.35, irisHex);
-  grad.addColorStop(0.82, irisHex);
-  grad.addColorStop(1, '#0b101b');
+  // Luminous dragon iris
+  const grad = ctx.createRadialGradient(128, 134, 16, 128, 130, 88);
+  grad.addColorStop(0, '#ecfdf5');
+  grad.addColorStop(0.42, irisHex);
+  grad.addColorStop(0.85, irisHex);
+  grad.addColorStop(1, '#0f172a');
   ctx.fillStyle = grad;
   ctx.beginPath();
-  ctx.ellipse(128, 132, 74, 86, 0, 0, Math.PI * 2);
+  ctx.ellipse(128, 132, 76, 86, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Inner bright crescent
-  ctx.fillStyle = 'rgba(255,255,255,0.28)';
-  ctx.beginPath();
-  ctx.arc(128, 166, 42, 0.15 * Math.PI, 0.85 * Math.PI);
-  ctx.fill();
-
-  // Pupil
+  // Friendly vertical dragon slit pupil (rounded, cute!)
   ctx.fillStyle = '#090d16';
   ctx.beginPath();
-  ctx.ellipse(128, 130, 28, 34, 0, 0, Math.PI * 2);
+  ctx.ellipse(128, 132, 22, 54, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Specular anime highlights
-  ctx.fillStyle = highlightHex;
+  // Bright anime sparkle highlights
+  ctx.fillStyle = '#ffffff';
   ctx.beginPath();
-  ctx.arc(102, 98, 20, 0, Math.PI * 2);
+  ctx.arc(98, 96, 22, 0, Math.PI * 2);
   ctx.fill();
   ctx.beginPath();
-  ctx.arc(154, 152, 9, 0, Math.PI * 2);
+  ctx.arc(156, 156, 10, 0, Math.PI * 2);
   ctx.fill();
 
   const tex = new THREE.CanvasTexture(c);
@@ -114,406 +95,372 @@ function createEyeTexture(THREE, irisHex, highlightHex) {
   return tex;
 }
 
-/** Procedural CanvasTexture for subtle stylized jacket/outfit fabric */
-function createOutfitTexture(THREE, primaryHex, trimHex) {
+/** Procedural CanvasTexture for subtle pearl dragon scales */
+function createScaleTexture(THREE, baseHex, accentHex) {
   const c = document.createElement('canvas');
   c.width = 256;
   c.height = 256;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = primaryHex;
+  ctx.fillStyle = baseHex;
   ctx.fillRect(0, 0, 256, 256);
 
-  // Subtle diagonal weave + center zipper trim
-  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.strokeStyle = 'rgba(148,163,184,0.16)';
   ctx.lineWidth = 2;
-  for (let i = -256; i < 512; i += 14) {
-    ctx.beginPath();
-    ctx.moveTo(i, 0);
-    ctx.lineTo(i + 256, 256);
-    ctx.stroke();
+  const r = 20;
+  for (let row = 0; row < 16; row++) {
+    for (let col = -1; col < 10; col++) {
+      const x = col * r * 1.6 + (row % 2 ? r * 0.8 : 0);
+      const y = row * r * 0.9;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI);
+      ctx.stroke();
+    }
   }
-  ctx.fillStyle = trimHex;
-  ctx.fillRect(122, 0, 12, 256);
+  // Subtle iridescent shimmer band
+  const shimmer = ctx.createLinearGradient(0, 0, 256, 256);
+  shimmer.addColorStop(0, 'rgba(255,255,255,0.08)');
+  shimmer.addColorStop(0.5, accentHex + '14');
+  shimmer.addColorStop(1, 'rgba(255,255,255,0.06)');
+  ctx.fillStyle = shimmer;
+  ctx.fillRect(0, 0, 256, 256);
 
   const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(2, 2);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
 
-/** Build the complete zero-asset procedural VTuber rig + orbiting White Dragon companion */
-export function buildVtuberRig(THREE, preset = CHARACTER_PRESETS.lumi) {
+/** Build the Hero Procedural White Dragon VTuber Rig */
+export function buildVtuberRig(THREE, preset = CHARACTER_PRESETS.whiteDragon) {
   const root = new THREE.Group();
 
-  const matSkin = new THREE.MeshStandardMaterial({ color: preset.skin, roughness: 0.45, metalness: 0.02 });
+  const scaleTex = createScaleTexture(THREE, preset.scales, preset.accent);
+  const matScales = new THREE.MeshPhysicalMaterial({
+    map: scaleTex,
+    color: preset.scales,
+    roughness: 0.22,
+    metalness: 0.08,
+    clearcoat: 0.75,
+    clearcoatRoughness: 0.14,
+    iridescence: 0.95,
+    iridescenceIOR: 1.38,
+    iridescenceThicknessRange: [140, 680],
+  });
+  const matBelly = new THREE.MeshPhysicalMaterial({
+    color: preset.belly,
+    roughness: 0.30,
+    metalness: 0.04,
+    iridescence: 0.55,
+    iridescenceIOR: 1.3,
+  });
+  const matHorn = new THREE.MeshPhysicalMaterial({
+    color: preset.horn,
+    roughness: 0.20,
+    metalness: 0.65,
+    clearcoat: 0.8,
+    iridescence: 0.6,
+  });
+  const matAccent = new THREE.MeshPhysicalMaterial({
+    color: preset.accent,
+    emissive: preset.accent,
+    emissiveIntensity: 0.55,
+    roughness: 0.16,
+    metalness: 0.25,
+    iridescence: 1.0,
+    iridescenceIOR: 1.45,
+    iridescenceThicknessRange: [180, 760],
+  });
+  const matWing = new THREE.MeshPhysicalMaterial({
+    color: preset.wingMembrane,
+    emissive: preset.accent,
+    emissiveIntensity: 0.26,
+    roughness: 0.18,
+    metalness: 0.12,
+    clearcoat: 0.9,
+    iridescence: 1.0,
+    iridescenceIOR: 1.5,
+    iridescenceThicknessRange: [120, 820],
+    transparent: true,
+    opacity: 0.88,
+    side: THREE.DoubleSide,
+  });
   const matBlush = new THREE.MeshStandardMaterial({
     color: preset.blush,
-    roughness: 0.6,
     transparent: true,
     opacity: 0.42,
+    roughness: 0.6,
   });
-  const matHair = new THREE.MeshStandardMaterial({ color: preset.hairPrimary, roughness: 0.32, metalness: 0.12 });
-  const matHairAccent = new THREE.MeshStandardMaterial({
-    color: preset.hairAccent,
-    roughness: 0.25,
-    metalness: 0.2,
-    emissive: preset.hairAccent,
-    emissiveIntensity: 0.12,
-  });
-  const matOutfit = new THREE.MeshStandardMaterial({
-    map: createOutfitTexture(THREE, preset.outfitPrimary, preset.outfitTrim),
-    roughness: 0.55,
-    metalness: 0.08,
-  });
-  const matTrim = new THREE.MeshStandardMaterial({
-    color: preset.outfitTrim,
-    roughness: 0.22,
-    metalness: 0.35,
-    emissive: preset.outfitTrim,
-    emissiveIntensity: 0.25,
-  });
-  const matScarf = new THREE.MeshStandardMaterial({ color: preset.scarfColor, roughness: 0.5 });
+  const matMouth = new THREE.MeshStandardMaterial({ color: '#9f1239', roughness: 0.45 });
+  const matTongue = new THREE.MeshStandardMaterial({ color: '#fb7185', roughness: 0.4 });
+  const matScarf = new THREE.MeshStandardMaterial({ color: preset.scarf, roughness: 0.45 });
 
-  // 1. Torso (LatheGeometry silhouette — zero .glb!)
+  // 1. Dragon Torso & Ribbed Belly Plates
   const bodyGroup = new THREE.Group();
   root.add(bodyGroup);
 
   const torsoPts = [
     new THREE.Vector2(0.0, 0.0),
-    new THREE.Vector2(0.56, 0.02),
-    new THREE.Vector2(0.46, 0.55),
-    new THREE.Vector2(0.36, 1.05),
-    new THREE.Vector2(0.44, 1.38),
-    new THREE.Vector2(0.22, 1.54),
-    new THREE.Vector2(0.0, 1.56),
+    new THREE.Vector2(0.66, 0.06),
+    new THREE.Vector2(0.62, 0.55),
+    new THREE.Vector2(0.50, 1.05),
+    new THREE.Vector2(0.46, 1.42),
+    new THREE.Vector2(0.28, 1.60),
+    new THREE.Vector2(0.0, 1.62),
   ];
-  const torso = new THREE.Mesh(new THREE.LatheGeometry(torsoPts, 32), matOutfit);
+  const torso = new THREE.Mesh(new THREE.LatheGeometry(torsoPts, 32), matScales);
+  torso.scale.set(1.0, 1.0, 0.92);
   torso.castShadow = true;
   torso.receiveShadow = true;
   bodyGroup.add(torso);
 
-  // Glowing tech collar / scarf
-  const scarf = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.095, 16, 36), matScarf);
+  // Ribbed dragon belly plates
+  for (let i = 0; i < 6; i++) {
+    const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.36 - i * 0.015, 0.38 - i * 0.015, 0.14, 20, 1, false, -0.7, 1.4), matBelly);
+    plate.position.set(0, 0.34 + i * 0.18, 0.19);
+    plate.scale.set(1.0, 0.85, 1.0);
+    bodyGroup.add(plate);
+  }
+
+  // Stylish VTuber tech scarf around base of neck
+  const scarf = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.08, 14, 36), matScarf);
   scarf.rotation.x = Math.PI / 2;
-  scarf.position.y = 1.48;
-  scarf.castShadow = true;
+  scarf.position.y = 1.50;
   bodyGroup.add(scarf);
 
-  const collarGlow = new THREE.Mesh(new THREE.TorusGeometry(0.38, 0.025, 12, 36), matTrim);
-  collarGlow.rotation.x = Math.PI / 2;
-  collarGlow.position.y = 1.41;
-  bodyGroup.add(collarGlow);
-
-  // Arms (TubeGeometry along smooth CatmullRomCurve3)
-  function makeArm(side) {
+  // Expressive Dragon Forepaws (Arms)
+  function makePaw(side) {
     const g = new THREE.Group();
-    g.position.set(side * 0.44, 1.36, 0);
-    const curve = new THREE.CatmullRomCurve3([
+    g.position.set(side * 0.52, 1.24, 0.16);
+    const armCurve = new THREE.CatmullRomCurve3([
       new THREE.Vector3(0, 0, 0),
-      new THREE.Vector3(side * 0.22, -0.35, 0.06),
-      new THREE.Vector3(side * 0.16, -0.78, 0.16),
+      new THREE.Vector3(side * 0.24, -0.26, 0.14),
+      new THREE.Vector3(side * 0.16, -0.58, 0.30),
     ]);
-    const armMesh = new THREE.Mesh(new THREE.TubeGeometry(curve, 20, 0.11, 14, false), matOutfit);
-    armMesh.castShadow = true;
-    g.add(armMesh);
-    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.115, 16, 16), matSkin);
-    hand.position.set(side * 0.16, -0.82, 0.18);
-    g.add(hand);
+    const arm = new THREE.Mesh(new THREE.TubeGeometry(armCurve, 18, 0.125, 14, false), matScales);
+    arm.castShadow = true;
+    g.add(arm);
+
+    const paw = new THREE.Mesh(new THREE.SphereGeometry(0.145, 16, 16), matScales);
+    paw.scale.set(1.0, 0.85, 1.15);
+    paw.position.set(side * 0.16, -0.60, 0.34);
+    g.add(paw);
+
+    // 3 cute rounded claws
+    for (let c = -1; c <= 1; c++) {
+      const claw = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.09, 8), matHorn);
+      claw.rotation.x = Math.PI / 2.2;
+      claw.position.set(side * 0.16 + c * 0.055, -0.63, 0.48);
+      g.add(claw);
+    }
     return g;
   }
-  const leftArm = makeArm(-1);
-  const rightArm = makeArm(1);
+  const leftArm = makePaw(-1);
+  const rightArm = makePaw(1);
   bodyGroup.add(leftArm, rightArm);
 
-  // Neck
-  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 0.34, 20), matSkin);
-  neck.position.y = 1.66;
+  // 2. Majestic Scalloped Dragon Wings (pivoted cleanly at the upper back!)
+  const wingShape = new THREE.Shape();
+  wingShape.moveTo(0, 0);
+  wingShape.quadraticCurveTo(0.48, 0.72, 1.28, 0.78);
+  wingShape.quadraticCurveTo(1.06, 0.30, 1.16, -0.08);
+  wingShape.quadraticCurveTo(0.80, 0.10, 0.74, -0.28);
+  wingShape.quadraticCurveTo(0.42, -0.06, 0.26, -0.34);
+  wingShape.closePath();
+  const wingGeo = new THREE.ExtrudeGeometry(wingShape, {
+    depth: 0.032,
+    bevelEnabled: true,
+    bevelThickness: 0.012,
+    bevelSize: 0.012,
+    bevelSegments: 2,
+  });
+
+  const wings = [];
+  for (const side of [-1, 1]) {
+    const pivot = new THREE.Group();
+    pivot.position.set(side * 0.34, 1.38, -0.34);
+    const mesh = new THREE.Mesh(wingGeo, matWing);
+    if (side === -1) mesh.scale.x = -1;
+    mesh.rotation.y = side * -0.38;
+    mesh.castShadow = true;
+    pivot.add(mesh);
+
+    // Leading-edge wing spar (white dragon bone)
+    const sparCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0.02, 0.01),
+      new THREE.Vector3(side * 0.54, 0.56, -0.18),
+      new THREE.Vector3(side * 1.22, 0.74, -0.44),
+    ]);
+    const spar = new THREE.Mesh(new THREE.TubeGeometry(sparCurve, 16, 0.048, 10, false), matScales);
+    pivot.add(spar);
+
+    bodyGroup.add(pivot);
+    wings.push(pivot);
+  }
+
+  // Graceful Dragon Tail curving behind the body
+  const tailCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 0.25, -0.44),
+    new THREE.Vector3(-0.35, 0.12, -0.92),
+    new THREE.Vector3(-0.92, 0.30, -0.78),
+    new THREE.Vector3(-1.26, 0.62, -0.36),
+  ]);
+  const tailMesh = new THREE.Mesh(new THREE.TubeGeometry(tailCurve, 28, 0.12, 12, false), matScales);
+  bodyGroup.add(tailMesh);
+
+  // Graceful Dragon Neck + Glowing Dorsal Crest
+  const neckCurve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0, 1.44, -0.02),
+    new THREE.Vector3(0, 1.72, -0.06),
+    new THREE.Vector3(0, 1.98, 0.02),
+  ]);
+  const neck = new THREE.Mesh(new THREE.TubeGeometry(neckCurve, 16, 0.22, 18, false), matScales);
   bodyGroup.add(neck);
 
-  // 2. Head Group (pivot at neck for natural VTuber tracking!)
+  // 3. Sculpted Friendly White Dragon Head (pivot at top of neck!)
   const headGroup = new THREE.Group();
-  headGroup.position.set(0, 1.84, 0);
+  headGroup.position.set(0, 2.02, 0.04);
   bodyGroup.add(headGroup);
 
-  // Sculpted stylized anime head (slightly tapered chin)
-  const headGeo = new THREE.SphereGeometry(0.62, 36, 36);
-  const pos = headGeo.attributes.position;
-  for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i);
-    const y = pos.getY(i);
-    const z = pos.getZ(i);
-    const chinTaper = y < 0 ? 1.0 + y * 0.22 : 1.0;
-    const cheekPull = y < 0 && z > 0 ? 1.03 : 1.0;
-    pos.setXYZ(i, x * chinTaper * cheekPull, y * 1.06, z * 0.96);
-  }
-  headGeo.computeVertexNormals();
-  const headMesh = new THREE.Mesh(headGeo, matSkin);
-  headMesh.position.y = 0.42;
-  headMesh.castShadow = true;
-  headGroup.add(headMesh);
+  // Cranium (friendly rounded dome)
+  const cranium = new THREE.Mesh(new THREE.SphereGeometry(0.54, 32, 32), matScales);
+  cranium.scale.set(1.04, 0.96, 1.08);
+  cranium.position.set(0, 0.34, -0.02);
+  cranium.castShadow = true;
+  headGroup.add(cranium);
 
-  // Blush cheeks
+  // Sculpted Upper Snout (rounded, friendly dragon muzzle!)
+  const snout = new THREE.Mesh(new THREE.SphereGeometry(0.35, 28, 24), matScales);
+  snout.scale.set(1.02, 0.72, 1.38);
+  snout.position.set(0, 0.22, 0.46);
+  snout.castShadow = true;
+  headGroup.add(snout);
+
+  // Cute dragon nostrils
   for (const side of [-1, 1]) {
-    const blush = new THREE.Mesh(new THREE.CircleGeometry(0.12, 20), matBlush);
-    blush.position.set(side * 0.32, 0.30, 0.53);
-    blush.rotation.y = side * 0.38;
+    const nostril = new THREE.Mesh(new THREE.SphereGeometry(0.032, 10, 10), matAccent);
+    nostril.scale.set(0.8, 0.6, 1.2);
+    nostril.position.set(side * 0.13, 0.29, 0.86);
+    headGroup.add(nostril);
+
+    // Rosy cheek blush
+    const blush = new THREE.Mesh(new THREE.CircleGeometry(0.11, 18), matBlush);
+    blush.position.set(side * 0.38, 0.18, 0.42);
+    blush.rotation.y = side * 0.65;
     headGroup.add(blush);
   }
 
-  // Expressive Eyes (CanvasTexture + blink scaling + pupil look-at!)
-  const eyeTex = createEyeTexture(THREE, preset.eyeIris, preset.eyeHighlight);
-  const matEye = new THREE.MeshStandardMaterial({ map: eyeTex, roughness: 0.15, metalness: 0.05 });
-  const matBrow = new THREE.MeshStandardMaterial({ color: preset.hairPrimary, roughness: 0.4 });
+  // Articulated Lower Jaw (pivots smoothly with microphone lip-sync!)
+  const jawPivot = new THREE.Group();
+  jawPivot.position.set(0, 0.10, 0.14);
+  headGroup.add(jawPivot);
 
-  function makeEye(side) {
-    const eyePivot = new THREE.Group();
-    eyePivot.position.set(side * 0.22, 0.44, 0.50);
-    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.135, 24, 24), matEye);
-    ball.scale.set(1.0, 1.12, 0.65);
+  const lowerJaw = new THREE.Mesh(new THREE.SphereGeometry(0.30, 24, 20), matBelly);
+  lowerJaw.scale.set(0.94, 0.46, 1.38);
+  lowerJaw.position.set(0, -0.04, 0.30);
+  jawPivot.add(lowerJaw);
+
+  const mouthCavity = new THREE.Mesh(new THREE.SphereGeometry(0.24, 18, 14), matMouth);
+  mouthCavity.scale.set(0.92, 0.35, 1.15);
+  mouthCavity.position.set(0, 0.03, 0.28);
+  jawPivot.add(mouthCavity);
+
+  const tongue = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 12), matTongue);
+  tongue.scale.set(0.9, 0.28, 1.25);
+  tongue.position.set(0, 0.02, 0.34);
+  jawPivot.add(tongue);
+
+  // Large Expressive Glossy Anime Dragon Eyes
+  const eyeTex = createDragonEyeTexture(THREE, preset.eyeIris);
+  const matEye = new THREE.MeshStandardMaterial({ map: eyeTex, roughness: 0.12, metalness: 0.05 });
+
+  function makeDragonEye(side) {
+    const pivot = new THREE.Group();
+    pivot.position.set(side * 0.31, 0.44, 0.42);
+    pivot.rotation.y = side * 0.36;
+
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.155, 24, 24), matEye);
+    ball.scale.set(1.0, 1.14, 0.72);
     ball.rotation.y = -Math.PI / 2;
-    eyePivot.add(ball);
+    pivot.add(ball);
 
-    const lash = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.022, 10, 24, Math.PI * 0.85), matOutfit);
-    lash.position.set(0, 0.03, 0.05);
-    lash.rotation.z = Math.PI * 0.08;
-    eyePivot.add(lash);
-
-    const brow = new THREE.Mesh(new THREE.CapsuleGeometry(0.022, 0.14, 6, 12), matBrow);
-    brow.rotation.z = Math.PI / 2 - side * 0.12;
-    brow.position.set(side * 0.01, 0.21, 0.04);
-    eyePivot.add(brow);
-    return { eyePivot, ball, brow };
+    const brow = new THREE.Mesh(new THREE.CapsuleGeometry(0.038, 0.22, 8, 12), matScales);
+    brow.rotation.z = Math.PI / 2 - side * 0.18;
+    brow.position.set(0, 0.21, 0.04);
+    pivot.add(brow);
+    return { pivot, brow };
   }
-  const leftEye = makeEye(-1);
-  const rightEye = makeEye(1);
-  headGroup.add(leftEye.eyePivot, rightEye.eyePivot);
+  const leftEye = makeDragonEye(-1);
+  const rightEye = makeDragonEye(1);
+  headGroup.add(leftEye.pivot, rightEye.pivot);
 
-  // Cute tiny nose
-  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.09, 12), matSkin);
-  nose.rotation.x = Math.PI / 2.2;
-  nose.position.set(0, 0.34, 0.60);
-  headGroup.add(nose);
-
-  // Lip-sync animated Mouth
-  const mouthGroup = new THREE.Group();
-  mouthGroup.position.set(0, 0.18, 0.55);
-  const mouthInner = new THREE.Mesh(
-    new THREE.SphereGeometry(0.09, 18, 18),
-    new THREE.MeshStandardMaterial({ color: '#9f1239', roughness: 0.4 }),
-  );
-  mouthInner.scale.set(1.25, 0.22, 0.45);
-  mouthGroup.add(mouthInner);
-  headGroup.add(mouthGroup);
-
-  // Procedural Layered Anime Hair (back cap + curved TubeGeometry bangs + twin side locks!)
-  const hairGroup = new THREE.Group();
-  hairGroup.position.y = 0.44;
-  headGroup.add(hairGroup);
-
-  const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.665, 32, 32, 0, Math.PI * 2, 0, Math.PI * 0.68), matHair);
-  hairCap.rotation.x = -0.22;
-  hairCap.castShadow = true;
-  hairGroup.add(hairCap);
-
-  // Flowing front bangs & side locks via CatmullRomCurve3
-  const bangSpecs = [
-    { x: -0.34, z: 0.46, drop: -0.36, r: 0.10, accent: false },
-    { x: -0.14, z: 0.56, drop: -0.24, r: 0.095, accent: true },
-    { x: 0.08, z: 0.58, drop: -0.28, r: 0.10, accent: false },
-    { x: 0.30, z: 0.48, drop: -0.34, r: 0.095, accent: true },
-    { x: -0.58, z: 0.14, drop: -0.78, r: 0.125, accent: false },
-    { x: 0.58, z: 0.14, drop: -0.78, r: 0.125, accent: false },
-  ];
-  for (const b of bangSpecs) {
-    const curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(b.x * 0.55, 0.56, b.z * 0.45),
-      new THREE.Vector3(b.x, 0.26, b.z),
-      new THREE.Vector3(b.x * 1.06, b.drop, b.z * 0.92),
+  // Majestic Swept-Back Curved Golden Dragon Horns + Ear Frills!
+  for (const side of [-1, 1]) {
+    const hornCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(side * 0.24, 0.72, 0.02),
+      new THREE.Vector3(side * 0.42, 1.06, -0.32),
+      new THREE.Vector3(side * 0.56, 1.22, -0.78),
     ]);
-    const strand = new THREE.Mesh(
-      new THREE.TubeGeometry(curve, 18, b.r, 12, false),
-      b.accent ? matHairAccent : matHair,
-    );
-    strand.castShadow = true;
-    hairGroup.add(strand);
-  }
+    const horn = new THREE.Mesh(new THREE.TubeGeometry(hornCurve, 22, 0.078, 12, false), matHorn);
+    horn.castShadow = true;
+    headGroup.add(horn);
 
-  // Ahoge (bouncy top hair strand!)
-  const ahogeCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0, 0.62, 0.05),
-    new THREE.Vector3(0.08, 0.88, 0.12),
-    new THREE.Vector3(0.24, 0.92, 0.02),
-  ]);
-  const ahoge = new THREE.Mesh(new THREE.TubeGeometry(ahogeCurve, 14, 0.045, 10, false), matHairAccent);
-  hairGroup.add(ahoge);
+    // Pointed horn tip
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.078, 0.22, 12), matHorn);
+    tip.position.set(side * 0.58, 1.24, -0.86);
+    tip.rotation.x = -Math.PI / 2.2;
+    tip.rotation.z = -side * 0.25;
+    headGroup.add(tip);
 
-  // Optional Cat/Fox Ears
-  if (preset.catEars) {
-    for (const side of [-1, 1]) {
-      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.42, 4), matHair);
-      ear.position.set(side * 0.38, 0.62, -0.02);
-      ear.rotation.z = -side * 0.34;
-      ear.rotation.y = side * 0.25;
-      hairGroup.add(ear);
-      const inner = new THREE.Mesh(new THREE.ConeGeometry(0.10, 0.26, 4), matBlush);
-      inner.position.set(side * 0.37, 0.60, 0.04);
-      inner.rotation.z = -side * 0.34;
-      hairGroup.add(inner);
+    // Swept crystalline ear frills (2 feathers/fins per side)
+    for (let f = 0; f < 2; f++) {
+      const frill = new THREE.Mesh(new THREE.ConeGeometry(0.085 - f * 0.015, 0.44 - f * 0.08, 6), f === 0 ? matScales : matAccent);
+      frill.position.set(side * (0.50 + f * 0.04), 0.46 - f * 0.14, -0.18 - f * 0.06);
+      frill.rotation.z = -side * (1.05 + f * 0.25);
+      frill.rotation.x = -0.45;
+      headGroup.add(frill);
     }
   }
 
-  // Optional Cyber Headphones
+  // Glowing Dorsal Crest Spikes down the back of head & neck
+  for (let i = 0; i < 4; i++) {
+    const spike = new THREE.Mesh(new THREE.ConeGeometry(0.075 - i * 0.01, 0.24 - i * 0.02, 5), matAccent);
+    spike.position.set(0, 0.78 - i * 0.22, -0.26 - i * 0.16);
+    spike.rotation.x = -0.75;
+    headGroup.add(spike);
+  }
+
+  // Optional Cyber Headphones (for Omarchy Cyber Dragon preset!)
   if (preset.headphones) {
-    const band = new THREE.Mesh(new THREE.TorusGeometry(0.68, 0.045, 12, 36, Math.PI), matOutfit);
-    band.position.y = 0.08;
-    hairGroup.add(band);
+    const band = new THREE.Mesh(new THREE.TorusGeometry(0.58, 0.04, 12, 32, Math.PI), matScarf);
+    band.position.set(0, 0.42, -0.02);
+    headGroup.add(band);
     for (const side of [-1, 1]) {
-      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.12, 24), matOutfit);
+      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.10, 20), matScarf);
       cup.rotation.z = Math.PI / 2;
-      cup.position.set(side * 0.67, -0.02, 0.02);
-      hairGroup.add(cup);
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.024, 10, 24), matTrim);
-      ring.rotation.y = Math.PI / 2;
-      ring.position.set(side * 0.73, -0.02, 0.02);
-      hairGroup.add(ring);
+      cup.position.set(side * 0.56, 0.36, -0.02);
+      headGroup.add(cup);
     }
   }
 
-  // Floating Chromatic Halo Ring
+  // Floating Chromatic Halo + Orbiting Lumi Crystal Star
   let halo = null;
   if (preset.haloRing) {
-    halo = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.024, 14, 48), matTrim);
+    halo = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.024, 14, 48), matAccent);
     halo.rotation.x = Math.PI / 2.2;
-    halo.position.set(0, 1.05, -0.14);
-    hairGroup.add(halo);
+    halo.position.set(0, 1.38, -0.18);
+    headGroup.add(halo);
   }
 
-  // 3. Orbiting Procedural Chibi White Dragon Companion (sculpted head, horns, eyes, dorsal ridge, scalloped wings!)
-  const dragonOrbit = new THREE.Group();
-  dragonOrbit.position.set(0, 2.25, 0);
-  root.add(dragonOrbit);
+  const orbOrbit = new THREE.Group();
+  orbOrbit.position.set(0, 2.3, 0);
+  root.add(orbOrbit);
+  const lumiOrb = new THREE.Mesh(new THREE.OctahedronGeometry(0.11, 0), matAccent);
+  lumiOrb.position.set(1.38, 0.1, 0.3);
+  orbOrbit.add(lumiOrb);
 
-  const dragonGroup = new THREE.Group();
-  dragonGroup.position.set(1.42, 0.12, 0.25);
-  dragonGroup.rotation.y = -0.35;
-  dragonOrbit.add(dragonGroup);
-
-  const matDragon = new THREE.MeshStandardMaterial({ color: preset.dragonPrimary, roughness: 0.28, metalness: 0.08 });
-  const matDragonBelly = new THREE.MeshStandardMaterial({ color: '#e0f2fe', roughness: 0.4 });
-  const matDragonGlow = new THREE.MeshStandardMaterial({
-    color: preset.dragonAccent,
-    emissive: preset.dragonAccent,
-    emissiveIntensity: 0.48,
-    roughness: 0.22,
-    side: THREE.DoubleSide,
-  });
-  const matDragonHorn = new THREE.MeshStandardMaterial({ color: '#fbbf24', roughness: 0.25, metalness: 0.55 });
-  const matDragonEye = new THREE.MeshStandardMaterial({
-    color: '#10b981',
-    emissive: '#34d399',
-    emissiveIntensity: 0.9,
-    roughness: 0.1,
-  });
-
-  // Plump chibi torso + tapering serpentine tail
-  const dragonTorso = new THREE.Mesh(new THREE.SphereGeometry(0.14, 20, 16), matDragon);
-  dragonTorso.scale.set(0.95, 0.88, 1.35);
-  dragonGroup.add(dragonTorso);
-
-  const dragonBelly = new THREE.Mesh(new THREE.SphereGeometry(0.115, 16, 14), matDragonBelly);
-  dragonBelly.scale.set(0.85, 0.72, 1.15);
-  dragonBelly.position.set(0, -0.045, 0.02);
-  dragonGroup.add(dragonBelly);
-
-  // Tapering tail segments + spade tip
-  const tailSegs = [
-    { z: -0.20, y: -0.02, r: 0.085 },
-    { z: -0.32, y: -0.05, r: 0.062 },
-    { z: -0.43, y: -0.03, r: 0.044 },
-    { z: -0.53, y: 0.02, r: 0.030 },
-  ];
-  for (const seg of tailSegs) {
-    const s = new THREE.Mesh(new THREE.SphereGeometry(seg.r, 12, 12), matDragon);
-    s.position.set(0, seg.y, seg.z);
-    dragonGroup.add(s);
-    const fin = new THREE.Mesh(new THREE.ConeGeometry(seg.r * 0.45, seg.r * 1.4, 4), matDragonGlow);
-    fin.position.set(0, seg.y + seg.r * 1.1, seg.z);
-    fin.rotation.x = -0.35;
-    dragonGroup.add(fin);
-  }
-  // Glowing diamond tail spade
-  const spadeShape = new THREE.Shape();
-  spadeShape.moveTo(0, 0);
-  spadeShape.lineTo(0.07, 0.06);
-  spadeShape.lineTo(0, 0.16);
-  spadeShape.lineTo(-0.07, 0.06);
-  spadeShape.closePath();
-  const tailSpade = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(spadeShape, { depth: 0.015, bevelEnabled: false }),
-    matDragonGlow,
-  );
-  tailSpade.rotation.x = Math.PI / 2;
-  tailSpade.position.set(0, 0.03, -0.55);
-  dragonGroup.add(tailSpade);
-
-  // Cute sculpted dragon head (cranium + snout + glowing eyes + swept-back golden horns!)
-  const dHead = new THREE.Group();
-  dHead.position.set(0, 0.10, 0.22);
-  dragonGroup.add(dHead);
-
-  const cranium = new THREE.Mesh(new THREE.SphereGeometry(0.125, 20, 18), matDragon);
-  cranium.scale.set(1.0, 0.92, 1.05);
-  dHead.add(cranium);
-
-  const snout = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.075, 0.14), matDragon);
-  snout.position.set(0, -0.02, 0.12);
-  dHead.add(snout);
-
-  for (const side of [-1, 1]) {
-    // Glowing emerald dragon eyes
-    const dEye = new THREE.Mesh(new THREE.SphereGeometry(0.028, 12, 12), matDragonEye);
-    dEye.position.set(side * 0.078, 0.025, 0.095);
-    dHead.add(dEye);
-
-    // Swept-back golden dragon horns
-    const hornCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(side * 0.055, 0.085, -0.01),
-      new THREE.Vector3(side * 0.11, 0.17, -0.10),
-      new THREE.Vector3(side * 0.15, 0.22, -0.22),
-    ]);
-    const horn = new THREE.Mesh(new THREE.TubeGeometry(hornCurve, 12, 0.018, 8, false), matDragonHorn);
-    dHead.add(horn);
-
-    // Cute side cheek fins
-    const earFin = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.10, 4), matDragonGlow);
-    earFin.position.set(side * 0.12, -0.01, -0.03);
-    earFin.rotation.z = -side * 1.1;
-    earFin.rotation.x = -0.4;
-    dHead.add(earFin);
-  }
-
-  // Real scalloped dragon wings (ExtrudeGeometry pivoted at shoulders!)
-  const wingShape = new THREE.Shape();
-  wingShape.moveTo(0, 0);
-  wingShape.quadraticCurveTo(0.16, 0.22, 0.38, 0.20);
-  wingShape.quadraticCurveTo(0.32, 0.08, 0.34, -0.04);
-  wingShape.quadraticCurveTo(0.24, 0.02, 0.20, -0.09);
-  wingShape.quadraticCurveTo(0.12, -0.02, 0.06, -0.10);
-  wingShape.closePath();
-  const wingGeo = new THREE.ExtrudeGeometry(wingShape, { depth: 0.016, bevelEnabled: true, bevelThickness: 0.005, bevelSize: 0.005, bevelSegments: 2 });
-
-  const dragonWings = [];
-  for (const side of [-1, 1]) {
-    const wingPivot = new THREE.Group();
-    wingPivot.position.set(side * 0.11, 0.07, 0.01);
-    const wingMesh = new THREE.Mesh(wingGeo, matDragonGlow);
-    if (side === -1) wingMesh.scale.x = -1;
-    wingMesh.rotation.y = side * -0.25;
-    wingPivot.add(wingMesh);
-    dragonGroup.add(wingPivot);
-    dragonWings.push(wingPivot);
-  }
-
-  // Rig state for smooth spring physics & live scripting
+  // Rig state & animation
   const state = {
     expression: 'neutral',
     targetYaw: 0,
@@ -525,39 +472,44 @@ export function buildVtuberRig(THREE, preset = CHARACTER_PRESETS.lumi) {
     blinkAmount: 0,
     waveTimer: 0,
     bounceTimer: 0,
-    dragonSpeed: 0.75,
+    dragonSpeed: 0.9,
   };
 
   function update(dt, elapsed) {
-    // Smooth spring tracking
     state.curYaw += (state.targetYaw - state.curYaw) * Math.min(1, dt * 8);
     state.curPitch += (state.targetPitch - state.curPitch) * Math.min(1, dt * 8);
 
-    // Idle breathing + optional bounce script
-    const breath = Math.sin(elapsed * 2.2) * 0.025;
-    const bounce = state.bounceTimer > 0 ? Math.abs(Math.sin(state.bounceTimer * 12)) * 0.18 : 0;
+    const breath = Math.sin(elapsed * 2.1) * 0.03;
+    const bounce = state.bounceTimer > 0 ? Math.abs(Math.sin(state.bounceTimer * 12)) * 0.22 : 0;
     if (state.bounceTimer > 0) state.bounceTimer = Math.max(0, state.bounceTimer - dt);
 
     bodyGroup.position.y = breath + bounce;
-    bodyGroup.rotation.y = state.curYaw * 0.35;
-    bodyGroup.rotation.z = -state.curYaw * 0.08 + Math.sin(elapsed * 1.4) * 0.02;
+    bodyGroup.rotation.y = state.curYaw * 0.32;
+    bodyGroup.rotation.z = -state.curYaw * 0.06 + Math.sin(elapsed * 1.4) * 0.02;
 
     headGroup.rotation.y = state.curYaw * 0.65;
-    headGroup.rotation.x = state.curPitch * 0.55 + Math.sin(elapsed * 2.2 - 0.5) * 0.03;
-    headGroup.rotation.z = -state.curYaw * 0.14;
+    headGroup.rotation.x = state.curPitch * 0.48 + Math.sin(elapsed * 2.1 - 0.5) * 0.025;
+    headGroup.rotation.z = -state.curYaw * 0.12;
 
-    // Ahoge & halo bounce
-    ahoge.rotation.z = Math.sin(elapsed * 4.5) * 0.08 - state.curYaw * 0.15;
+    // Wing breathing + hype flap!
+    const wingSpeed = state.expression === 'hype' || state.bounceTimer > 0 ? 10.0 : 2.1;
+    const wingAmp = state.expression === 'hype' || state.bounceTimer > 0 ? 0.38 : 0.10;
+    const flap = Math.sin(elapsed * wingSpeed) * wingAmp;
+    wings[0].rotation.y = 0.22 + flap;
+    wings[1].rotation.y = -0.22 - flap;
+    wings[0].rotation.z = -flap * 0.4;
+    wings[1].rotation.z = flap * 0.4;
+
     if (halo) {
-      halo.rotation.z = elapsed * 0.8;
-      halo.position.y = 1.05 + Math.sin(elapsed * 3.0) * 0.03;
+      halo.rotation.z = elapsed * 0.7;
+      halo.position.y = 1.38 + Math.sin(elapsed * 2.8) * 0.03;
     }
 
-    // Wave animation
+    // Wave paw animation
     if (state.waveTimer > 0) {
       state.waveTimer = Math.max(0, state.waveTimer - dt);
-      rightArm.rotation.z = 2.1 + Math.sin(elapsed * 14) * 0.35;
-      rightArm.rotation.x = -0.3;
+      rightArm.rotation.z = 1.85 + Math.sin(elapsed * 14) * 0.35;
+      rightArm.rotation.x = -0.35;
     } else {
       rightArm.rotation.z += (Math.sin(elapsed * 1.8) * 0.06 - rightArm.rotation.z) * Math.min(1, dt * 6);
       rightArm.rotation.x += (0 - rightArm.rotation.x) * Math.min(1, dt * 6);
@@ -573,55 +525,53 @@ export function buildVtuberRig(THREE, preset = CHARACTER_PRESETS.lumi) {
       state.blinkAmount = Math.max(0, state.blinkAmount - dt * 9);
     }
 
-    // Expression modifiers
-    let lEyeScaleY = 1.0 - state.blinkAmount * 0.92;
-    let rEyeScaleY = 1.0 - state.blinkAmount * 0.92;
-    let mouthW = 1.25;
-    let mouthH = 0.18 + state.mouthOpen * 1.15;
+    // Expressions + Articulated Dragon Jaw Lip-Sync!
+    let lEyeY = 1.0 - state.blinkAmount * 0.92;
+    let rEyeY = 1.0 - state.blinkAmount * 0.92;
+    let jawRot = 0.04 + state.mouthOpen * 0.46;
     let browLift = 0;
 
     if (state.expression === 'happy') {
-      lEyeScaleY = 0.25;
-      rEyeScaleY = 0.25;
-      mouthW = 1.65;
-      mouthH = Math.max(0.55, mouthH);
+      lEyeY = 0.26;
+      rEyeY = 0.26;
+      jawRot = Math.max(0.24, jawRot);
       browLift = 0.04;
     } else if (state.expression === 'pog') {
-      lEyeScaleY = 1.2;
-      rEyeScaleY = 1.2;
-      mouthW = 0.95;
-      mouthH = Math.max(1.25, mouthH);
+      lEyeY = 1.22;
+      rEyeY = 1.22;
+      jawRot = Math.max(0.45, jawRot);
       browLift = 0.08;
     } else if (state.expression === 'wink') {
-      rEyeScaleY = 0.15;
-      mouthW = 1.45;
+      rEyeY = 0.16;
+      jawRot = Math.max(0.14, jawRot);
       browLift = 0.03;
     } else if (state.expression === 'sleepy') {
-      lEyeScaleY = 0.38;
-      rEyeScaleY = 0.38;
-      mouthW = 0.85;
+      lEyeY = 0.36;
+      rEyeY = 0.36;
       browLift = -0.04;
     } else if (state.expression === 'hype') {
-      lEyeScaleY = 1.18;
-      rEyeScaleY = 1.18;
-      mouthW = 1.8;
-      mouthH = Math.max(0.85, mouthH);
+      lEyeY = 1.20;
+      rEyeY = 1.20;
+      jawRot = Math.max(0.36, jawRot);
       browLift = 0.07;
     }
 
-    leftEye.eyePivot.scale.y = Math.max(0.08, lEyeScaleY);
-    rightEye.eyePivot.scale.y = Math.max(0.08, rEyeScaleY);
+    leftEye.pivot.scale.y = Math.max(0.08, lEyeY);
+    rightEye.pivot.scale.y = Math.max(0.08, rEyeY);
     leftEye.brow.position.y = 0.21 + browLift;
     rightEye.brow.position.y = 0.21 + browLift;
+    jawPivot.rotation.x = jawRot;
 
-    mouthInner.scale.set(mouthW, mouthH, 0.45);
+    // Orbiting Lumi crystal + smooth chromatic shimmer on crest, halo & wings!
+    const hue = (elapsed * 0.14) % 1.0;
+    matAccent.emissive.setHSL(hue, 0.85, 0.56);
+    matAccent.color.setHSL((hue + 0.08) % 1.0, 0.82, 0.66);
+    matWing.emissive.setHSL((hue + 0.15) % 1.0, 0.78, 0.52);
 
-    // Orbiting White Dragon companion (smooth shoulder-pivoted wing flap)
-    dragonOrbit.rotation.y = elapsed * state.dragonSpeed;
-    dragonGroup.position.y = 0.12 + Math.sin(elapsed * 3.5) * 0.16;
-    const flap = Math.sin(elapsed * 10) * 0.52;
-    dragonWings[0].rotation.z = -flap;
-    dragonWings[1].rotation.z = flap;
+    orbOrbit.rotation.y = elapsed * state.dragonSpeed;
+    lumiOrb.rotation.y = elapsed * 2.2;
+    lumiOrb.rotation.x = elapsed * 1.4;
+    lumiOrb.position.y = 0.1 + Math.sin(elapsed * 3.2) * 0.14;
   }
 
   return {

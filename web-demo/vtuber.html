@@ -51,14 +51,14 @@
 </head>
 <body>
 <aside class="hud">
-  <h1>Lumi 3D VTuber Studio <span class="pill">0 Assets</span></h1>
-  <div class="hint">100% procedural Three.js (<code>vtuber-rig.mjs</code>). Move mouse to track head/eyes. Keys <b>1-6</b> expressions, <b>W</b> wave, <b>Space</b> bounce.</div>
+  <h1>White Dragon VTuber Studio <span class="pill">0 Assets</span></h1>
+  <div class="hint">100% procedural 3D White Dragon (<code>vtuber-rig.mjs</code>). Move mouse to track head/eyes. Keys <b>1-6</b> expressions, <b>W</b> wave paw, <b>Space</b> wing-flap bounce.</div>
 
-  <div class="sec-title">Character Preset</div>
+  <div class="sec-title">Dragon Preset</div>
   <div class="row" id="presets">
-    <button class="active" data-preset="lumi">Lumi</button>
-    <button data-preset="omarchy">Omarchy</button>
-    <button data-preset="dragon">White Dragon</button>
+    <button class="active" data-preset="whiteDragon">White Dragon</button>
+    <button data-preset="cyberDragon">Cyber Omarchy</button>
+    <button data-preset="goldDragon">Celestial Gold</button>
   </div>
 
   <div class="sec-title">Expressions (Hotkeys 1–6)</div>
@@ -99,7 +99,7 @@ rig.setDragonSpeed(2.2);</textarea>
 <script type="module">
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { buildVtuberRig, CHARACTER_PRESETS } from './vtuber-rig.mjs?v=2';
+import { buildVtuberRig, CHARACTER_PRESETS } from './vtuber-rig.mjs?v=3';
 
 const params = new URLSearchParams(location.search);
 if (params.get('obs') === '1') document.body.classList.add('obs-clean');
@@ -118,9 +118,9 @@ const scene = new THREE.Scene();
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 
-const camera = new THREE.PerspectiveCamera(34, window.innerWidth / window.innerHeight, 0.1, 50);
-camera.position.set(0, 2.05, 4.4);
-camera.lookAt(0, 1.85, 0);
+const camera = new THREE.PerspectiveCamera(36, window.innerWidth / window.innerHeight, 0.1, 50);
+camera.position.set(0, 2.25, 5.2);
+camera.lookAt(0, 1.95, 0);
 
 // Warm Pixar-style key + cool rim + soft bounce lighting
 const keyLight = new THREE.DirectionalLight(0xfff4e0, 2.2);
@@ -138,11 +138,11 @@ scene.add(hemi);
 let rig = null;
 function loadPreset(key) {
   if (rig) scene.remove(rig.root);
-  rig = buildVtuberRig(THREE, CHARACTER_PRESETS[key] || CHARACTER_PRESETS.lumi);
+  rig = buildVtuberRig(THREE, CHARACTER_PRESETS[key] || CHARACTER_PRESETS.whiteDragon);
   scene.add(rig.root);
   window.rig = rig.api;
 }
-loadPreset(params.get('preset') || 'lumi');
+loadPreset(params.get('preset') || 'whiteDragon');
 
 function setBg(mode) {
   document.body.classList.remove('bg-transparent', 'bg-chroma');
