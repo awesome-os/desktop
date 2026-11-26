@@ -26,11 +26,27 @@ static int g_tty0_fd = -1;
 static int g_ttyS0_fd = -1;
 
 static void open_consoles(void) {
+    struct stat st_out, st_tmp;
+    int have_out = (fstat(STDOUT_FILENO, &st_out) == 0);
     if (g_tty0_fd < 0) {
-        g_tty0_fd = open("/dev/tty0", O_WRONLY | O_NOCTTY | O_NONBLOCK);
+        int fd = open("/dev/tty0", O_WRONLY | O_NOCTTY | O_NONBLOCK);
+        if (fd >= 0) {
+            if (have_out && fstat(fd, &st_tmp) == 0 && st_tmp.st_rdev == st_out.st_rdev) {
+                close(fd);
+            } else {
+                g_tty0_fd = fd;
+            }
+        }
     }
     if (g_ttyS0_fd < 0) {
-        g_ttyS0_fd = open("/dev/ttyS0", O_WRONLY | O_NOCTTY | O_NONBLOCK);
+        int fd = open("/dev/ttyS0", O_WRONLY | O_NOCTTY | O_NONBLOCK);
+        if (fd >= 0) {
+            if (have_out && fstat(fd, &st_tmp) == 0 && st_tmp.st_rdev == st_out.st_rdev) {
+                close(fd);
+            } else {
+                g_ttyS0_fd = fd;
+            }
+        }
     }
 }
 
@@ -372,6 +388,15 @@ int main(void) {
     sa.sa_handler = reap_zombies;
     sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
     (void)sigaction(SIGCHLD, &sa, NULL);
+
+    /* Launch graphical Lumi bootscreen -> Omarchy/Noctalia/ChonkStep/Sectium desktop on /dev/fb0 */
+    if (!cmdline_has_token("awesome.nogui=1") &&
+        access("/dev/fb0", R_OK | W_OK) == 0 &&
+        access("/bin/awesome-desktop-fb", X_OK) == 0) {
+        log_both("[AWESOME-OS] Starting graphical desktop on /dev/fb0 (Press [5] or [ESC] for shell)\n");
+        char *const fb_argv[] = {"/bin/awesome-desktop-fb", NULL};
+        (void)run_wait(fb_argv);
+    }
 
     /* Spawn interactive terminal devices on both local VGA (tty0) and serial (ttyS0) */
     pid_t tty0_pid = spawn_terminal_on("/dev/tty0");

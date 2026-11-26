@@ -28,12 +28,13 @@ jobs:
             e2fsprogs parted zstd busybox-static musl-tools ca-certificates \
             jq curl cpio
 
-      - name: Compile static musl PID 1 (/init)
+      - name: Compile static musl PID 1 (/init) & Graphical Desktop (/bin/awesome-desktop-fb)
         run: |
           mkdir -p dist build
           musl-gcc -march=x86-64 -static -Os -s -Wall -Wextra -Werror boot/src/init.c -o dist/init-x86_64
-          file dist/init-x86_64
-          ls -lh dist/init-x86_64
+          musl-gcc -march=x86-64 -static -Os -s -Wall -Wextra -Werror boot/src/fb_desktop.c -o dist/awesome-desktop-fb-x86_64
+          file dist/init-x86_64 dist/awesome-desktop-fb-x86_64
+          ls -lh dist/init-x86_64 dist/awesome-desktop-fb-x86_64
 
       - name: Build initramfs-x86_64.cpio.zst
         run: |
@@ -43,6 +44,8 @@ jobs:
 
           cp dist/init-x86_64 "$ROOTFS/init"
           chmod 755 "$ROOTFS/init"
+          cp dist/awesome-desktop-fb-x86_64 "$ROOTFS/bin/awesome-desktop-fb"
+          chmod 755 "$ROOTFS/bin/awesome-desktop-fb"
           cp boot/config/system.json "$ROOTFS/etc/awesome-os/system.json"
 
           cp /bin/busybox "$ROOTFS/bin/busybox"
