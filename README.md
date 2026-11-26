@@ -28,8 +28,28 @@ Every host (bare-metal PC, Hyper-V/QEMU VM, Proxmox blade, Windows/macOS/Linux w
    - **Omarchy Hyprland** (`awesome-os/desktop-omarchy`)
    - **Noctalia Shell** (`awesome-os/noctalia`)
    - **ChonkStep Wayland** (Smithay 0.7.0)
+   - **GNOME Wayland (Debloated)** (Mutter + GNOME Shell; Xorg/Tracker/Evolution excluded)
+   - **KDE Plasma Wayland (Debloated)** (KWin + Plasma + shared Qt6 `v11` CAS; Xorg/Baloo/Akonadi excluded)
    - **Kitty-Ink Terminal** (Zero-GPU ANSI/TUI)
-   - Plus **Virtual KVM Switch** (`web-demo/kvm.html`) and **19" Server Rack Manager** (`web-demo/rack.html`).
+   - Plus **Virtual KVM Switch** (`web-demo/kvm.html`), **19" Server Rack Manager** (`web-demo/rack.html`), and **Zero-Asset 3D White Dragon VTuber Studio** (`web-demo/vtuber.html`).
+
+---
+
+## Why X11 (`xorg-server`) Is Never Needed in Awesome-OS
+
+> **Awesome-OS supports every machine from 2026 WebGPU/Wayland workstations down to 1978 VT100 serial terminals — with zero `xorg-server` and 549+ fewer legacy packages.** See the full technical breakdown in **[`docs/WHY-NO-X11.md`](docs/WHY-NO-X11.md)**.
+
+| Tier | Display Sink | Hardware Era Covered |
+| :--- | :--- | :--- |
+| **1. GPU / WebGPU** | Wayland DRM+KMS + `holo-display-webgpu` | Modern GPUs (2016–2026), 120–240 Hz, full 3D & shaders |
+| **2. Raw Framebuffer** | `/dev/fb0` (`boot/src/fb_desktop.c`, `42 KB` static C11) | **Any PC since ~1998** — truecolor desktop with **0 GPU drivers** |
+| **3. Kitty Graphics + ANSI** | `kitty-ink` TUI + inline graphics over SSH / mTLS | Old laptops, Raspberry Pis, remote blades with **0 GPU** |
+| **4. VGA Text (`80×25`)** | 16-color `tty0` / `linux` VT (`TTY-Ink Greeter`) | **1987+ VGA**, IPMI/iDRAC/iLO KVM consoles, recovery boots |
+| **5. Pure Serial (`ttyS0`)** | `115200 8N1` VT100 / ASCII (`awesome-os/posix`) | Headless 19" rack blades, embedded boards, **1978 VT100** |
+
+- **Hardware drivers belong in the kernel + `modalias` `v11` CAS hydrator (`boot/src/driver_hydrator.c`), not X11.**
+- **Zero X11 security surface** (no global keystroke-sniffing X11 bus, no `setuid` Xorg).
+- **Ancient X11-only apps** run rootless via `Xwayland` or the frozen opt-in `packages-legacy` overlay — never replacing the host display stack.
 
 ## Quick Start
 
