@@ -125,6 +125,25 @@
     }
     .blade.off .pwr-btn { border-color: #475569; background: #0f172a; color: #64748b; }
 
+    /* Scope Tag Filter Bar */
+    .tag-bar {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;
+    }
+    .tag-pill {
+      padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;
+      font-family: ui-monospace, Consolas, monospace; cursor: pointer;
+      background: #101726; border: 1px solid rgba(148,163,184,0.24); color: #94a3b8;
+    }
+    .tag-pill:hover { border-color: #38bdf8; color: #f8fafc; }
+    .tag-pill.active { background: rgba(56,189,248,0.2); border-color: #38bdf8; color: #7dd3fc; }
+    .blade.filtered-out { display: none; }
+    .scope-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+    .scope-b {
+      font-family: ui-monospace, Consolas, monospace; font-size: 9.5px; padding: 1px 5px;
+      border-radius: 4px; background: rgba(56,189,248,0.12); color: #7dd3fc;
+      border: 1px solid rgba(56,189,248,0.25);
+    }
+
     /* Bottom 1U Serial Console */
     .console-oled {
       background: #030710; border: 1px solid rgba(56,189,248,0.28); border-radius: 7px;
@@ -145,14 +164,19 @@
   </header>
 
   <main class="rack-wrap">
+    <div id="tag-bar" class="tag-bar"></div>
     <section id="rack-frame" class="rack-frame"></section>
   </main>
 
   <script type="module">
+    const SCOPE_TAGS = ['all', 'appliance', 'device', 'monitor', 'keyboard', 'oci-container', 'browser-app', 'terminal-app', 'folder-structure', 'local', 'remote'];
+    let activeTag = 'all';
+
     const BLADES = [
       {
         id: 'kvm', u: '1U', name: 'KVM Switch & HID Matrix',
         sub: 'holo-kvm-switch · 64B B8G_ARENA_V1',
+        tags: ['device', 'monitor', 'keyboard', 'browser-app', 'local', 'remote'],
         leds: ['PWR:green', 'HID:blue', 'LOCK:amber'],
         launch: './kvm.html', launchLabel: 'KVM Console',
         oledTop: 'MON=CH2 (omarchy) · HID=CH2',
@@ -162,6 +186,7 @@
       {
         id: 'webgpu', u: '2U', name: 'Sectium WebGPU Compositor',
         sub: 'holo-display-webgpu · WGSL / Dawn',
+        tags: ['device', 'monitor', 'browser-app', 'local'],
         leds: ['PWR:green', 'GPU:blue', '60HZ:green'],
         launch: './sectium.html', launchLabel: 'Sectium',
         oledTop: () => (navigator.gpu ? 'GPU: WebGPU (WGSL Active)' : 'GPU: WebGL2 / Canvas2D'),
@@ -171,6 +196,7 @@
       {
         id: 'desktops', u: '2U', name: 'Desktop OS Blades (4×)',
         sub: 'Omarchy · Noctalia · Chonkstep · Kitty-Ink',
+        tags: ['appliance', 'monitor', 'keyboard', 'browser-app', 'terminal-app', 'local'],
         leds: ['PWR:green', 'BSP:blue', '25TH:amber'],
         launch: './omarchy.html', launchLabel: 'Omarchy',
         extraLinks: [
@@ -185,6 +211,7 @@
       {
         id: 'gitlab', u: '2U', name: 'GitLab Holo Forge & Gitaly',
         sub: 'holo-gitlab-api · Zero Rails / Postgres',
+        tags: ['appliance', 'browser-app', 'terminal-app', 'folder-structure', 'local', 'remote'],
         leds: ['PWR:green', 'API4:blue', 'GIT:green'],
         launch: './gitlab.html', launchLabel: 'GitLab Forge',
         oledTop: 'REST /api/v4 + Smart-HTTP pkt-line READY',
@@ -194,6 +221,7 @@
       {
         id: 'cas', u: '1U', name: 'Global v11 CAS Storage Array',
         sub: 'OPFS:/v11/files/ · 0 Cache API',
+        tags: ['folder-structure', 'appliance', 'local', 'remote'],
         leds: ['PWR:green', 'CAS:green', 'DEDUP:blue'],
         launch: './cas-mandelbrot.html', launchLabel: 'Q(self) CAS',
         oledTop: 'OPFS:/v11/files/ · 39/39 v11-tree adopted',
@@ -203,6 +231,7 @@
       {
         id: 'emukit', u: '1U', name: 'holo-vm-arch Multi-Arch Node',
         sub: 'x86_64 · RISC-V · PowerPC · COEP SAB',
+        tags: ['device', 'oci-container', 'browser-app', 'local', 'remote'],
         leds: ['PWR:green', 'COI:blue', 'FORK:amber'],
         launch: '/emukit.html', launchLabel: 'holo-vm-arch',
         oledTop: () => `COI/SAB=${self.crossOriginIsolated ? 'ONLINE' : 'STANDBY'} · b8g-emu-kit.b8p`,
@@ -210,6 +239,26 @@
         sparkColor: '#f472b6',
       },
     ];
+
+    const tagBar = document.getElementById('tag-bar');
+    function renderTagBar() {
+      tagBar.innerHTML = '';
+      SCOPE_TAGS.forEach((t) => {
+        const b = document.createElement('button');
+        b.className = 'tag-pill' + (t === activeTag ? ' active' : '');
+        b.textContent = t === 'all' ? 'all scopes' : '#' + t;
+        b.onclick = () => {
+          activeTag = t;
+          renderTagBar();
+          BLADES.forEach((bl) => {
+            const el = document.getElementById('blade-' + bl.id);
+            if (el) el.classList.toggle('filtered-out', t !== 'all' && !bl.tags.includes(t));
+          });
+        };
+        tagBar.append(b);
+      });
+    }
+    renderTagBar();
 
     const state = new Map(BLADES.map((b) => [b.id, { on: true, history: Array.from({ length: 28 }, () => 0.25 + Math.random() * 0.45) }]));
     const frame = document.getElementById('rack-frame');
@@ -253,6 +302,7 @@
             <h2>${b.name}</h2>
             <p>${b.sub}</p>
             <div class="leds">${ledHtml}</div>
+            <div class="scope-badges">${b.tags.map((t) => `<span class="scope-b">#${t}</span>`).join('')}</div>
           </div>
           <div class="oled">
             <div class="oled-lines">
