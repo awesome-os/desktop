@@ -28,13 +28,14 @@ jobs:
             e2fsprogs parted zstd busybox-static musl-tools ca-certificates \
             jq curl cpio
 
-      - name: Compile static musl PID 1 (/init) & Graphical Desktop (/bin/awesome-desktop-fb)
+      - name: Compile static musl PID 1 (/init), Desktop (/bin/awesome-desktop-fb) & Driver Hydrator
         run: |
           mkdir -p dist build
           musl-gcc -march=x86-64 -static -Os -s -Wall -Wextra -Werror boot/src/init.c -o dist/init-x86_64
           musl-gcc -march=x86-64 -static -Os -s -Wall -Wextra -Werror boot/src/fb_desktop.c -o dist/awesome-desktop-fb-x86_64
-          file dist/init-x86_64 dist/awesome-desktop-fb-x86_64
-          ls -lh dist/init-x86_64 dist/awesome-desktop-fb-x86_64
+          musl-gcc -march=x86-64 -static -Os -s -Wall -Wextra -Werror boot/src/driver_hydrator.c -o dist/awesome-driver-hydrator-x86_64
+          file dist/init-x86_64 dist/awesome-desktop-fb-x86_64 dist/awesome-driver-hydrator-x86_64
+          ls -lh dist/init-x86_64 dist/awesome-desktop-fb-x86_64 dist/awesome-driver-hydrator-x86_64
 
       - name: Build initramfs-x86_64.cpio.zst
         run: |
@@ -46,7 +47,21 @@ jobs:
           chmod 755 "$ROOTFS/init"
           cp dist/awesome-desktop-fb-x86_64 "$ROOTFS/bin/awesome-desktop-fb"
           chmod 755 "$ROOTFS/bin/awesome-desktop-fb"
+          cp dist/awesome-driver-hydrator-x86_64 "$ROOTFS/bin/awesome-driver-hydrator"
+          chmod 755 "$ROOTFS/bin/awesome-driver-hydrator"
           cp boot/config/system.json "$ROOTFS/etc/awesome-os/system.json"
+          cat << 'EOF' > "$ROOTFS/etc/awesome-os/driver-index.v11.conf"
+          # Awesome-OS v11 Modalias Driver Index
+          # Format: <tier> <modalias_pattern> <module_path> <name>
+          tier0 vmbus:* /lib/modules/hv_vmbus.ko hv_vmbus
+          tier0 serio:* /lib/modules/evdev.ko evdev
+          tier0 hid:* /lib/modules/evdev.ko evdev
+          tier1 vmbus:* /lib/modules/hyperv-keyboard.ko hyperv-keyboard
+          tier1 vmbus:* /lib/modules/hid-hyperv.ko hid-hyperv
+          tier1 hid:* /lib/modules/hid-hyperv.ko hid-hyperv
+          tier1 serio:* /lib/modules/atkbd.ko atkbd
+          tier1 pci:* /lib/modules/evdev.ko evdev
+          EOF
 
           cp /bin/busybox "$ROOTFS/bin/busybox"
           chmod 755 "$ROOTFS/bin/busybox"
@@ -167,6 +182,7 @@ jobs:
             -nographic -m 512 -no-reboot | tee build/qemu-direct.log
 
           grep -F '[AWESOME-OS] PID 1 READY (B8G_ABI_MAGIC_V3=0x33564742)' build/qemu-direct.log
+          grep -F '[AWESOME-OS] DRIVER-HYDRATOR SELFTEST PASS' build/qemu-direct.log
           grep -F '[AWESOME-OS] BARE-METAL V11 SELFTEST PASS' build/qemu-direct.log
 
       - name: QEMU Boot Test 2 — Hybrid ISO Boot via Limine (Dual tty0+ttyS0)

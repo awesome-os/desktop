@@ -275,6 +275,15 @@ static void run_selftest(void) {
         log_both("[AWESOME-OS] static musl awesome-os/coreutils present\n");
     }
 
+    if (access("/bin/awesome-driver-hydrator", X_OK) == 0) {
+        char *const dh_argv[] = {"/bin/awesome-driver-hydrator", "--selftest", NULL};
+        int dh_rc = run_wait(dh_argv);
+        if (dh_rc != 0) {
+            log_both("[AWESOME-OS] FAIL: awesome-driver-hydrator --selftest exited %d\n",
+                     dh_rc);
+        }
+    }
+
     log_both("[AWESOME-OS] BARE-METAL V11 SELFTEST PASS\n");
     fflush(stdout);
     sync();
@@ -389,7 +398,13 @@ int main(void) {
     sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
     (void)sigaction(SIGCHLD, &sa, NULL);
 
-    /* Load bundled Hyper-V / HID / evdev keyboard modules if present */
+    /* Hydrate hardware drivers via modalias index before launching desktop */
+    if (access("/bin/awesome-driver-hydrator", X_OK) == 0) {
+        char *const dh_argv[] = {"/bin/awesome-driver-hydrator", "--hydrate", NULL};
+        (void)run_wait(dh_argv);
+    }
+
+    /* Fallback: load bundled Hyper-V / HID / evdev keyboard modules if present */
     if (access("/bin/insmod", X_OK) == 0) {
         const char *mods[] = {"/lib/modules/hv_vmbus.ko",
                               "/lib/modules/evdev.ko",
