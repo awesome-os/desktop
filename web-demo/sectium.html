@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sectium Pure-Art Desktop — Lumi Chromatic + Code-OSS + libsectium_display</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --bg-panel: rgba(255, 255, 255, 0.86);
+      --bg-chrome: rgba(241, 245, 249, 0.92);
+      --fg: #0f172a;
+      --muted: #64748b;
+      --border: rgba(15, 23, 42, 0.12);
+      --cyan: #06b6d4;
+      --violet: #7c3aed;
+      --magenta: #ec4899;
+      --gold: #f59e0b;
+      --code-bg: #ffffff;
+      --shadow: 0 18px 48px rgba(15, 23, 42, 0.12);
+    }
+    body.dark {
+      --bg: #080b14;
+      --bg-panel: rgba(13, 18, 32, 0.84);
+      --bg-chrome: rgba(10, 14, 24, 0.94);
+      --fg: #f1f5f9;
+      --muted: #94a3b8;
+      --border: rgba(148, 163, 184, 0.18);
+      --code-bg: #0b101d;
+      --shadow: 0 22px 58px rgba(0, 0, 0, 0.55);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      background: var(--bg); color: var(--fg);
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      transition: background 240ms ease, color 240ms ease;
+      user-select: none;
+    }
+
+    #art-canvas {
+      position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;
+    }
+
+    .shell { position: fixed; inset: 0; z-index: 5; display: flex; flex-direction: column; }
+
+    /* Pure-Art Top Bar */
+    .topbar {
+      height: 36px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 14px; background: var(--bg-chrome); backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border); font-size: 12px; flex-shrink: 0;
+    }
+    .tb-left, .tb-center, .tb-right { display: flex; align-items: center; gap: 8px; }
+    .brand {
+      display: inline-flex; align-items: center; gap: 7px; font-weight: 800; letter-spacing: -0.02em;
+      background: linear-gradient(90deg, var(--cyan), var(--violet), var(--magenta));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      font-size: 13.5px;
+    }
+    .prism-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: conic-gradient(var(--cyan), var(--violet), var(--magenta), var(--gold), var(--cyan));
+      box-shadow: 0 0 10px rgba(124, 58, 237, 0.45);
+    }
+    .pill {
+      padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600;
+      background: var(--bg-panel); border: 1px solid var(--border); color: var(--fg);
+      font-family: ui-monospace, Consolas, monospace; cursor: pointer;
+      transition: border-color 140ms ease, transform 120ms ease;
+    }
+    .pill:hover { border-color: var(--cyan); }
+    .pill.accent { border-color: rgba(6, 182, 212, 0.45); color: var(--cyan); }
+
+    /* Workspace Stage */
+    .stage {
+      flex: 1; position: relative; padding: 14px 14px 72px 14px;
+      display: grid; grid-template-columns: 1.25fr 0.95fr; grid-template-rows: 1fr 0.85fr;
+      gap: 14px; min-height: 0;
+    }
+    @media (max-width: 900px) {
+      .stage { grid-template-columns: 1fr; grid-template-rows: 1fr 0.9fr 0.8fr; }
+    }
+
+    .surface {
+      background: var(--bg-panel); backdrop-filter: blur(22px);
+      border: 1px solid var(--border); border-radius: 16px;
+      box-shadow: var(--shadow); display: flex; flex-direction: column;
+      overflow: hidden; min-height: 0;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+    .surface.focused {
+      border-color: rgba(6, 182, 212, 0.65);
+      box-shadow: 0 0 0 1px rgba(6, 182, 212, 0.35), var(--shadow);
+    }
+    .surface.hidden { display: none; }
+    .surface-ide { grid-row: 1 / span 2; }
+    @media (max-width: 900px) { .surface-ide { grid-row: auto; } }
+
+    .surf-hdr {
+      height: 36px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg-chrome); border-bottom: 1px solid var(--border);
+      font-size: 12px; font-weight: 600; flex-shrink: 0;
+    }
+    .surf-hdr-sub { font-family: ui-monospace, Consolas, monospace; font-size: 11px; color: var(--muted); font-weight: 500; }
+    .surf-body { flex: 1; min-height: 0; display: flex; overflow: hidden; user-select: text; }
+
+    /* Code-OSS Workbench */
+    .ide-tree {
+      width: 190px; border-right: 1px solid var(--border); background: var(--bg-chrome);
+      padding: 10px 8px; display: flex; flex-direction: column; gap: 3px; overflow-y: auto; flex-shrink: 0;
+    }
+    .ide-tree-hdr { font-size: 10px; font-weight: 800; letter-spacing: 0.08em; color: var(--muted); padding: 4px 8px; text-transform: uppercase; }
+    .ide-file {
+      padding: 6px 9px; border-radius: 8px; font-family: ui-monospace, Consolas, monospace; font-size: 11.5px;
+      cursor: pointer; color: var(--fg); display: flex; align-items: center; justify-content: space-between;
+    }
+    .ide-file:hover { background: rgba(6, 182, 212, 0.10); }
+    .ide-file.active { background: linear-gradient(90deg, rgba(6, 182, 212, 0.18), rgba(124, 58, 237, 0.14)); color: var(--cyan); font-weight: 700; }
+    .ide-editor { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--code-bg); }
+    .ide-tabs {
+      height: 30px; display: flex; align-items: center; gap: 4px; padding: 0 10px;
+      border-bottom: 1px solid var(--border); background: var(--bg-chrome);
+      font-family: ui-monospace, Consolas, monospace; font-size: 11px; color: var(--muted);
+    }
+    .ide-code {
+      flex: 1; padding: 14px 16px; overflow: auto; font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+      font-size: 12.5px; line-height: 1.6; white-space: pre; color: var(--fg);
+    }
+    .ln { display: inline-block; width: 28px; color: var(--muted); user-select: none; }
+    .kw { color: var(--violet); font-weight: 600; }
+    .fn { color: var(--cyan); }
+    .str { color: var(--magenta); }
+    .num { color: var(--gold); }
+    .com { color: var(--muted); font-style: italic; }
+
+    /* Pure-Art Canvas Studio */
+    .canvas-studio {
+      flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden;
+    }
+    #pure-art-preview { width: 100%; height: 100%; display: block; }
+    .art-controls {
+      position: absolute; bottom: 10px; left: 10px; right: 10px;
+      display: flex; align-items: center; justify-content: space-between; gap: 6px;
+      padding: 6px 10px; border-radius: 10px;
+      background: var(--bg-chrome); backdrop-filter: blur(12px); border: 1px solid var(--border);
+      font-size: 11px; font-family: ui-monospace, Consolas, monospace;
+    }
+    .art-btns { display: flex; gap: 4px; }
+    .art-btn {
+      padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--bg-panel); color: var(--fg); cursor: pointer; font-size: 11px; font-weight: 600;
+    }
+    .art-btn.active { background: var(--cyan); color: #04131a; border-color: var(--cyan); }
+
+    /* Command Pipe (ttyS0) */
+    .pipe-wrap { flex: 1; display: flex; flex-direction: column; min-height: 0; background: var(--code-bg); }
+    .pipe-out {
+      flex: 1; padding: 10px 12px; overflow-y: auto;
+      font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+      font-size: 12px; line-height: 1.55; white-space: pre-wrap; color: var(--fg);
+    }
+    .pipe-form { display: flex; align-items: center; border-top: 1px solid var(--border); background: var(--bg-chrome); }
+    .pipe-prompt { padding: 8px 6px 8px 12px; font-family: ui-monospace, Consolas, monospace; font-size: 12px; color: var(--cyan); font-weight: 700; }
+    .pipe-in {
+      flex: 1; background: transparent; border: none; outline: none; color: var(--fg);
+      font-family: ui-monospace, Consolas, monospace; font-size: 12px; padding: 8px 10px 8px 0;
+    }
+
+    /* Pure-Art Floating Dock */
+    .dock {
+      position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 30;
+      display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 16px;
+      background: var(--bg-panel); backdrop-filter: blur(20px);
+      border: 1px solid var(--border); box-shadow: var(--shadow);
+    }
+    .dock-item {
+      padding: 6px 12px; border-radius: 10px; border: 1px solid transparent;
+      background: transparent; color: var(--fg); cursor: pointer; font-size: 12px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 6px; transition: all 140ms ease;
+    }
+    .dock-item:hover { background: rgba(6, 182, 212, 0.12); border-color: rgba(6, 182, 212, 0.35); transform: translateY(-2px); }
+    .dock-item.active { background: linear-gradient(135deg, rgba(6,182,212,0.18), rgba(124,58,237,0.16)); border-color: rgba(6,182,212,0.45); }
+  </style>
+</head>
+<body>
+  <canvas id="art-canvas"></canvas>
+
+  <div class="shell">
+    <header class="topbar">
+      <div class="tb-left">
+        <span class="prism-dot"></span>
+        <span class="brand">Sectium Pure-Art Desktop</span>
+        <span class="pill accent">wm-compositor-sectium</span>
+        <span class="pill" id="abi-pill">B8G_ABI_MAGIC_V3</span>
+      </div>
+      <div class="tb-center">
+        <span id="clock" style="font-weight:700;font-family:ui-monospace,Consolas,monospace">--:--</span>
+      </div>
+      <div class="tb-right">
+        <button class="pill" id="theme-btn" onclick="togglePrismMode()">&#9788; Lumi Light</button>
+        <span class="pill" id="cas-pill">OPFS v11</span>
+        <button class="pill" onclick="location.href='./'">&#8635; Greeter</button>
+      </div>
+    </header>
+
+    <main class="stage">
+      <!-- Surface 1: Code-OSS Workbench -->
+      <section class="surface surface-ide focused" id="surf-ide" onclick="focusSurf(this)">
+        <div class="surf-hdr">
+          <span>Code - OSS · Sectium Pure-Art Workbench</span>
+          <span class="surf-hdr-sub" id="ide-status">awesome-os/sectium-display · UTF-8</span>
+        </div>
+        <div class="surf-body">
+          <aside class="ide-tree">
+            <div class="ide-tree-hdr">Workspace</div>
+            <div class="ide-file active" onclick="openFile('sectium_display.c', this)">sectium_display.c</div>
+            <div class="ide-file" onclick="openFile('wm-compositors.mts', this)">wm-compositors.mts</div>
+            <div class="ide-file" onclick="openFile('b8g_abi.rs', this)">b8g_abi.rs</div>
+            <div class="ide-file" onclick="openFile('device-host.mts', this)">device-host.mts</div>
+          </aside>
+          <div class="ide-editor">
+            <div class="ide-tabs" id="ide-tab-bar">sectium_display.c — libsectium_display (4–21 KB C11)</div>
+            <pre class="ide-code" id="ide-code"></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- Surface 2: Sectium Pure-Art Canvas -->
+      <section class="surface" id="surf-art" onclick="focusSurf(this)">
+        <div class="surf-hdr">
+          <span>Sectium Canvas · Pure-Art Display Sink</span>
+          <span class="surf-hdr-sub">0 closed DLLs · AppContainer ACL</span>
+        </div>
+        <div class="surf-body">
+          <div class="canvas-studio">
+            <canvas id="pure-art-preview"></canvas>
+            <div class="art-controls">
+              <div class="art-btns">
+                <button class="art-btn active" onclick="setArtScene('prism', this)">Lumi Prism</button>
+                <button class="art-btn" onclick="setArtScene('wave', this)">Chromatic Wave</button>
+                <button class="art-btn" onclick="setArtScene('mesh', this)">B8G Mesh</button>
+              </div>
+              <span id="art-fps">60 fps · pure-art</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Surface 3: Sectium Device Command Pipe -->
+      <section class="surface" id="surf-pipe" onclick="focusSurf(this)">
+        <div class="surf-hdr">
+          <span>Sectium Command Pipe · \\.\pipe\sectium-dev</span>
+          <span class="surf-hdr-sub">channel: command · SharedWorker WASM</span>
+        </div>
+        <div class="surf-body">
+          <div class="pipe-wrap">
+            <div id="pipe-out" class="pipe-out"></div>
+            <form id="pipe-form" class="pipe-form">
+              <span class="pipe-prompt">sectium@pure-art &gt;</span>
+              <input id="pipe-in" class="pipe-in" placeholder="help | sectium-status | wasm-check | holo-pm status | clear" autocomplete="off" />
+            </form>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <nav class="dock">
+      <button class="dock-item active" onclick="toggleSurf('surf-ide', this)">&#9998; Code-OSS</button>
+      <button class="dock-item active" onclick="toggleSurf('surf-art', this)">&#9672; Pure-Art Canvas</button>
+      <button class="dock-item active" onclick="toggleSurf('surf-pipe', this)">&gt;_ Command Pipe</button>
+      <button class="dock-item" onclick="location.href='./omarchy.html'">&Omega; Omarchy</button>
+      <button class="dock-item" onclick="location.href='./noctalia.html'">&#9789; Noctalia</button>
+      <button class="dock-item" onclick="location.href='./chonkstep.html'">&#9635; Chonkstep</button>
+      <button class="dock-item" onclick="location.href='./cas-mandelbrot.html'">&#8734; Q(self) Orbit</button>
+      <button class="dock-item" onclick="location.href='./kitty-ink.html'">&#9608; Kitty-Ink</button>
+    </nav>
+  </div>
+
+  <script type="module">
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./holo-web-service-worker.js', { scope: './' }).catch(() => {});
+    }
+
+    let port;
+    if (typeof SharedWorker !== 'undefined') {
+      const sw = new SharedWorker('./wasi-host-worker.js?v=11.2');
+      port = sw.port;
+      port.start();
+    } else {
+      port = new Worker('./wasi-host-worker.js?v=11.2');
+    }
+
+    const pipeOut = document.getElementById('pipe-out');
+    const pipeIn = document.getElementById('pipe-in');
+    const casPill = document.getElementById('cas-pill');
+
+    port.onmessage = (ev) => {
+      const msg = ev.data;
+      if (msg.type === 'ready' || msg.type === 'boot-log') {
+        casPill.textContent = `OPFS v11 (${msg.casCount || 1})`;
+        if (msg.magic) document.getElementById('abi-pill').textContent = `B8G ${msg.magic}`;
+      } else if (msg.type === 'shell-out') {
+        pipeOut.textContent += (msg.out ? msg.out + '\n' : '');
+        pipeOut.scrollTop = pipeOut.scrollHeight;
+      }
+    };
+
+    const FILES = {
+      'sectium_display.c': {
+        meta: 'sectium_display.c — libsectium_display (4–21 KB C11)',
+        lines: [
+          `<span class="com">/* awesome-os/sectium-display — Zero-bloat C11 pure-art display sink */</span>`,
+          `<span class="kw">#include</span> <span class="str">"sectium_display.h"</span>`,
+          `<span class="kw">#define</span> B8G_ABI_MAGIC_V3 <span class="num">0x33564742u</span>`,
+          ``,
+          `<span class="kw">int</span> <span class="fn">sectium_present_surface</span>(<span class="kw">const</span> SectiumSurfaceV1 *surf) {`,
+          `  <span class="kw">if</span> (!surf || surf-&gt;magic != B8G_ABI_MAGIC_V3) <span class="kw">return</span> -<span class="num">1</span>;`,
+          `  <span class="com">// Pure-art presentation: zero closed Google/Microsoft DLLs</span>`,
+          `  <span class="kw">return</span> <span class="fn">b8g_arena_commit_64b</span>(surf-&gt;arena_ptr, surf-&gt;frame_seq);`,
+          `}`,
+        ],
+      },
+      'wm-compositors.mts': {
+        meta: 'wm-compositors.mts — Canonical awesome-os/wayland & wm-compositor-* Registry',
+        lines: [
+          `<span class="com">// Orthogonal WM-Compositor taxonomy across awesome-os/wayland</span>`,
+          `<span class="kw">export const</span> WM_COMPOSITORS = [`,
+          `  { id: <span class="str">'wm-compositor-sectium'</span>,  protocol: <span class="str">'sectium-pure-art'</span>, desktop: <span class="str">'sectium.html'</span> },`,
+          `  { id: <span class="str">'wm-compositor-hyprland'</span>, protocol: <span class="str">'wayland-dwindle'</span>,  desktop: <span class="str">'omarchy.html'</span> },`,
+          `  { id: <span class="str">'wm-compositor-wayland'</span>,  protocol: <span class="str">'wayland-smithay'</span>,  desktop: <span class="str">'chonkstep.html'</span> },`,
+          `  { id: <span class="str">'wm-compositor-noctalia'</span>, protocol: <span class="str">'wayland-gles-cpp23'</span>, desktop: <span class="str">'noctalia.html'</span> },`,
+          `  { id: <span class="str">'wm-compositor-tmux'</span>,     protocol: <span class="str">'tty-ansi-zero-gpu'</span>, desktop: <span class="str">'kitty-ink.html'</span> },`,
+          `];`,
+        ],
+      },
+      'b8g_abi.rs': {
+        meta: 'b8g_abi.rs — 64-byte aligned B8G_ARENA_V1 bridge (awesome-os/chonkstep)',
+        lines: [
+          `<span class="kw">#[repr(C, align(64))]</span>`,
+          `<span class="kw">pub struct</span> <span class="fn">B8gArenaHeaderV1</span> {`,
+          `  <span class="kw">pub</span> magic: <span class="kw">u32</span>,      <span class="com">// 0x33564742 (B8G_ABI_MAGIC_V3)</span>`,
+          `  <span class="kw">pub</span> version: <span class="kw">u32</span>,    <span class="com">// 1 (B8G_ARENA_V1)</span>`,
+          `  <span class="kw">pub</span> write_seq: <span class="kw">u32</span>,  <span class="com">// atomic frame sequence</span>`,
+          `  <span class="kw">pub</span> surfaces: <span class="kw">u32</span>,   <span class="com">// active Wayland/Sectium surfaces</span>`,
+          `}`,
+        ],
+      },
+      'device-host.mts': {
+        meta: 'device-host.mts — Sectium Host Device Boundary (dual NDJSON channels)',
+        lines: [
+          `<span class="com">// Strict separation: display = pure art, command = ttyS0 / DevTools</span>`,
+          `<span class="kw">export const</span> SECTIUM_PIPE_WIN32 = <span class="str">'\\\\\\\\.\\\\pipe\\\\sectium-dev'</span>;`,
+          `<span class="kw">export const</span> SECTIUM_SOCK_POSIX = <span class="str">'/tmp/sectium-dev.sock'</span>;`,
+          `<span class="kw">export function</span> <span class="fn">routeChannel</span>(frame) {`,
+          `  <span class="kw">return</span> frame.channel === <span class="str">'display'</span> ? <span class="fn">presentPureArt</span>(frame) : <span class="fn">dispatchCommand</span>(frame);`,
+          `}`,
+        ],
+      },
+    };
+
+    window.openFile = (name, el) => {
+      const f = FILES[name];
+      if (!f) return;
+      document.querySelectorAll('.ide-file').forEach((x) => x.classList.remove('active'));
+      if (el) el.classList.add('active');
+      document.getElementById('ide-tab-bar').textContent = f.meta;
+      document.getElementById('ide-code').innerHTML = f.lines
+        .map((l, i) => `<span class="ln">${String(i + 1).padStart(2, ' ')}</span>${l}`)
+        .join('\n');
+    };
+    window.openFile('sectium_display.c', document.querySelector('.ide-file'));
+
+    window.focusSurf = (el) => {
+      document.querySelectorAll('.surface').forEach((s) => s.classList.remove('focused'));
+      el.classList.add('focused');
+    };
+    window.toggleSurf = (id, btn) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.toggle('hidden');
+      btn.classList.toggle('active', !el.classList.contains('hidden'));
+    };
+
+    let darkMode = localStorage.getItem('sectium_dark') === '1';
+    function applyMode() {
+      document.body.classList.toggle('dark', darkMode);
+      document.getElementById('theme-btn').textContent = darkMode ? '☽ Lumi Dark' : '☼ Lumi Light';
+    }
+    window.togglePrismMode = () => {
+      darkMode = !darkMode;
+      localStorage.setItem('sectium_dark', darkMode ? '1' : '0');
+      applyMode();
+    };
+    applyMode();
+
+    // Pure-Art Background + Studio Canvas
+    let artScene = 'prism';
+    window.setArtScene = (scene, btn) => {
+      artScene = scene;
+      document.querySelectorAll('.art-btn').forEach((b) => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+    };
+
+    const bgCanvas = document.getElementById('art-canvas');
+    const bgCtx = bgCanvas.getContext('2d');
+    const prevCanvas = document.getElementById('pure-art-preview');
+    const prevCtx = prevCanvas.getContext('2d');
+
+    function resizeCanvases() {
+      bgCanvas.width = window.innerWidth;
+      bgCanvas.height = window.innerHeight;
+      const r = prevCanvas.parentElement.getBoundingClientRect();
+      prevCanvas.width = Math.max(200, Math.floor(r.width));
+      prevCanvas.height = Math.max(160, Math.floor(r.height));
+    }
+    resizeCanvases();
+    window.addEventListener('resize', resizeCanvases);
+
+    let t = 0;
+    function renderArt() {
+      t += 0.015;
+      // Subtle Lumi Chromatic background
+      const w = bgCanvas.width, h = bgCanvas.height;
+      bgCtx.clearRect(0, 0, w, h);
+      const a = darkMode ? 0.20 : 0.14;
+      const g1 = bgCtx.createRadialGradient(w * (0.25 + 0.06 * Math.sin(t)), h * 0.2, 20, w * 0.25, h * 0.2, w * 0.5);
+      g1.addColorStop(0, `rgba(6, 182, 212, ${a})`);
+      g1.addColorStop(1, 'transparent');
+      bgCtx.fillStyle = g1;
+      bgCtx.fillRect(0, 0, w, h);
+
+      const g2 = bgCtx.createRadialGradient(w * (0.78 + 0.05 * Math.cos(t * 0.8)), h * 0.82, 20, w * 0.78, h * 0.82, w * 0.48);
+      g2.addColorStop(0, `rgba(124, 58, 237, ${a})`);
+      g2.addColorStop(1, 'transparent');
+      bgCtx.fillStyle = g2;
+      bgCtx.fillRect(0, 0, w, h);
+
+      // Pure-art studio preview
+      const pw = prevCanvas.width, ph = prevCanvas.height;
+      prevCtx.fillStyle = darkMode ? '#070a12' : '#f1f5f9';
+      prevCtx.fillRect(0, 0, pw, ph);
+
+      if (artScene === 'prism') {
+        const cx = pw / 2, cy = ph / 2 - 14;
+        for (let i = 0; i < 5; i++) {
+          const ang = t * 0.7 + i * 1.256;
+          const x = cx + Math.cos(ang) * (pw * 0.18);
+          const y = cy + Math.sin(ang * 1.2) * (ph * 0.16);
+          const rad = Math.min(pw, ph) * 0.34;
+          const colors = ['rgba(6,182,212,0.55)', 'rgba(124,58,237,0.55)', 'rgba(236,72,153,0.48)', 'rgba(245,158,11,0.42)', 'rgba(56,189,248,0.50)'];
+          const rg = prevCtx.createRadialGradient(x, y, 4, x, y, rad);
+          rg.addColorStop(0, colors[i]);
+          rg.addColorStop(1, 'transparent');
+          prevCtx.fillStyle = rg;
+          prevCtx.fillRect(0, 0, pw, ph);
+        }
+      } else if (artScene === 'wave') {
+        const strokes = ['#06b6d4', '#7c3aed', '#ec4899', '#f59e0b'];
+        strokes.forEach((col, idx) => {
+          prevCtx.beginPath();
+          prevCtx.strokeStyle = col;
+          prevCtx.lineWidth = 2.4;
+          for (let x = 0; x <= pw; x += 6) {
+            const y = ph * 0.48 + Math.sin(x * 0.018 + t * (1.4 + idx * 0.25) + idx) * (24 + idx * 8);
+            if (x === 0) prevCtx.moveTo(x, y); else prevCtx.lineTo(x, y);
+          }
+          prevCtx.stroke();
+        });
+      } else {
+        prevCtx.strokeStyle = darkMode ? 'rgba(6,182,212,0.28)' : 'rgba(124,58,237,0.25)';
+        prevCtx.lineWidth = 1;
+        const step = 28;
+        for (let x = 0; x < pw; x += step) {
+          prevCtx.beginPath();
+          for (let y = 0; y <= ph; y += 10) {
+            const dx = Math.sin(y * 0.03 + t + x * 0.02) * 8;
+            if (y === 0) prevCtx.moveTo(x + dx, y); else prevCtx.lineTo(x + dx, y);
+          }
+          prevCtx.stroke();
+        }
+      }
+      requestAnimationFrame(renderArt);
+    }
+    requestAnimationFrame(renderArt);
+
+    // Command pipe terminal
+    pipeOut.textContent =
+      `Sectium Pure-Art Host Device Boundary (B8G_ABI_MAGIC_V3 = 0x33564742)\n` +
+      `Display Channel : pure-art (0 closed DLLs · AppContainer S-1-15-2-1)\n` +
+      `Command Channel : \\\\.\\pipe\\sectium-dev (SharedWorker WASM online)\n` +
+      `Type "help", "sectium-status", or "wasm-check".\n\n`;
+
+    document.getElementById('pipe-form').onsubmit = (e) => {
+      e.preventDefault();
+      const cmd = pipeIn.value.trim();
+      pipeIn.value = '';
+      if (!cmd) return;
+      pipeOut.textContent += `sectium@pure-art > ${cmd}\n`;
+      if (cmd === 'clear') {
+        pipeOut.textContent = '';
+      } else if (cmd === 'help') {
+        pipeOut.textContent += 'Commands: sectium-status | wasm-check | holo-pm status | clear | reboot\n';
+      } else if (cmd === 'sectium-status') {
+        pipeOut.textContent += `Compositor: wm-compositor-sectium (scene=${artScene}, mode=${darkMode ? 'dark' : 'light'})\nPipe: \\\\.\\pipe\\sectium-dev | Display: pure-art | ABI: 0x33564742\n`;
+      } else if (cmd === 'reboot') {
+        location.href = './';
+      } else {
+        port.postMessage({ type: 'shell-exec', cmd });
+      }
+      pipeOut.scrollTop = pipeOut.scrollHeight;
+    };
+
+    function tick() {
+      const d = new Date();
+      document.getElementById('clock').textContent =
+        d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) + ' · ' + d.toTimeString().slice(0, 5);
+    }
+    tick();
+    setInterval(tick, 10000);
+  </script>
+</body>
+</html>

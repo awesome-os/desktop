@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kitty-Ink DevOps TUI — wm-compositor-tmux (Zero-GPU holo-display-tty)</title>
+  <style>
+    :root {
+      --bg: #050806;
+      --panel: #070d09;
+      --fg: #86efac;
+      --fg-bright: #dcfce7;
+      --muted: #3f6b4e;
+      --accent: #22c55e;
+      --warn: #facc15;
+      --border: #1e462b;
+      --status-bg: #14532d;
+      --status-fg: #dcfce7;
+    }
+    body.amber {
+      --bg: #0b0702; --panel: #120c04; --fg: #fcd34d; --fg-bright: #fef3c7;
+      --muted: #78551a; --accent: #f59e0b; --warn: #fb923c; --border: #5c3d0e;
+      --status-bg: #78350f; --status-fg: #fef3c7;
+    }
+    body.ice {
+      --bg: #04080e; --panel: #08101c; --fg: #7dd3fc; --fg-bright: #e0f2fe;
+      --muted: #355874; --accent: #38bdf8; --warn: #a78bfa; --border: #1b3d59;
+      --status-bg: #0c4a6e; --status-fg: #e0f2fe;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      background: var(--bg); color: var(--fg);
+      font-family: 'Cascadia Mono', 'JetBrains Mono', ui-monospace, Consolas, monospace;
+      font-size: 13px; line-height: 1.45;
+    }
+    .tui-shell { position: fixed; inset: 0; display: flex; flex-direction: column; }
+
+    /* Top ANSI Header */
+    .tui-top {
+      height: 28px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 10px; background: var(--panel); border-bottom: 1px solid var(--border);
+      font-size: 12px; flex-shrink: 0;
+    }
+    .tui-top-group { display: flex; align-items: center; gap: 8px; }
+    .tui-btn {
+      background: transparent; color: var(--fg); border: 1px solid var(--border);
+      padding: 1px 7px; font-family: inherit; font-size: 11.5px; cursor: pointer;
+    }
+    .tui-btn:hover { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; }
+
+    /* Multi-Pane tmux Grid */
+    .tui-grid {
+      flex: 1; display: grid; grid-template-columns: 1.25fr 0.75fr; grid-template-rows: 1fr 0.85fr;
+      gap: 2px; background: var(--border); min-height: 0; padding: 2px;
+    }
+    .tui-grid.zoomed .pane:not(.active) { display: none; }
+    .tui-grid.zoomed .pane.active { grid-column: 1 / -1 !important; grid-row: 1 / -1 !important; }
+    @media (max-width: 820px) { .tui-grid { grid-template-columns: 1fr; grid-template-rows: 1fr 0.7fr 0.7fr; } }
+
+    .pane {
+      background: var(--panel); border: 1px solid var(--border);
+      display: flex; flex-direction: column; min-height: 0; overflow: hidden;
+    }
+    .pane.active { border-color: var(--accent); }
+    .pane-main { grid-row: 1 / span 2; }
+    @media (max-width: 820px) { .pane-main { grid-row: auto; } }
+
+    .pane-bar {
+      height: 24px; padding: 0 8px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px dashed var(--border); font-size: 11.5px; color: var(--muted); flex-shrink: 0;
+    }
+    .pane.active .pane-bar { color: var(--fg-bright); background: rgba(34, 197, 94, 0.08); }
+    .pane-body {
+      flex: 1; min-height: 0; overflow-y: auto; padding: 8px 10px;
+      white-space: pre-wrap; user-select: text;
+    }
+    .pane-form {
+      display: flex; align-items: center; border-top: 1px dashed var(--border);
+      padding: 4px 8px; background: var(--bg);
+    }
+    .pane-prompt { color: var(--accent); font-weight: 700; margin-right: 6px; white-space: nowrap; }
+    .pane-in {
+      flex: 1; min-width: 0; background: transparent; border: none; outline: none;
+      color: var(--fg-bright); font-family: inherit; font-size: 13px;
+    }
+
+    /* Bottom tmux Status Bar */
+    .tmux-bar {
+      height: 24px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 10px; background: var(--status-bg); color: var(--status-fg);
+      font-size: 12px; font-weight: 700; flex-shrink: 0;
+    }
+    .tmux-wins { display: flex; gap: 12px; }
+    .tmux-win { cursor: pointer; opacity: 0.75; }
+    .tmux-win.cur { opacity: 1; text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="tui-shell">
+    <div class="tui-top">
+      <div class="tui-top-group">
+        <strong>[ KITTY-INK :: wm-compositor-tmux ]</strong>
+        <span style="color:var(--muted)">holo-display-tty · 0 GPU shaders</span>
+      </div>
+      <div class="tui-top-group">
+        <button class="tui-btn" onclick="spawnPane()">[+ Split Alt+Enter]</button>
+        <button class="tui-btn" onclick="toggleZoom()">[Z Zoom Alt+Z]</button>
+        <button class="tui-btn" onclick="cyclePhosphor()">[CRT Palette Alt+C]</button>
+        <button class="tui-btn" onclick="location.href='./'">[Greeter]</button>
+      </div>
+    </div>
+
+    <div class="tui-grid" id="tui-grid">
+      <!-- Pane 0: Primary DevOps Shell -->
+      <div class="pane pane-main active" id="pane-0" onclick="focusPane(this)">
+        <div class="pane-bar">
+          <span>+---[ 0:ttyS0 :: wasi-host-web (SharedWorker WASM) ]---+</span>
+          <span>ACTIVE</span>
+        </div>
+        <div class="pane-body" id="term-out-0"></div>
+        <form class="pane-form" onsubmit="execCmd(event, 'term-out-0', 'term-in-0')">
+          <span class="pane-prompt">root@kitty-ink:~#</span>
+          <input id="term-in-0" class="pane-in" placeholder="help | tmux ls | holo-vm-arch status | wasm-check | clear" autocomplete="off" />
+        </form>
+      </div>
+
+      <!-- Pane 1: holo-vm-arch & B8G_ABI_MAGIC_V3 Live Telemetry -->
+      <div class="pane" id="pane-1" onclick="focusPane(this)">
+        <div class="pane-bar">
+          <span>+---[ 1:holo-vm-arch :: B8G_ABI_MAGIC_V3 ]---+</span>
+          <span>60Hz TTY</span>
+        </div>
+        <pre class="pane-body" id="telemetry-out"></pre>
+      </div>
+
+      <!-- Pane 2: OPFS v11 CAS Explorer -->
+      <div class="pane" id="pane-2" onclick="focusPane(this)">
+        <div class="pane-bar">
+          <span>+---[ 2:OPFS:/v11/files/ :: Zero Cache API ]---+</span>
+          <button class="tui-btn" onclick="event.stopPropagation();refreshOpfs()">[R]</button>
+        </div>
+        <pre class="pane-body" id="opfs-out">Scanning OPFS:/v11/files/...</pre>
+      </div>
+    </div>
+
+    <div class="tmux-bar">
+      <div class="tmux-wins">
+        <span class="tmux-win cur" onclick="focusPane(document.getElementById('pane-0'))">[0:ttyS0*]</span>
+        <span class="tmux-win" onclick="focusPane(document.getElementById('pane-1'))">[1:holo-vm-arch]</span>
+        <span class="tmux-win" onclick="focusPane(document.getElementById('pane-2'))">[2:opfs-cas]</span>
+        <span class="tmux-win" onclick="location.href='./omarchy.html'">[3:omarchy]</span>
+        <span class="tmux-win" onclick="location.href='./chonkstep.html'">[4:chonkstep]</span>
+      </div>
+      <div id="tmux-right">OPFS v11 | 0x33564742 | --:--</div>
+    </div>
+  </div>
+
+  <script type="module">
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./holo-web-service-worker.js', { scope: './' }).catch(() => {});
+    }
+
+    let port;
+    if (typeof SharedWorker !== 'undefined') {
+      const sw = new SharedWorker('./wasi-host-worker.js?v=11.2');
+      port = sw.port;
+      port.start();
+    } else {
+      port = new Worker('./wasi-host-worker.js?v=11.2');
+    }
+
+    let lastOutId = 'term-out-0';
+    let casCount = 1;
+    port.onmessage = (ev) => {
+      const msg = ev.data;
+      if (msg.type === 'ready' || msg.type === 'boot-log') {
+        casCount = msg.casCount || casCount;
+      } else if (msg.type === 'shell-out') {
+        const el = document.getElementById(lastOutId) || document.getElementById('term-out-0');
+        if (el) {
+          el.textContent += (msg.out ? msg.out + '\n' : '');
+          el.scrollTop = el.scrollHeight;
+        }
+      }
+    };
+
+    const grid = document.getElementById('tui-grid');
+    let extraPanes = 0;
+    const PALETTES = ['', 'amber', 'ice'];
+    let palIdx = 0;
+
+    window.focusPane = (el) => {
+      if (!el) return;
+      document.querySelectorAll('.pane').forEach((p) => p.classList.remove('active'));
+      el.classList.add('active');
+      const inp = el.querySelector('.pane-in');
+      if (inp) inp.focus();
+    };
+
+    window.toggleZoom = () => grid.classList.toggle('zoomed');
+
+    window.cyclePhosphor = () => {
+      palIdx = (palIdx + 1) % PALETTES.length;
+      document.body.className = PALETTES[palIdx];
+    };
+
+    window.spawnPane = () => {
+      if (extraPanes >= 2) return;
+      extraPanes += 1;
+      const pid = 'extra-' + extraPanes;
+      const pane = document.createElement('div');
+      pane.className = 'pane';
+      pane.id = 'pane-' + pid;
+      pane.onclick = () => window.focusPane(pane);
+      pane.innerHTML =
+        `<div class="pane-bar"><span>+---[ ttyS${extraPanes} :: tmux split ]---+</span><button class="tui-btn" onclick="event.stopPropagation();this.closest('.pane').remove()">[x]</button></div>` +
+        `<div class="pane-body" id="term-out-${pid}">Spawned tmux split ttyS${extraPanes} (wm-compositor-tmux).\nType "help" or "wasm-check".\n\n</div>` +
+        `<form class="pane-form" onsubmit="execCmd(event,'term-out-${pid}','term-in-${pid}')"><span class="pane-prompt">root@kitty-ink:~#</span><input id="term-in-${pid}" class="pane-in" autocomplete="off" /></form>`;
+      grid.append(pane);
+      window.focusPane(pane);
+    };
+
+    window.execCmd = (e, outId, inId) => {
+      e.preventDefault();
+      const inp = document.getElementById(inId);
+      const out = document.getElementById(outId);
+      const cmd = inp.value.trim();
+      inp.value = '';
+      if (!cmd) return;
+      out.textContent += `root@kitty-ink:~# ${cmd}\n`;
+      if (cmd === 'clear') {
+        out.textContent = '';
+      } else if (cmd === 'help') {
+        out.textContent += [
+          'Kitty-Ink DevOps TUI (wm-compositor-tmux · holo-display-tty):',
+          '  tmux ls                List active TUI panes',
+          '  holo-vm-arch status    Inspect promoted holo-vm-arch (ex-Emukit) VM layer',
+          '  wasm-check             Run B8G_ABI_MAGIC_V3 WASM check in SharedWorker',
+          '  holo-pm status         Inspect OPFS:/v11/files/ CAS store',
+          '  reboot                 Return to Awesome-OS Desktop Greeter',
+          'Keys: Alt+Enter (Split) | Alt+Z (Zoom) | Alt+C (Phosphor/Amber/Ice)',
+        ].join('\n') + '\n';
+      } else if (cmd === 'tmux ls') {
+        const count = document.querySelectorAll('.pane').length;
+        out.textContent += `0: devops-tui (${count} panes) [wm-compositor-tmux · zero-GPU]\n`;
+      } else if (cmd === 'holo-vm-arch status') {
+        out.textContent += 'holo-vm-arch (promoted from Emukit):\n  Targets: wasm32-wasi | x86_64-linux-musl | aarch64 | riscv64\n  Display: holo-display-tty (zero-GPU ANSI) | ABI: 0x33564742\n';
+      } else if (cmd === 'reboot') {
+        location.href = './';
+      } else {
+        lastOutId = outId;
+        port.postMessage({ type: 'shell-exec', cmd });
+      }
+      out.scrollTop = out.scrollHeight;
+    };
+
+    window.refreshOpfs = async () => {
+      const el = document.getElementById('opfs-out');
+      try {
+        const root = await navigator.storage.getDirectory();
+        const v11 = await root.getDirectoryHandle('v11', { create: true });
+        const files = await v11.getDirectoryHandle('files', { create: true });
+        const lines = ['OPFS:/v11/files/ (Cache API bypassed)'];
+        for await (const shard of files.values()) {
+          if (shard.kind === 'directory') {
+            for await (const f of shard.values()) {
+              if (f.kind === 'file') {
+                const file = await f.getFile();
+                lines.push(`  |-- ${shard.name}/${f.name.slice(0, 22)}.. (${file.size}B)`);
+              }
+            }
+          }
+        }
+        el.textContent = lines.join('\n');
+      } catch (err) {
+        el.textContent = 'OPFS error: ' + err;
+      }
+    };
+
+    function bar(pct) {
+      const n = Math.round(pct / 5);
+      return '[' + '#'.repeat(n) + '.'.repeat(20 - n) + '] ' + String(pct).padStart(2, ' ') + '%';
+    }
+
+    function tick() {
+      const cpu = 8 + Math.floor(Math.random() * 16);
+      const mem = 22 + Math.floor(Math.random() * 10);
+      const now = new Date().toTimeString().slice(0, 8);
+      document.getElementById('telemetry-out').textContent = [
+        `COMPOSITOR : wm-compositor-tmux (0 GPU shaders)`,
+        `VM LAYER   : holo-vm-arch (B8G_ABI_MAGIC_V3 = 0x33564742)`,
+        `STORAGE    : OPFS:/v11/files/ (${casCount} blobs)`,
+        `CPU WASM   : ${bar(cpu)}`,
+        `ARENA MEM  : ${bar(mem)}`,
+        `TTY SINK   : holo-display-tty (ttyS0)`,
+        `UPTIME     : ${now}`,
+      ].join('\n');
+      document.getElementById('tmux-right').textContent = `OPFS v11 (${casCount}) | 0x33564742 | ${now.slice(0, 5)}`;
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.altKey && e.key === 'Enter') { e.preventDefault(); window.spawnPane(); }
+      else if (e.altKey && e.key.toLowerCase() === 'z') { e.preventDefault(); window.toggleZoom(); }
+      else if (e.altKey && e.key.toLowerCase() === 'c') { e.preventDefault(); window.cyclePhosphor(); }
+    });
+
+    document.getElementById('term-out-0').textContent =
+      `Kitty-Ink DevOps TUI · wm-compositor-tmux (Zero-GPU ANSI Compositor)\n` +
+      `Type "help", "tmux ls", "holo-vm-arch status", or "wasm-check".\n` +
+      `Keys: Alt+Enter (Split) | Alt+Z (Zoom) | Alt+C (Phosphor/Amber/Ice)\n\n`;
+    document.getElementById('term-in-0').focus();
+    window.refreshOpfs();
+    tick();
+    setInterval(tick, 1800);
+  </script>
+</body>
+</html>

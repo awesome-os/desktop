@@ -56,7 +56,7 @@
       padding: 10px 14px; font-family: ui-monospace, Consolas, monospace; font-size: 12px;
       color: #6ee7b7; max-height: 104px; overflow-y: auto; line-height: 1.5; user-select: text;
     }
-    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
     @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
     .card {
       background: rgba(16,22,36,0.85); border: 2px solid rgba(148,163,184,0.16); border-radius: 12px;
@@ -244,6 +244,8 @@
         <span id="abi-pill" class="pill">booting wasm...</span>
         <span id="sw-pill" class="pill green">SW: OPFS v11</span>
         <span id="worker-pill" class="pill purple">SharedWorker</span>
+        <a href="./cas-mandelbrot.html" title="Q(self) Bounded CAS Orbit & WebGPU Mandelbrot">Q(self) Orbit</a>
+        <a href="/emukit.html" title="Promoted VM/Arch Substrate (formerly Emukit)">holo-vm-arch</a>
         <a href="/">Home</a>
         <a href="/docs/">/docs/</a>
       </div>
@@ -350,10 +352,11 @@
 
   <script>
     const DESKTOPS = [
-      { id: 'sectium-desktop', name: 'Sectium Pure-Art Desktop', desc: 'Sectium Universal Display Driver (Skia / Dawn WebGPU / Blink) + Code - OSS', uri: 'project://node/sectium-desktop?from=repository://github.com/awesome-os/sectium@main' },
-      { id: 'omarchy-hyprland', name: 'Omarchy Hyprland / Wayland', desc: 'holo-display-wayland + static musl awesome-os/coreutils', uri: 'project://coreutils/omarchy?from=repository://github.com/awesome-os/desktop-omarchy@main' },
-      { id: 'noctalia-shell', name: 'Noctalia Shell / Quickshell', desc: 'holo-display-qt prismatic desktop projected from v11 CAS', uri: 'project://coreutils/noctalia?from=repository://github.com/awesome-os/t2desktop-noctalia@main' },
-      { id: 'kitty-ink-tui', name: 'Kitty-Ink DevOps TUI', desc: 'Zero-GPU holo-display-tty terminal shell', uri: 'project://node/kitty-ink?from=repository://github.com/awesome-os/awesome-os@main' },
+      { id: 'sectium-desktop', page: './sectium.html', name: 'Sectium Pure-Art Desktop', desc: 'wm-compositor-sectium · Lumi Chromatic Pure-Art Canvas + Code - OSS', uri: 'project://node/sectium-desktop?from=repository://github.com/awesome-os/sectium@main' },
+      { id: 'omarchy-hyprland', page: './omarchy.html', name: 'Omarchy Hyprland / Wayland', desc: 'wm-compositor-hyprland · Dwindle BSP + 25 Themes + WebGPU + Wallpapers', uri: 'project://coreutils/omarchy?from=repository://github.com/awesome-os/desktop-omarchy@main' },
+      { id: 'noctalia-shell', page: './noctalia.html', name: 'Noctalia Wayland Shell', desc: 'wm-compositor-noctalia · Sovereign C++23 Wayland/GLES + Explorer Miller UI', uri: 'project://cpp/noctalia?from=repository://github.com/awesome-os/noctalia@main' },
+      { id: 'chonkstep-wayland', page: './chonkstep.html', name: 'Chonkstep Wayland', desc: 'wm-compositor-wayland · Smithay 0.7.0 Floating + BeOS / OS/2 / System 7 / Modern', uri: 'project://rust/chonkstep?from=repository://github.com/awesome-os/chonkstep@main' },
+      { id: 'kitty-ink-tui', page: './kitty-ink.html', name: 'Kitty-Ink DevOps TUI', desc: 'wm-compositor-tmux · Zero-GPU holo-display-tty Multi-Pane Terminal Shell', uri: 'project://node/kitty-ink?from=repository://github.com/awesome-os/awesome-os@main' },
     ];
     const GREETERS = ['lumi-chromatic-greeter', 'tty-ink-greeter', 'wol-warm-resume'];
 
@@ -661,11 +664,10 @@
     document.getElementById('launch-btn').onclick = () => {
       const d = DESKTOPS[selDesktop];
       showLoader('Booting ' + d.name, 'holo-project "' + d.uri + '" -> OPFS:/v11/files/', 45);
-      if (d.id === 'omarchy-hyprland') {
-        setTimeout(() => { location.href = './omarchy.html'; }, 280);
-        return;
-      }
       port.postMessage({ type: 'boot-desktop', desktop: d.id, greeter: GREETERS[selGreeter], projectUri: d.uri });
+      if (d.page) {
+        setTimeout(() => { location.href = d.page; }, 260);
+      }
     };
     document.getElementById('reboot-btn').onclick = () => {
       port.postMessage({ type: 'shell-exec', cmd: 'reboot' });
@@ -678,8 +680,8 @@
     };
     window.addEventListener('keydown', (e) => {
       if (!greeterScreen.classList.contains('hidden')) {
-        if (e.key === 'ArrowRight') { selDesktop = (selDesktop + 1) % 4; renderChooser(); }
-        else if (e.key === 'ArrowLeft') { selDesktop = (selDesktop + 3) % 4; renderChooser(); }
+        if (e.key === 'ArrowRight') { selDesktop = (selDesktop + 1) % DESKTOPS.length; renderChooser(); }
+        else if (e.key === 'ArrowLeft') { selDesktop = (selDesktop + DESKTOPS.length - 1) % DESKTOPS.length; renderChooser(); }
         else if (e.key === 'Enter') { document.getElementById('launch-btn').click(); }
       }
     });

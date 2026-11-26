@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Noctalia Wayland Shell — Sovereign C++23 Wayland + OpenGL ES + Explorer</title>
+  <style>
+    :root {
+      --bg: #0c0816;
+      --surface: rgba(24, 17, 42, 0.84);
+      --surface-hi: rgba(38, 27, 66, 0.92);
+      --fg: #f3e8ff;
+      --muted: #a78bfa;
+      --rose: #f472b6;
+      --violet: #a855f7;
+      --cyan: #38bdf8;
+      --green: #34d399;
+      --border: rgba(192, 132, 252, 0.24);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      background:
+        radial-gradient(circle at 18% 22%, rgba(244, 114, 182, 0.28), transparent 44%),
+        radial-gradient(circle at 82% 72%, rgba(168, 85, 247, 0.30), transparent 46%),
+        radial-gradient(circle at 52% 10%, rgba(56, 189, 248, 0.16), transparent 40%),
+        var(--bg);
+      color: var(--fg);
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      user-select: none;
+    }
+
+    .shell { position: fixed; inset: 0; display: flex; flex-direction: column; padding: 10px 14px 12px; gap: 12px; }
+
+    /* Authentic Noctalia Floating Pill Top Bar */
+    .noc-bar {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px; z-index: 40;
+    }
+    .noc-pill-group {
+      display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px;
+      background: var(--surface); backdrop-filter: blur(20px);
+      border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.42);
+      font-size: 12px;
+    }
+    .noc-btn {
+      padding: 4px 10px; border-radius: 999px; border: 1px solid transparent;
+      background: transparent; color: var(--fg); cursor: pointer; font-size: 12px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 5px; transition: all 130ms ease;
+    }
+    .noc-btn:hover { background: rgba(168, 85, 247, 0.22); }
+    .noc-btn.active { background: linear-gradient(135deg, var(--violet), var(--rose)); color: #fff; }
+    .noc-tag {
+      font-family: ui-monospace, Consolas, monospace; font-size: 11px; color: var(--rose);
+      padding: 2px 8px; border-radius: 999px; background: rgba(244, 114, 182, 0.14);
+    }
+
+    /* Main Desktop Stage */
+    .stage {
+      flex: 1; position: relative; display: grid;
+      grid-template-columns: 1.35fr 0.65fr; gap: 14px; min-height: 0;
+      padding-bottom: 66px;
+    }
+    @media (max-width: 920px) { .stage { grid-template-columns: 1fr; } }
+
+    .panel {
+      background: var(--surface); backdrop-filter: blur(22px);
+      border: 1px solid var(--border); border-radius: 20px;
+      box-shadow: 0 20px 54px rgba(0, 0, 0, 0.50);
+      display: flex; flex-direction: column; overflow: hidden; min-height: 0;
+    }
+    .panel-hdr {
+      height: 40px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border); background: rgba(15, 10, 28, 0.65);
+      font-size: 12.5px; font-weight: 700;
+    }
+    .panel-sub { font-size: 11px; font-family: ui-monospace, Consolas, monospace; color: var(--muted); font-weight: 500; }
+
+    /* awesome-os/explorer Miller-Column File Manager */
+    .miller {
+      flex: 1; display: grid; grid-template-columns: 0.9fr 1.1fr 1.2fr; min-height: 0;
+    }
+    .miller-col {
+      border-right: 1px solid var(--border); overflow-y: auto; padding: 8px;
+      display: flex; flex-direction: column; gap: 3px;
+    }
+    .miller-col:last-child { border-right: none; }
+    .miller-hdr {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--muted); padding: 4px 8px; font-weight: 800;
+    }
+    .m-row {
+      padding: 7px 10px; border-radius: 10px; cursor: pointer; font-size: 12px;
+      display: flex; align-items: center; justify-content: space-between;
+      font-family: ui-monospace, Consolas, monospace; transition: background 100ms ease;
+    }
+    .m-row:hover { background: rgba(168, 85, 247, 0.16); }
+    .m-row.active { background: linear-gradient(90deg, rgba(168,85,247,0.32), rgba(244,114,182,0.22)); color: #fff; font-weight: 700; }
+    .m-preview {
+      padding: 12px; font-family: ui-monospace, Consolas, monospace; font-size: 11.5px;
+      line-height: 1.6; color: #e9d5ff; white-space: pre-wrap; user-select: text;
+    }
+
+    /* Right Column: Noctalia Widgets + Quick Shell */
+    .right-col { display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+    .widgets-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px; }
+    .w-card {
+      padding: 12px; border-radius: 14px; background: var(--surface-hi);
+      border: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px;
+    }
+    .w-lbl { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .w-val { font-size: 18px; font-weight: 800; color: #fff; }
+    .w-sub { font-size: 11px; color: var(--rose); font-family: ui-monospace, Consolas, monospace; }
+
+    .term-wrap { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    .term-out {
+      flex: 1; padding: 10px 12px; overflow-y: auto; font-family: ui-monospace, Consolas, monospace;
+      font-size: 12px; line-height: 1.5; white-space: pre-wrap; user-select: text;
+    }
+    .term-form { display: flex; border-top: 1px solid var(--border); background: rgba(12, 8, 22, 0.72); }
+    .term-prompt { padding: 8px 6px 8px 12px; color: var(--rose); font-family: ui-monospace, Consolas, monospace; font-size: 12px; font-weight: 700; }
+    .term-in { flex: 1; background: transparent; border: none; outline: none; color: #fff; font-family: ui-monospace, Consolas, monospace; font-size: 12px; padding: 8px 10px 8px 0; }
+
+    /* Control Center Popover */
+    .cc-popover {
+      position: fixed; top: 56px; right: 16px; width: 320px; z-index: 80;
+      background: var(--surface-hi); backdrop-filter: blur(26px);
+      border: 1px solid var(--border); border-radius: 20px; padding: 14px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.65);
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .cc-popover.hidden { display: none; }
+    .cc-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .cc-tile {
+      padding: 10px; border-radius: 14px; border: 1px solid var(--border);
+      background: rgba(12, 8, 22, 0.55); color: var(--fg); cursor: pointer;
+      text-align: left; font-size: 12px; font-weight: 600;
+    }
+    .cc-tile.on { background: linear-gradient(135deg, rgba(168,85,247,0.45), rgba(244,114,182,0.35)); border-color: var(--rose); }
+    .cc-slider { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--muted); }
+    .cc-slider input { width: 100%; accent-color: var(--rose); }
+
+    /* Noctalia Floating Bottom Dock */
+    .noc-dock {
+      position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 40;
+      display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px;
+      background: var(--surface); backdrop-filter: blur(22px);
+      border: 1px solid var(--border); box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <!-- Floating Pill Top Bar -->
+    <header class="noc-bar">
+      <div class="noc-pill-group">
+        <button class="noc-btn active">&#9789; Noctalia</button>
+        <span class="noc-tag">C++23 · Wayland/GLES</span>
+        <span class="noc-tag" style="color:var(--cyan);background:rgba(56,189,248,0.14)">zero Qt/GTK</span>
+      </div>
+      <div class="noc-pill-group">
+        <span id="noc-clock" style="font-weight:700;font-family:ui-monospace,Consolas,monospace;padding:0 8px">--:--</span>
+        <span style="color:var(--muted);font-size:11px">·</span>
+        <span id="noc-cas" style="font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--green);padding:0 6px">OPFS v11</span>
+      </div>
+      <div class="noc-pill-group">
+        <button class="noc-btn" onclick="toggleCC()">&#9881; Control Center</button>
+        <button class="noc-btn" onclick="location.href='./'">&#8635; Greeter</button>
+      </div>
+    </header>
+
+    <!-- Control Center Popover -->
+    <aside id="cc-pop" class="cc-popover hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <strong>Noctalia Control Center</strong>
+        <span class="panel-sub">b8g-ghost CAS</span>
+      </div>
+      <div class="cc-tiles">
+        <button class="cc-tile on" onclick="this.classList.toggle('on')">Wi-Fi · AwesomeNet</button>
+        <button class="cc-tile on" onclick="this.classList.toggle('on')">Wayland GLES 60Hz</button>
+        <button class="cc-tile" onclick="this.classList.toggle('on')">Night Light</button>
+        <button class="cc-tile" onclick="this.classList.toggle('on')">Do Not Disturb</button>
+      </div>
+      <label class="cc-slider">Audio PipeWire Volume <input type="range" min="0" max="100" value="72" /></label>
+      <label class="cc-slider">Display Brightness <input type="range" min="10" max="100" value="88" /></label>
+    </aside>
+
+    <!-- Main Stage -->
+    <main class="stage">
+      <!-- awesome-os/explorer Miller-Column File Manager -->
+      <section class="panel">
+        <div class="panel-hdr">
+          <span>awesome-os/explorer · Native Wayland Miller-Column File Manager</span>
+          <span class="panel-sub">xdg-desktop-portal · B8G_ABI_MAGIC_V3</span>
+        </div>
+        <div class="miller">
+          <div class="miller-col" id="col-roots">
+            <div class="miller-hdr">Locations</div>
+            <div class="m-row active" onclick="selectRoot('wayland', this)">awesome-os/wayland <span>&rsaquo;</span></div>
+            <div class="m-row" onclick="selectRoot('compositors', this)">wm-compositor-* <span>&rsaquo;</span></div>
+            <div class="m-row" onclick="selectRoot('opfs', this)">OPFS:/v11/files/ <span>&rsaquo;</span></div>
+            <div class="m-row" onclick="selectRoot('noctalia', this)">noctalia/src/ <span>&rsaquo;</span></div>
+          </div>
+          <div class="miller-col" id="col-items"></div>
+          <div class="miller-col">
+            <div class="miller-hdr">Inspector</div>
+            <div class="m-preview" id="col-preview">Select a file or OPFS blob to inspect.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Widgets + Noctalia Shell -->
+      <div class="right-col">
+        <section class="panel">
+          <div class="panel-hdr">
+            <span>Noctalia Desktop Widgets</span>
+            <span class="panel-sub">ext-workspace-v1</span>
+          </div>
+          <div class="widgets-grid">
+            <div class="w-card">
+              <span class="w-lbl">Wayland Shell</span>
+              <span class="w-val">C++23</span>
+              <span class="w-sub">OpenGL ES · 0 Qt</span>
+            </div>
+            <div class="w-card">
+              <span class="w-lbl">B8G Bridge</span>
+              <span class="w-val">0x33564742</span>
+              <span class="w-sub">b8g_ghost_bridge.h</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" style="flex:1">
+          <div class="panel-hdr">
+            <span>Noctalia Shell · wasi-host-web</span>
+            <span class="panel-sub">SharedWorker WASM</span>
+          </div>
+          <div class="term-wrap">
+            <div id="term-out" class="term-out"></div>
+            <form id="term-form" class="term-form">
+              <span class="term-prompt">noctalia@wayland ~&gt;</span>
+              <input id="term-in" class="term-in" placeholder="help | noctalia-status | wasm-check | clear" autocomplete="off" />
+            </form>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Noctalia Bottom Dock -->
+    <nav class="noc-dock">
+      <button class="noc-btn active" onclick="selectRoot('opfs')">&#128193; Explorer</button>
+      <button class="noc-btn" onclick="toggleCC()">&#9881; Controls</button>
+      <button class="noc-btn" onclick="location.href='./omarchy.html'">&Omega; Omarchy</button>
+      <button class="noc-btn" onclick="location.href='./chonkstep.html'">&#9635; Chonkstep</button>
+      <button class="noc-btn" onclick="location.href='./sectium.html'">&#9672; Sectium</button>
+      <button class="noc-btn" onclick="location.href='./kitty-ink.html'">&#9608; Kitty-Ink</button>
+    </nav>
+  </div>
+
+  <script type="module">
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./holo-web-service-worker.js', { scope: './' }).catch(() => {});
+    }
+
+    let port;
+    if (typeof SharedWorker !== 'undefined') {
+      const sw = new SharedWorker('./wasi-host-worker.js?v=11.2');
+      port = sw.port;
+      port.start();
+    } else {
+      port = new Worker('./wasi-host-worker.js?v=11.2');
+    }
+
+    const termOut = document.getElementById('term-out');
+    const termIn = document.getElementById('term-in');
+    port.onmessage = (ev) => {
+      const msg = ev.data;
+      if (msg.type === 'ready' || msg.type === 'boot-log') {
+        document.getElementById('noc-cas').textContent = `OPFS v11 (${msg.casCount || 1})`;
+      } else if (msg.type === 'shell-out') {
+        termOut.textContent += (msg.out ? msg.out + '\n' : '');
+        termOut.scrollTop = termOut.scrollHeight;
+      }
+    };
+
+    const TREE = {
+      wayland: [
+        { name: 'wayland-compositor-registry.mts', info: 'Canonical generic awesome-os/wayland compositor registry.\nDefines B8G_ABI_MAGIC_V3 (0x33564742) surface handoff across:\n  - wm-compositor-wayland (Chonkstep / Smithay)\n  - wm-compositor-hyprland (Omarchy Dwindle BSP)\n  - wm-compositor-noctalia (C++23 Wayland/GLES)\n  - wm-compositor-tmux (Kitty-Ink zero-GPU TUI)' },
+        { name: 'ext-workspace-v1.xml', info: 'Standard Wayland workspace protocol consumed by Noctalia pill bar and Chonkstep IPC.' },
+        { name: 'b8g_ghost_bridge.h', info: 'Zero-copy B8G_ARENA_V1 bridge connecting Noctalia C++23 shell to ~/.b8g/cas and /tmp/sectium-dev.sock.' },
+      ],
+      compositors: [
+        { name: 'wm-compositor-wayland', info: 'Generic floating Wayland compositor (awesome-os/chonkstep · Smithay 0.7.0).' },
+        { name: 'wm-compositor-hyprland', info: 'Dynamic Dwindle BSP tiling Wayland compositor (awesome-os/desktop-omarchy).' },
+        { name: 'wm-compositor-tmux', info: 'Zero-GPU multi-pane terminal compositor (Kitty-Ink / holo-display-tty).' },
+        { name: 'wm-compositor-sectium', info: 'Pure-Art multi-renderer compositor (awesome-os/sectium-display).' },
+      ],
+      noctalia: [
+        { name: 'shell_main.cpp', info: 'Single-process C++23 Wayland + OpenGL ES shell (zero Qt, zero GTK).\nRenders floating pill bar, dock, control center, OSD, and lock screen.' },
+        { name: 'explorer_miller.cpp', info: 'awesome-os/explorer native Wayland Miller-column file manager with xdg-desktop-portal.' },
+      ],
+    };
+
+    window.selectRoot = async (key, el) => {
+      if (el) {
+        document.querySelectorAll('#col-roots .m-row').forEach((r) => r.classList.remove('active'));
+        el.classList.add('active');
+      }
+      const itemsCol = document.getElementById('col-items');
+      const preview = document.getElementById('col-preview');
+      itemsCol.innerHTML = `<div class="miller-hdr">${key}</div>`;
+
+      if (key === 'opfs') {
+        try {
+          const root = await navigator.storage.getDirectory();
+          const v11 = await root.getDirectoryHandle('v11', { create: true });
+          const files = await v11.getDirectoryHandle('files', { create: true });
+          let count = 0;
+          for await (const shard of files.values()) {
+            if (shard.kind === 'directory') {
+              for await (const f of shard.values()) {
+                if (f.kind === 'file') {
+                  count++;
+                  const file = await f.getFile();
+                  const row = document.createElement('div');
+                  row.className = 'm-row';
+                  row.innerHTML = `<span>${shard.name}/${f.name.slice(0, 14)}...</span><span>${file.size}B</span>`;
+                  row.onclick = () => {
+                    itemsCol.querySelectorAll('.m-row').forEach((x) => x.classList.remove('active'));
+                    row.classList.add('active');
+                    preview.textContent = `OPFS:/v11/files/${shard.name}/${f.name}\nSize: ${file.size} bytes\nStorage: Origin Private File System (0 Cache API)`;
+                  };
+                  itemsCol.append(row);
+                }
+              }
+            }
+          }
+          preview.textContent = `OPFS:/v11/files/ scanned: ${count} content-addressed blobs.`;
+        } catch (err) {
+          preview.textContent = 'OPFS error: ' + err;
+        }
+        return;
+      }
+
+      const list = TREE[key] || [];
+      list.forEach((item, idx) => {
+        const row = document.createElement('div');
+        row.className = 'm-row' + (idx === 0 ? ' active' : '');
+        row.textContent = item.name;
+        row.onclick = () => {
+          itemsCol.querySelectorAll('.m-row').forEach((x) => x.classList.remove('active'));
+          row.classList.add('active');
+          preview.textContent = item.info;
+        };
+        itemsCol.append(row);
+      });
+      if (list[0]) preview.textContent = list[0].info;
+    };
+    window.selectRoot('wayland');
+
+    window.toggleCC = () => document.getElementById('cc-pop').classList.toggle('hidden');
+
+    termOut.textContent =
+      `Awesome-OS Noctalia Wayland Shell (C++23 + OpenGL ES · zero Qt/GTK)\n` +
+      `Paired with awesome-os/explorer (Miller columns) & b8g_ghost_bridge.h\n` +
+      `Type "help", "noctalia-status", or "wasm-check".\n\n`;
+
+    document.getElementById('term-form').onsubmit = (e) => {
+      e.preventDefault();
+      const cmd = termIn.value.trim();
+      termIn.value = '';
+      if (!cmd) return;
+      termOut.textContent += `noctalia@wayland ~> ${cmd}\n`;
+      if (cmd === 'clear') termOut.textContent = '';
+      else if (cmd === 'help') termOut.textContent += 'Commands: noctalia-status | wasm-check | holo-pm status | clear | reboot\n';
+      else if (cmd === 'noctalia-status') termOut.textContent += 'Shell: awesome-os/noctalia (C++23 Wayland/GLES)\nExplorer: awesome-os/explorer (Miller columns)\nBridge: B8G_ABI_MAGIC_V3 (0x33564742)\n';
+      else if (cmd === 'reboot') location.href = './';
+      else port.postMessage({ type: 'shell-exec', cmd });
+      termOut.scrollTop = termOut.scrollHeight;
+    };
+
+    function tick() {
+      const d = new Date();
+      document.getElementById('noc-clock').textContent =
+        d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) + '  ' + d.toTimeString().slice(0, 5);
+    }
+    tick();
+    setInterval(tick, 10000);
+  </script>
+</body>
+</html>

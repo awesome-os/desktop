@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chonkstep Wayland — wm-compositor-wayland (Smithay 0.7.0 + BeOS / OS/2 / System 7 / Modern)</title>
+  <style>
+    :root {
+      --bg: #336698;
+      --win-bg: #e4e4e4;
+      --win-fg: #111827;
+      --win-border: #1f2937;
+      --bar-bg: #ffcc00;
+      --bar-fg: #111111;
+      --term-bg: #111827;
+      --term-fg: #e5e7eb;
+      --accent: #ffcc00;
+      --radius: 2px;
+    }
+    /* BeOS Theme (signature yellow tab titlebar) */
+    body.deco-beos {
+      --bg: #336698; --win-bg: #dcdcdc; --win-fg: #111; --win-border: #333;
+      --bar-bg: linear-gradient(180deg, #ffe047 0%, #f5b800 100%); --bar-fg: #111;
+      --accent: #f5b800; --radius: 2px;
+    }
+    /* OS/2 Warp Theme */
+    body.deco-os2 {
+      --bg: #1b4d4f; --win-bg: #c8c8c8; --win-fg: #0f172a; --win-border: #1e293b;
+      --bar-bg: linear-gradient(180deg, #1d4ed8 0%, #1e3a8a 100%); --bar-fg: #ffffff;
+      --accent: #2563eb; --radius: 0px;
+    }
+    /* Classic System 7 Theme */
+    body.deco-system7 {
+      --bg: #7a8b99; --win-bg: #f5f5f5; --win-fg: #000000; --win-border: #000000;
+      --bar-bg: repeating-linear-gradient(180deg, #fff 0px, #fff 2px, #222 2px, #222 3px); --bar-fg: #000;
+      --accent: #111111; --radius: 1px;
+    }
+    /* Modern Floating Wayland */
+    body.deco-modern {
+      --bg: radial-gradient(circle at 20% 20%, #1e3a8a, #0f172a 55%, #090d16);
+      --win-bg: rgba(17, 24, 39, 0.90); --win-fg: #f1f5f9; --win-border: rgba(56, 189, 248, 0.45);
+      --bar-bg: rgba(15, 23, 42, 0.96); --bar-fg: #f8fafc;
+      --accent: #38bdf8; --radius: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      background: var(--bg); color: var(--win-fg);
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      user-select: none;
+    }
+
+    .shell { position: fixed; inset: 0; display: flex; flex-direction: column; }
+
+    /* Chonkstep Top Bar */
+    .topbar {
+      height: 32px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 12px; background: rgba(15, 23, 42, 0.92); color: #f1f5f9;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.14); font-size: 12px; z-index: 60;
+    }
+    .tb-group { display: flex; align-items: center; gap: 6px; }
+    .tb-btn {
+      padding: 3px 9px; border-radius: 6px; border: 1px solid rgba(148, 163, 184, 0.3);
+      background: rgba(30, 41, 59, 0.8); color: #e2e8f0; cursor: pointer; font-size: 11.5px; font-weight: 600;
+    }
+    .tb-btn:hover { border-color: #facc15; color: #fff; }
+    .tb-btn.active { background: #facc15; color: #111827; border-color: #facc15; }
+
+    /* Floating Compositor Stage */
+    .stage { flex: 1; position: relative; overflow: hidden; }
+
+    .cwin {
+      position: absolute; display: flex; flex-direction: column;
+      background: var(--win-bg); color: var(--win-fg);
+      border: 2px solid var(--win-border); border-radius: var(--radius);
+      box-shadow: 0 18px 46px rgba(0, 0, 0, 0.42);
+      min-width: 300px; min-height: 200px; overflow: hidden;
+    }
+    .cwin.active { box-shadow: 0 24px 60px rgba(0, 0, 0, 0.58); }
+    .cwin-hdr {
+      height: 28px; padding: 0 8px; display: flex; align-items: center; justify-content: space-between;
+      background: var(--bar-bg); color: var(--bar-fg);
+      border-bottom: 2px solid var(--win-border); cursor: grab; font-size: 12px; font-weight: 800;
+    }
+    body.deco-system7 .cwin-title {
+      background: #f5f5f5; padding: 0 8px; border: 1px solid #000;
+    }
+    .cwin-close {
+      width: 18px; height: 18px; border: 1px solid var(--win-border);
+      background: var(--win-bg); color: var(--win-fg); font-weight: 800; cursor: pointer;
+      display: inline-grid; place-items: center; font-size: 12px; line-height: 1;
+    }
+    .cwin-body { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; user-select: text; }
+
+    .term-out {
+      flex: 1; padding: 10px 12px; overflow-y: auto; background: var(--term-bg); color: var(--term-fg);
+      font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; line-height: 1.5; white-space: pre-wrap;
+    }
+    .term-form { display: flex; background: #090d16; border-top: 1px solid #334155; }
+    .term-prompt { padding: 7px 6px 7px 10px; color: #facc15; font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; font-weight: 700; }
+    .term-in { flex: 1; background: transparent; border: none; outline: none; color: #fff; font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; padding: 7px 8px 7px 0; }
+
+    .info-body {
+      flex: 1; padding: 12px; overflow-y: auto; font-family: ui-monospace, Consolas, monospace;
+      font-size: 12px; line-height: 1.55; white-space: pre-wrap;
+    }
+
+    /* Authentic Right-Hand chonk-dock Tiles */
+    .chonk-dock {
+      position: absolute; top: 14px; right: 14px; z-index: 45;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .dock-tile {
+      width: 64px; height: 64px; background: rgba(15, 23, 42, 0.88); color: #f8fafc;
+      border: 2px solid rgba(250, 204, 21, 0.7); border-radius: 6px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+      cursor: pointer; font-size: 10px; font-weight: 700; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      transition: transform 110ms ease;
+    }
+    .dock-tile:hover { transform: scale(1.05); border-color: #38bdf8; }
+    .dock-tile span.ico { font-size: 18px; color: #facc15; }
+  </style>
+</head>
+<body class="deco-beos">
+  <div class="shell">
+    <header class="topbar">
+      <div class="tb-group">
+        <strong>Chonkstep Wayland</strong>
+        <span style="color:#94a3b8;font-family:ui-monospace,Consolas,monospace;font-size:11px">wm-compositor-wayland · Smithay 0.7.0</span>
+      </div>
+      <div class="tb-group">
+        <span style="color:#94a3b8;font-size:11px">Decoration:</span>
+        <button class="tb-btn active" onclick="setDeco('beos', this)">BeOS</button>
+        <button class="tb-btn" onclick="setDeco('os2', this)">OS/2 Warp</button>
+        <button class="tb-btn" onclick="setDeco('system7', this)">System 7</button>
+        <button class="tb-btn" onclick="setDeco('modern', this)">Modern</button>
+        <button class="tb-btn" onclick="spawnWindow()">+ Window</button>
+        <button class="tb-btn" onclick="location.href='./'">&#8635; Greeter</button>
+      </div>
+    </header>
+
+    <main class="stage" id="stage">
+      <!-- Floating Window 1: Chonkstep Terminal -->
+      <div class="cwin active" id="cw-term" style="left:28px;top:28px;width:540px;height:380px;z-index:12">
+        <div class="cwin-hdr" data-drag="cw-term">
+          <span class="cwin-title">chonk-shell · wasi-host-web (Wayland Floating)</span>
+          <button class="cwin-close" onclick="document.getElementById('cw-term').style.display='none'">&times;</button>
+        </div>
+        <div class="cwin-body">
+          <div id="term-out" class="term-out"></div>
+          <form id="term-form" class="term-form">
+            <span class="term-prompt">chonk@wayland ~$</span>
+            <input id="term-in" class="term-in" placeholder="help | chonk-ipc status | wasm-check | clear" autocomplete="off" />
+          </form>
+        </div>
+      </div>
+
+      <!-- Floating Window 2: Smithay + B8G ABI Inspector -->
+      <div class="cwin" id="cw-ipc" style="left:590px;top:44px;width:440px;height:340px;z-index:11">
+        <div class="cwin-hdr" data-drag="cw-ipc">
+          <span class="cwin-title">chonk-hyprland-ipc · src/b8g_abi.rs</span>
+          <button class="cwin-close" onclick="document.getElementById('cw-ipc').style.display='none'">&times;</button>
+        </div>
+        <div class="cwin-body">
+          <pre id="ipc-info" class="info-body"></pre>
+        </div>
+      </div>
+
+      <!-- Authentic chonk-dock -->
+      <aside class="chonk-dock">
+        <button class="dock-tile" onclick="showWin('cw-term')"><span class="ico">&gt;_</span><span>Shell</span></button>
+        <button class="dock-tile" onclick="showWin('cw-ipc')"><span class="ico">ABI</span><span>B8G IPC</span></button>
+        <button class="dock-tile" onclick="spawnWindow()"><span class="ico">+</span><span>Float</span></button>
+        <button class="dock-tile" onclick="location.href='./omarchy.html'"><span class="ico">&Omega;</span><span>Omarchy</span></button>
+        <button class="dock-tile" onclick="location.href='./noctalia.html'"><span class="ico">&#9789;</span><span>Noctalia</span></button>
+      </aside>
+    </main>
+  </div>
+
+  <script type="module">
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./holo-web-service-worker.js', { scope: './' }).catch(() => {});
+    }
+
+    let port;
+    if (typeof SharedWorker !== 'undefined') {
+      const sw = new SharedWorker('./wasi-host-worker.js?v=11.2');
+      port = sw.port;
+      port.start();
+    } else {
+      port = new Worker('./wasi-host-worker.js?v=11.2');
+    }
+
+    const termOut = document.getElementById('term-out');
+    const termIn = document.getElementById('term-in');
+    let casCount = 1;
+    let topZ = 20;
+    let curDeco = 'beos';
+    let winSeq = 2;
+
+    port.onmessage = (ev) => {
+      const msg = ev.data;
+      if (msg.type === 'ready' || msg.type === 'boot-log') {
+        casCount = msg.casCount || casCount;
+        updateIpc();
+      } else if (msg.type === 'shell-out') {
+        termOut.textContent += (msg.out ? msg.out + '\n' : '');
+        termOut.scrollTop = termOut.scrollHeight;
+      }
+    };
+
+    function focusWin(el) {
+      document.querySelectorAll('.cwin').forEach((w) => w.classList.remove('active'));
+      el.classList.add('active');
+      el.style.zIndex = String(++topZ);
+    }
+
+    window.showWin = (id) => {
+      const el = document.getElementById(id);
+      if (el) { el.style.display = 'flex'; focusWin(el); }
+    };
+
+    function bindDrag(el) {
+      el.addEventListener('mousedown', () => focusWin(el));
+      const hdr = el.querySelector('.cwin-hdr');
+      hdr.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('button')) return;
+        focusWin(el);
+        const sx = e.clientX, sy = e.clientY;
+        const ox = el.offsetLeft, oy = el.offsetTop;
+        const move = (ev) => {
+          el.style.left = Math.max(0, ox + (ev.clientX - sx)) + 'px';
+          el.style.top = Math.max(0, oy + (ev.clientY - sy)) + 'px';
+        };
+        const up = () => {
+          window.removeEventListener('pointermove', move);
+          window.removeEventListener('pointerup', up);
+          updateIpc();
+        };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+      });
+    }
+    document.querySelectorAll('.cwin').forEach(bindDrag);
+
+    window.setDeco = (name, btn) => {
+      curDeco = name;
+      document.body.className = 'deco-' + name;
+      document.querySelectorAll('.topbar .tb-btn').forEach((b) => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      updateIpc();
+    };
+
+    window.spawnWindow = () => {
+      winSeq += 1;
+      const el = document.createElement('div');
+      el.className = 'cwin';
+      el.style.left = (70 + (winSeq % 5) * 34) + 'px';
+      el.style.top = (70 + (winSeq % 5) * 28) + 'px';
+      el.style.width = '360px';
+      el.style.height = '220px';
+      el.innerHTML =
+        `<div class="cwin-hdr"><span class="cwin-title">Wayland Surface #${winSeq} (${curDeco})</span><button class="cwin-close" onclick="this.closest('.cwin').remove()">&times;</button></div>` +
+        `<div class="cwin-body"><div class="info-body">xdg_toplevel #${winSeq}\nCompositor: awesome-os/chonkstep (Smithay 0.7.0)\nDecoration: ${curDeco}\nDrag this titlebar anywhere on the Wayland stage.</div></div>`;
+      document.getElementById('stage').append(el);
+      bindDrag(el);
+      focusWin(el);
+      updateIpc();
+    };
+
+    function updateIpc() {
+      const wins = Array.from(document.querySelectorAll('.cwin')).filter((w) => w.style.display !== 'none');
+      document.getElementById('ipc-info').textContent = [
+        `REPO       : awesome-os/chonkstep (wm-compositor-wayland)`,
+        `COMPOSITOR : Rust + vendored smithay-0.7.0`,
+        `DECORATION : ${curDeco.toUpperCase()} (BeOS / OS/2 / System 7 / Modern)`,
+        `B8G BRIDGE : src/b8g_abi.rs (0x33564742 · align(64))`,
+        `OPFS CAS   : OPFS:/v11/files/ (${casCount} blobs)`,
+        `SURFACES   : ${wins.length} floating Wayland toplevels`,
+        ``,
+        ...wins.map((w, i) => `  [${i}] ${w.offsetWidth}x${w.offsetHeight}@${w.offsetLeft},${w.offsetTop}  ${w.querySelector('.cwin-title')?.textContent || ''}`),
+      ].join('\n');
+    }
+
+    termOut.textContent =
+      `Awesome-OS Chonkstep Floating Wayland Compositor (wm-compositor-wayland)\n` +
+      `Switch live decorations above: BeOS | OS/2 Warp | System 7 | Modern\n` +
+      `Type "help", "chonk-ipc status", or "wasm-check".\n\n`;
+
+    document.getElementById('term-form').onsubmit = (e) => {
+      e.preventDefault();
+      const cmd = termIn.value.trim();
+      termIn.value = '';
+      if (!cmd) return;
+      termOut.textContent += `chonk@wayland ~$ ${cmd}\n`;
+      if (cmd === 'clear') termOut.textContent = '';
+      else if (cmd === 'help') termOut.textContent += 'Commands: chonk-ipc status | wasm-check | holo-pm status | clear | reboot\n';
+      else if (cmd === 'chonk-ipc status') termOut.textContent += document.getElementById('ipc-info').textContent + '\n';
+      else if (cmd === 'reboot') location.href = './';
+      else port.postMessage({ type: 'shell-exec', cmd });
+      termOut.scrollTop = termOut.scrollHeight;
+    };
+
+    updateIpc();
+    termIn.focus();
+  </script>
+</body>
+</html>
