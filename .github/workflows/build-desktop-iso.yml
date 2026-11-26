@@ -206,10 +206,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="v0.3.0"
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" release-assets/* --clobber
+          REPO="${{ github.repository }}"
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release upload "$TAG" release-assets/* --repo "$REPO" --clobber
           else
-            gh release create "$TAG" release-assets/* \
+            gh release create "$TAG" release-assets/* --repo "$REPO" \
               --title "Awesome-OS Desktop $TAG — Unified Cross-Platform Foundation" \
               --notes "Unified ChromeOS/Fuchsia-style bare-metal UEFI ISO, netboot kernel/initramfs (dual tty0+ttyS0), Wayland/WebGPU foundation, and pluggable desktop UI adapters (Omarchy, Noctalia, ChonkStep, Sectium, Kitty-Ink)."
           fi
