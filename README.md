@@ -1,6 +1,6 @@
-# Awesome-OS Desktop (`awesome-os/desktop`)
+# AwesomeOS Desktop (`awesome-os/desktop`)
 
-Unified, cross-platform Desktop OS Foundation — modeled on the deployable, remotely manageable device architecture of ChromeOS, Android, and Fuchsia, powered by `B8G_ABI_MAGIC_V3` (`0x33564742`) and the `v11` Content-Addressable Store.
+> **ChromeOS-Grade Sovereign Desktop OS Foundation** — pairing **Holo-Linux `7.3.6`**, **Ed25519 Verified Boot**, **A/B Atomic Slots**, **1-Click Powerwash**, and **Sectium** (Browser-as-Shell), consolidated in the [`awesome-os/awesome-os`](https://github.com/awesome-os/awesome-os) monorepo and live at **[https://awesome-os.com/shell/](https://awesome-os.com/shell/)**.
 
 ## Core Model: Devices (`local` & `remote`) => `terminal` | `desktop`
 
