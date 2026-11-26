@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Awesome-OS Virtual KVM Switch — Shared Pure-Lib RAM &amp; Split Monitor/HID</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      background: #05080f; color: #e2e8f0;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      user-select: none;
+    }
+    .shell { position: fixed; inset: 0; display: flex; flex-direction: column; }
+
+    /* Hardware KVM Top Console Bar */
+    .kvm-bar {
+      height: 40px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 10px; gap: 8px;
+      background: #0b101d; border-bottom: 1px solid rgba(56,189,248,0.28);
+      font-size: 12px; flex-shrink: 0; z-index: 40;
+    }
+    .kvm-left, .kvm-right { display: flex; align-items: center; gap: 6px; min-width: 0; }
+    .kvm-brand {
+      font-weight: 800; color: #f8fafc; letter-spacing: 0.03em; white-space: nowrap;
+      padding-right: 6px; border-right: 1px solid rgba(148,163,184,0.2);
+    }
+    .kvm-brand span { color: #38bdf8; }
+    .port-strip { display: flex; gap: 4px; overflow-x: auto; }
+    .port-btn {
+      height: 26px; padding: 0 9px; border-radius: 7px; border: 1px solid rgba(148,163,184,0.22);
+      background: #101726; color: #94a3b8; cursor: pointer; font-size: 11.5px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+      transition: all 120ms ease;
+    }
+    .port-btn:hover { border-color: rgba(56,189,248,0.55); color: #f8fafc; }
+    .port-btn.mon-active {
+      background: rgba(56,189,248,0.18); border-color: #38bdf8; color: #fff;
+      box-shadow: 0 0 12px rgba(56,189,248,0.25);
+    }
+    .port-btn .key {
+      font-family: ui-monospace, Consolas, monospace; font-size: 10px;
+      padding: 1px 4px; border-radius: 4px; background: rgba(148,163,184,0.16); color: #cbd5e1;
+    }
+    .port-btn.mon-active .key { background: #38bdf8; color: #05080f; font-weight: 800; }
+    .port-btn .hid-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: transparent;
+    }
+    .port-btn.hid-active .hid-dot { background: #34d399; box-shadow: 0 0 6px #34d399; }
+
+    .pill {
+      padding: 3px 8px; border-radius: 999px; font-size: 11px;
+      font-family: ui-monospace, Consolas, monospace; white-space: nowrap;
+      background: rgba(16,185,129,0.14); border: 1px solid rgba(16,185,129,0.35); color: #6ee7b7;
+      cursor: pointer;
+    }
+    .pill.blue { background: rgba(56,189,248,0.14); border-color: rgba(56,189,248,0.35); color: #7dd3fc; }
+    .kvm-btn {
+      padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(148,163,184,0.22);
+      background: #101726; color: #cbd5e1; font-size: 11px; cursor: pointer; text-decoration: none;
+    }
+    .kvm-btn:hover { border-color: #38bdf8; color: #fff; }
+
+    /* Virtual Monitor Viewport Stack */
+    .monitor-stage { flex: 1; position: relative; background: #04060c; min-height: 0; }
+    .dev-frame {
+      position: absolute; inset: 0; width: 100%; height: 100%; border: none;
+      opacity: 0; pointer-events: none; z-index: 1;
+      transition: opacity 140ms ease;
+    }
+    .dev-frame.visible { opacity: 1; pointer-events: auto; z-index: 5; }
+    .dev-frame.hid-blocked { pointer-events: none !important; }
+
+    /* Split HID Indicator Banner */
+    .split-banner {
+      position: absolute; bottom: 12px; right: 14px; z-index: 30;
+      padding: 7px 12px; border-radius: 9px; font-size: 11.5px;
+      font-family: ui-monospace, Consolas, monospace;
+      background: rgba(11,16,29,0.92); border: 1px solid #f59e0b; color: #fde68a;
+      display: none; align-items: center; gap: 8px; backdrop-filter: blur(8px);
+    }
+    .split-banner.show { display: flex; }
+
+    /* Shared Pure-Lib RAM & KVM Matrix Drawer */
+    .drawer {
+      position: absolute; top: 8px; right: 10px; width: min(460px, 92vw); z-index: 35;
+      background: rgba(10, 15, 28, 0.96); backdrop-filter: blur(14px);
+      border: 1px solid rgba(56,189,248,0.45); border-radius: 12px;
+      padding: 14px; box-shadow: 0 20px 50px rgba(0,0,0,0.65);
+      display: none; flex-direction: column; gap: 10px; font-size: 12px;
+    }
+    .drawer.open { display: flex; }
+    .drawer h3 { font-size: 13.5px; color: #f8fafc; display: flex; justify-content: space-between; }
+    .drawer table { width: 100%; border-collapse: collapse; font-family: ui-monospace, Consolas, monospace; font-size: 11px; }
+    .drawer th, .drawer td { text-align: left; padding: 5px 6px; border-bottom: 1px solid rgba(148,163,184,0.14); }
+    .drawer th { color: #7dd3fc; }
+    .split-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .split-controls select {
+      background: #131c30; color: #f8fafc; border: 1px solid rgba(148,163,184,0.3);
+      border-radius: 6px; padding: 4px 8px; font-size: 11.5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="kvm-bar">
+      <div class="kvm-left">
+        <div class="kvm-brand">AWESOME-OS <span>KVM</span></div>
+        <div id="port-strip" class="port-strip"></div>
+      </div>
+      <div class="kvm-right">
+        <span id="ram-pill" class="pill" title="Click to inspect Shared Pure-Lib RAM & Split KVM routing">Shared RAM: 0 MB saved</span>
+        <span id="io-pill" class="pill blue" title="Monitor vs. HID target">MON=1 · HID=1</span>
+        <button id="fs-btn" class="kvm-btn">Fullscreen</button>
+        <a class="kvm-btn" href="./">Catalog</a>
+      </div>
+    </div>
+
+    <div id="monitor-stage" class="monitor-stage">
+      <div id="split-banner" class="split-banner">
+        <span id="split-banner-text">SPLIT KVM: Monitor != HID</span>
+        <button id="sync-hid-btn" class="kvm-btn" style="border-color:#f59e0b;color:#fde68a">Sync HID to Monitor</button>
+      </div>
+
+      <div id="drawer" class="drawer">
+        <h3>
+          <span>KVM Switch Matrix &amp; Shared Pure-Lib RAM</span>
+          <button id="close-drawer" class="kvm-btn">&times;</button>
+        </h3>
+        <div class="split-controls">
+          <label>Monitor:
+            <select id="sel-mon"></select>
+          </label>
+          <label>HID Input:
+            <select id="sel-hid"></select>
+          </label>
+          <button id="btn-test-hid" class="kvm-btn">Send Test HID Key</button>
+        </div>
+        <div id="kvm-summary" style="font-family:ui-monospace,Consolas,monospace;font-size:11.5px;color:#6ee7b7"></div>
+        <table>
+          <thead><tr><th>Pure Read-Only Lib</th><th>Physical RAM</th><th>Devices</th><th>Saved</th></tr></thead>
+          <tbody id="lib-tbody"></tbody>
+        </table>
+        <div style="font-size:11px;color:#94a3b8">
+          Hotkeys: <code>Ctrl+Alt+1..6</code> switch Monitor + HID instantly without restarting background devices.
+          Read-only pure libs share <strong>1 physical copy</strong> via <code>v11 SHA-512</code>; HID rings remain strictly isolated per device.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createHoloKvmSwitch } from './holo-kvm-switch.mjs';
+    import { HOLO_HID_KEY_DOWN } from './holo-device-host.mjs';
+
+    const DEVICES = [
+      { id: 'sectium',   key: '1', name: 'Sectium Pure-Art', url: './sectium.html' },
+      { id: 'omarchy',   key: '2', name: 'Omarchy Hyprland', url: './omarchy.html' },
+      { id: 'noctalia',  key: '3', name: 'Noctalia Wayland', url: './noctalia.html' },
+      { id: 'chonkstep', key: '4', name: 'Chonkstep Smithay', url: './chonkstep.html' },
+      { id: 'kitty-ink', key: '5', name: 'Kitty-Ink TUI',    url: './kitty-ink.html' },
+      { id: 'gitlab',    key: '6', name: 'GitLab Holo Forge', url: './gitlab.html' },
+    ];
+
+    const SHARED_PURE_LIBS = [
+      { name: 'dawn-webgpu',     sha512: 'aa01_dawn_webgpu_v11',     bytes: 32 * 1024 * 1024 },
+      { name: 'font-atlas',      sha512: 'bb02_font_atlas_v11',      bytes: 8 * 1024 * 1024 },
+      { name: 'v11-cas-runtime', sha512: 'cc03_v11_cas_runtime_v11', bytes: 4 * 1024 * 1024 },
+      { name: 'omarchy-themes',  sha512: 'dd04_omarchy_themes_v11',  bytes: 1.2 * 1024 * 1024 },
+    ];
+
+    const kvm = createHoloKvmSwitch();
+    for (const lib of SHARED_PURE_LIBS) kvm.registerSharedPureLib(lib);
+
+    const stage = document.getElementById('monitor-stage');
+    const portStrip = document.getElementById('port-strip');
+    const selMon = document.getElementById('sel-mon');
+    const selHid = document.getElementById('sel-hid');
+    const frames = new Map();
+
+    // Register all 6 virtual devices + attach shared pure libs lazily on boot
+    DEVICES.forEach((d) => {
+      kvm.registerDevice(d.id, { name: d.name });
+      for (const lib of SHARED_PURE_LIBS) kvm.attachSharedLib(d.id, lib.sha512);
+
+      const btn = document.createElement('button');
+      btn.className = 'port-btn';
+      btn.dataset.dev = d.id;
+      btn.innerHTML = `<span class="key">${d.key}</span><span>${d.name}</span><span class="hid-dot" title="HID active"></span>`;
+      btn.onclick = () => switchBoth(d.id);
+      portStrip.append(btn);
+
+      const opt1 = document.createElement('option');
+      opt1.value = d.id; opt1.textContent = `[${d.key}] ${d.name}`;
+      selMon.append(opt1);
+      selHid.append(opt1.cloneNode(true));
+
+      const iframe = document.createElement('iframe');
+      iframe.className = 'dev-frame';
+      iframe.dataset.src = d.url;
+      iframe.src = 'about:blank';
+      stage.append(iframe);
+      frames.set(d.id, iframe);
+    });
+
+    function ensureLoaded(devId) {
+      const f = frames.get(devId);
+      if (f && f.src === 'about:blank') {
+        f.src = f.dataset.src;
+      }
+    }
+
+    function syncUi() {
+      const stats = kvm.getStats();
+      const monIdx = DEVICES.findIndex((d) => d.id === stats.activeMonitorId) + 1;
+      const hidIdx = DEVICES.findIndex((d) => d.id === stats.activeHidId) + 1;
+
+      document.querySelectorAll('.port-btn').forEach((b) => {
+        b.classList.toggle('mon-active', b.dataset.dev === stats.activeMonitorId);
+        b.classList.toggle('hid-active', b.dataset.dev === stats.activeHidId);
+      });
+
+      frames.forEach((f, id) => {
+        const isMon = id === stats.activeMonitorId;
+        const isHid = id === stats.activeHidId;
+        f.classList.toggle('visible', isMon);
+        f.classList.toggle('hid-blocked', isMon && !isHid);
+      });
+
+      selMon.value = stats.activeMonitorId;
+      selHid.value = stats.activeHidId;
+
+      const sharedMB = (stats.sharedBytes / (1024 * 1024)).toFixed(1);
+      const savedMB = (stats.savedBytes / (1024 * 1024)).toFixed(1);
+      document.getElementById('ram-pill').textContent = `Shared RAM: ${sharedMB} MB (${savedMB} MB saved)`;
+      document.getElementById('io-pill').textContent = `MON=${monIdx} · HID=${hidIdx}`;
+
+      const banner = document.getElementById('split-banner');
+      const isSplit = stats.activeMonitorId !== stats.activeHidId;
+      banner.classList.toggle('show', isSplit);
+      if (isSplit) {
+        document.getElementById('split-banner-text').textContent =
+          `SPLIT KVM: Viewing [${monIdx}] ${stats.activeMonitorId} | HID locked to [${hidIdx}] ${stats.activeHidId}`;
+      }
+
+      document.getElementById('kvm-summary').textContent =
+        `ABI=${stats.abiMagic} | Devices=${stats.deviceCount} | Switches=${stats.switchCount} | Shared=${sharedMB} MB | Saved=${savedMB} MB`;
+
+      const tbody = document.getElementById('lib-tbody');
+      tbody.innerHTML = SHARED_PURE_LIBS.map((lib) => {
+        const mb = (lib.bytes / (1024 * 1024)).toFixed(1);
+        const sv = ((DEVICES.length - 1) * lib.bytes / (1024 * 1024)).toFixed(1);
+        return `<tr><td>${lib.name}</td><td>${mb} MB</td><td>${DEVICES.length}</td><td style="color:#6ee7b7">+${sv} MB</td></tr>`;
+      }).join('');
+    }
+
+    function switchBoth(devId) {
+      ensureLoaded(devId);
+      kvm.switchBoth(devId);
+      syncUi();
+    }
+
+    selMon.onchange = () => { ensureLoaded(selMon.value); kvm.switchMonitor(selMon.value); syncUi(); };
+    selHid.onchange = () => { kvm.switchHid(selHid.value); syncUi(); };
+    document.getElementById('sync-hid-btn').onclick = () => { kvm.switchHid(kvm.getStats().activeMonitorId); syncUi(); };
+    document.getElementById('btn-test-hid').onclick = () => {
+      kvm.routeHid(HOLO_HID_KEY_DOWN, 0x2c, 8);
+      syncUi();
+    };
+
+    const drawer = document.getElementById('drawer');
+    document.getElementById('ram-pill').onclick = () => drawer.classList.toggle('open');
+    document.getElementById('io-pill').onclick = () => drawer.classList.toggle('open');
+    document.getElementById('close-drawer').onclick = () => drawer.classList.remove('open');
+    document.getElementById('fs-btn').onclick = () => {
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      else document.documentElement.requestFullscreen().catch(() => {});
+    };
+
+    // Hardware KVM Hotkeys: Ctrl+Alt+1..6
+    window.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.altKey && ['1', '2', '3', '4', '5', '6'].includes(e.key)) {
+        e.preventDefault();
+        const dev = DEVICES[Number(e.key) - 1];
+        if (dev) switchBoth(dev.id);
+      }
+    }, true);
+
+    // Boot straight into Omarchy (Device 2) or hash target
+    const initial = location.hash.replace('#', '') || 'omarchy';
+    switchBoth(DEVICES.some((d) => d.id === initial) ? initial : 'omarchy');
+  </script>
+</body>
+</html>
