@@ -331,12 +331,12 @@ jobs:
             -efi-boot-part --efi-boot-image --protective-msdos-label \
             build/iso_root -o dist/awesomeos-v1.0.0-aarch64.iso
 
-          truncate -s 160M build/awesomeos-aarch64.img
+          truncate -s 256M build/awesomeos-aarch64.img
           parted -s build/awesomeos-aarch64.img mklabel gpt
-          parted -s build/awesomeos-aarch64.img mkpart ESP fat32 1MiB 97MiB
+          parted -s build/awesomeos-aarch64.img mkpart ESP fat32 1MiB 161MiB
           parted -s build/awesomeos-aarch64.img set 1 esp on
-          parted -s build/awesomeos-aarch64.img mkpart AWESOME_V11 ext4 97MiB 159MiB
-          truncate -s 96M build/esp64.img
+          parted -s build/awesomeos-aarch64.img mkpart AWESOME_V11 ext4 161MiB 255MiB
+          truncate -s 160M build/esp64.img
           mkfs.fat -F 32 -n ESP build/esp64.img
           mmd -i build/esp64.img ::/EFI ::/EFI/BOOT ::/boot ::/boot/limine ::/boot/slot-a ::/boot/slot-b
           mcopy -i build/esp64.img build/limine/BOOTAA64.EFI ::/EFI/BOOT/BOOTAA64.EFI
@@ -345,10 +345,10 @@ jobs:
           mcopy -i build/esp64.img dist/initramfs-aarch64.cpio.zst ::/boot/slot-a/initramfs.cpio.zst
           mcopy -i build/esp64.img build/Image-aarch64 ::/boot/slot-b/vmlinuz
           mcopy -i build/esp64.img dist/initramfs-aarch64.cpio.zst ::/boot/slot-b/initramfs.cpio.zst
-          truncate -s 62M build/cas64.img
+          truncate -s 94M build/cas64.img
           mkfs.ext4 -q -L AWESOME_V11 -F build/cas64.img
           dd if=build/esp64.img of=build/awesomeos-aarch64.img bs=1M seek=1 conv=notrunc status=none
-          dd if=build/cas64.img of=build/awesomeos-aarch64.img bs=1M seek=97 conv=notrunc status=none
+          dd if=build/cas64.img of=build/awesomeos-aarch64.img bs=1M seek=161 conv=notrunc status=none
           qemu-img convert -f raw -O qcow2 -c build/awesomeos-aarch64.img dist/awesomeos-v1.0.0-aarch64.qcow2
 
       - name: QEMU Gate 3 — ARM64 virt Direct Kernel + Initramfs Self-Test
