@@ -381,6 +381,138 @@
       padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border-strong);
       background: var(--bg-code); color: var(--text-primary); font-family: var(--font-mono); font-size: 12px;
     }
+
+    /* Branch Selector & Clone Dropdown */
+    .branch-controls {
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    select.branch-select {
+      padding: 3px 9px; border-radius: 999px; font-family: var(--font-mono); font-size: 11.5px;
+      background: rgba(123, 88, 207, 0.16); border: 1px solid rgba(123, 88, 207, 0.45);
+      color: var(--gl-purple-light); outline: none; cursor: pointer;
+    }
+    select.branch-select option {
+      background: var(--bg-elevated); color: var(--text-primary);
+    }
+    .btn-branch-new {
+      padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 600;
+      border: 1px solid rgba(123, 88, 207, 0.45); background: rgba(123, 88, 207, 0.12);
+      color: var(--gl-purple-light); white-space: nowrap;
+    }
+    .btn-branch-new:hover { background: rgba(123, 88, 207, 0.28); color: #fff; }
+
+    .clone-dropdown { position: relative; display: inline-flex; }
+    .clone-menu {
+      display: none; position: absolute; top: calc(100% + 6px); right: 0; z-index: 70;
+      width: 440px; max-width: calc(100vw - 32px);
+      background: var(--bg-elevated); border: 1px solid var(--border-strong); border-radius: 10px;
+      box-shadow: 0 18px 44px rgba(0, 0, 0, 0.65); padding: 12px;
+      flex-direction: column; gap: 10px;
+    }
+    .clone-menu.open { display: flex; }
+    .clone-item { display: flex; flex-direction: column; gap: 4px; }
+    .clone-item-label {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 11.5px; font-weight: 600; color: var(--text-secondary);
+    }
+    .clone-tag {
+      font-family: var(--font-mono); font-size: 10px; padding: 1px 6px; border-radius: 4px;
+      background: var(--bg-code); border: 1px solid var(--border); color: var(--text-muted);
+    }
+    .clone-tag.holo {
+      background: rgba(123, 88, 207, 0.18); border-color: rgba(123, 88, 207, 0.45); color: var(--gl-purple-light);
+    }
+    .clone-input-row { display: flex; gap: 6px; }
+    .clone-input {
+      flex: 1; min-width: 0; padding: 5px 8px; border-radius: 6px;
+      border: 1px solid var(--border); background: var(--bg-code); color: #cbd5e1;
+      font-family: var(--font-mono); font-size: 11px; outline: none;
+    }
+
+    /* Issues View */
+    .filter-tabs { display: inline-flex; gap: 4px; background: var(--bg-surface); padding: 3px; border-radius: 7px; border: 1px solid var(--border); }
+    .filter-tab {
+      padding: 4px 10px; border-radius: 5px; border: none; background: transparent;
+      color: var(--text-secondary); font-size: 12px; font-weight: 600;
+    }
+    .filter-tab.active { background: var(--bg-elevated); color: var(--text-primary); }
+    .issue-form-grid {
+      padding: 14px; display: flex; flex-direction: column; gap: 10px;
+    }
+    .issue-row {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      padding: 12px 14px; border-bottom: 1px solid var(--border);
+    }
+    .issue-row:last-child { border-bottom: none; }
+    .issue-row:hover { background: rgba(255, 255, 255, 0.02); }
+    .issue-title { font-weight: 600; font-size: 13.5px; color: var(--text-primary); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .issue-desc { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+    .issue-meta { font-size: 11.5px; color: var(--text-muted); margin-top: 6px; font-family: var(--font-mono); }
+    .issue-label {
+      font-size: 10.5px; font-family: var(--font-mono); padding: 1px 7px; border-radius: 999px;
+      background: rgba(66, 143, 220, 0.16); color: #93c5fd; border: 1px solid rgba(66, 143, 220, 0.35);
+    }
+
+    /* API & Legacy Git View */
+    .api-grid {
+      display: grid; grid-template-columns: 360px 1fr; gap: 14px; min-height: 300px;
+    }
+    @media (max-width: 1020px) { .api-grid { grid-template-columns: 1fr; } }
+    .api-ep-list { display: flex; flex-direction: column; }
+    .api-ep-btn {
+      width: 100%; text-align: left; padding: 10px 12px; border: none; border-bottom: 1px solid var(--border);
+      background: transparent; color: var(--text-primary); display: flex; flex-direction: column; gap: 4px;
+      transition: background 90ms ease;
+    }
+    .api-ep-btn:last-child { border-bottom: none; }
+    .api-ep-btn:hover { background: var(--bg-hover); }
+    .api-ep-btn.active { background: rgba(252, 109, 38, 0.12); border-left: 3px solid var(--gl-orange); padding-left: 9px; }
+    .api-ep-top { display: flex; align-items: center; gap: 7px; font-family: var(--font-mono); font-size: 11.5px; }
+    .api-method {
+      font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px;
+      background: var(--gl-green-bg); color: #6ee7b7; border: 1px solid rgba(45,161,96,0.4);
+    }
+    .api-ep-desc { font-size: 11.5px; color: var(--text-muted); }
+    .api-headers-bar {
+      display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px;
+      background: #0d1018; border-bottom: 1px solid var(--border); font-family: var(--font-mono); font-size: 11px;
+    }
+    .api-header-chip {
+      padding: 2px 7px; border-radius: 5px; background: var(--bg-elevated);
+      border: 1px solid var(--border); color: var(--text-secondary);
+    }
+    .api-header-chip strong { color: #79b8ff; }
+    .api-response-body {
+      flex: 1; padding: 12px 14px; background: var(--bg-code); font-family: var(--font-mono);
+      font-size: 12px; line-height: 1.55; white-space: pre-wrap; word-break: break-word;
+      overflow: auto; color: #dbeafe; max-height: 310px; min-height: 220px;
+    }
+
+    /* Interactive git / holo Mini-Terminal */
+    .mini-term {
+      background: #07090e; border: 1px solid var(--border); border-radius: 8px;
+      display: flex; flex-direction: column; overflow: hidden; min-height: 240px;
+    }
+    .quick-cmds { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px; background: #0d1018; border-bottom: 1px solid var(--border); }
+    .quick-cmd-chip {
+      padding: 3px 8px; border-radius: 5px; font-family: var(--font-mono); font-size: 11px;
+      border: 1px solid var(--border-strong); background: var(--bg-elevated); color: #93c5fd;
+    }
+    .quick-cmd-chip:hover { background: var(--bg-hover); color: #fff; }
+    .mini-term-out {
+      flex: 1; padding: 12px 14px; overflow-y: auto; font-family: var(--font-mono);
+      font-size: 12px; line-height: 1.55; white-space: pre-wrap; word-break: break-word;
+      color: #d8dee9; max-height: 260px; min-height: 150px;
+    }
+    .mini-term-input-row {
+      display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+      background: #0d1018; border-top: 1px solid var(--border);
+    }
+    .mini-term-prompt { font-family: var(--font-mono); font-size: 12px; color: #4ade80; white-space: nowrap; }
+    .mini-term-input {
+      flex: 1; background: transparent; border: none; outline: none;
+      color: #f8fafc; font-family: var(--font-mono); font-size: 12.5px;
+    }
   </style>
 </head>
 <body>
@@ -404,7 +536,12 @@
       <div class="breadcrumb">
         <span>awesome-os</span> / <strong>hello-holo</strong>
       </div>
-      <span class="branch-pill" title="Active Git branch">&#9095; main</span>
+      <div class="branch-controls">
+        <select id="branch-select" class="branch-select" title="Switch active Git branch">
+          <option value="main">&#9095; main</option>
+        </select>
+        <button class="btn-branch-new" id="btn-new-branch" title="Create branch via POST /api/v4/projects/hello-holo/repository/branches">+ New Branch</button>
+      </div>
     </div>
     <div class="topbar-right">
       <span id="opfs-status-pill" class="status-pill" title="Origin Private File System v11 CAS status">
@@ -447,6 +584,14 @@
         <span class="side-btn-left"><span class="side-ico">&#9670;</span> v11 CAS Objects</span>
         <span class="side-badge" id="nav-cas-count">0</span>
       </button>
+      <button class="side-btn" data-view="issues">
+        <span class="side-btn-left"><span class="side-ico">&#9737;</span> Issues</span>
+        <span class="side-badge" id="nav-issues-count">0</span>
+      </button>
+      <button class="side-btn" data-view="api">
+        <span class="side-btn-left"><span class="side-ico">&#9889;</span> API / Legacy Git</span>
+        <span class="side-badge" id="nav-api-badge">v4+v11</span>
+      </button>
 
       <div class="sidebar-footer">
         <div class="sidebar-kv"><span>Executor</span><span>executors/holo/</span></div>
@@ -467,6 +612,51 @@
             <p>Content-addressed Git blobs stored directly in <code>OPFS:/v11/files/&lt;sha512[:2]&gt;/&lt;sha512&gt;</code>.</p>
           </div>
           <div class="btn-row">
+            <div class="clone-dropdown" id="clone-dropdown">
+              <button class="btn btn-blue" id="btn-clone-toggle" aria-expanded="false">Clone &#9662;</button>
+              <div class="clone-menu" id="clone-menu">
+                <div class="clone-item">
+                  <div class="clone-item-label">
+                    <span>Clone with HTTPS (Legacy Smart-HTTP)</span>
+                    <span class="clone-tag">git-upload-pack</span>
+                  </div>
+                  <div class="clone-input-row">
+                    <input class="clone-input" id="clone-https" readonly value="https://awesome-os.com/apps/awesome-os/hello-holo.git" />
+                    <button class="btn btn-sm clone-copy-btn" data-copy-target="clone-https">Copy</button>
+                  </div>
+                </div>
+                <div class="clone-item">
+                  <div class="clone-item-label">
+                    <span>Clone with SSH (GitLab Shell)</span>
+                    <span class="clone-tag">gitlab-shell</span>
+                  </div>
+                  <div class="clone-input-row">
+                    <input class="clone-input" id="clone-ssh" readonly value="git@awesome-os.com:awesome-os/hello-holo.git" />
+                    <button class="btn btn-sm clone-copy-btn" data-copy-target="clone-ssh">Copy</button>
+                  </div>
+                </div>
+                <div class="clone-item">
+                  <div class="clone-item-label">
+                    <span>Holo <code>repository://</code> (Immutable v11)</span>
+                    <span class="clone-tag holo">SHA-512 CAS</span>
+                  </div>
+                  <div class="clone-input-row">
+                    <input class="clone-input" id="clone-holo-repo" readonly value="repository://awesome-os.com/awesome-os/hello-holo@main" />
+                    <button class="btn btn-sm clone-copy-btn" data-copy-target="clone-holo-repo">Copy</button>
+                  </div>
+                </div>
+                <div class="clone-item">
+                  <div class="clone-item-label">
+                    <span>Holo <code>project://</code> (0-byte Hardlink)</span>
+                    <span class="clone-tag holo">0-byte mount</span>
+                  </div>
+                  <div class="clone-input-row">
+                    <input class="clone-input" id="clone-holo-proj" readonly value="project://node/hello-holo?from=repository://awesome-os.com/awesome-os/hello-holo@main" />
+                    <button class="btn btn-sm clone-copy-btn" data-copy-target="clone-holo-proj">Copy</button>
+                  </div>
+                </div>
+              </div>
+            </div>
             <button class="btn" id="btn-new-file">+ New File</button>
             <button class="btn btn-blue" id="btn-quick-pipeline">&#9654; Run Pipeline</button>
           </div>
@@ -489,7 +679,7 @@
         <div class="repo-split">
           <div class="card file-tree">
             <div class="card-header">
-              <span>Files on <code>main</code></span>
+              <span>Files on <code id="tree-branch-name">main</code></span>
               <span class="badge badge-cas" id="tree-blob-summary">SHA-512</span>
             </div>
             <div id="file-list"></div>
@@ -516,7 +706,7 @@
                 <input type="checkbox" id="chk-trigger-ci" checked />
                 Trigger CI pipeline
               </label>
-              <button class="btn btn-primary" id="btn-commit">Commit to <code>main</code></button>
+              <button class="btn btn-primary" id="btn-commit">Commit to <code id="commit-branch-name">main</code></button>
             </div>
           </div>
         </div>
@@ -530,7 +720,7 @@
             <p>Parses <code>.gitlab-ci.yml</code> live, checks <code>v11</code> CAS cache hits, compiles &amp; tests <code>src/main.mts</code>, and publishes Pages.</p>
           </div>
           <div class="btn-row">
-            <button class="btn btn-primary" id="btn-run-pipeline">&#9654; Run Pipeline on <code>main</code></button>
+            <button class="btn btn-primary" id="btn-run-pipeline">&#9654; Run Pipeline on <code id="pipe-branch-name">main</code></button>
           </div>
         </div>
 
@@ -663,6 +853,132 @@
             </div>
             <div class="cas-preview" id="cas-inspector-body">Select any v11 CAS object to inspect its raw content and verify its SHA-512 digest.</div>
           </div>
+        </div>
+      </section>
+
+      <!-- 6. ISSUES VIEW -->
+      <section class="view" id="view-issues">
+        <div class="view-header">
+          <div>
+            <h1>Issues &mdash; <code>GET / POST / PUT ./api/v4/projects/hello-holo/issues</code></h1>
+            <p>Legacy GitLab REST v4 issue tracker backed directly by browser OPFS v11 (zero Rails/PostgreSQL backend).</p>
+          </div>
+          <div class="btn-row">
+            <span class="badge badge-cas" id="issues-source-badge">syncing…</span>
+            <div class="filter-tabs" id="issues-filter-tabs">
+              <button class="filter-tab active" data-issue-filter="opened">Open (<span id="issues-open-count">0</span>)</button>
+              <button class="filter-tab" data-issue-filter="closed">Closed (<span id="issues-closed-count">0</span>)</button>
+              <button class="filter-tab" data-issue-filter="all">All</button>
+            </div>
+            <button class="btn btn-sm" id="btn-refresh-issues">&#8635; Refresh</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span>New Issue</span>
+            <code style="font-size:11px;color:var(--text-muted);">POST ./api/v4/projects/hello-holo/issues</code>
+          </div>
+          <form class="issue-form-grid" id="issue-create-form">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <input id="issue-title-input" class="commit-input" type="text" placeholder="Issue title (e.g. Add WASI Tier-2 AOT cache verification)" required />
+              <input id="issue-labels-input" class="commit-input" style="max-width:260px;" type="text" placeholder="Labels (comma-separated, e.g. holo-v11, ci)" />
+              <button class="btn btn-primary" type="submit">+ Create Issue</button>
+            </div>
+            <input id="issue-desc-input" class="commit-input" type="text" placeholder="Optional description…" />
+          </form>
+        </div>
+
+        <div class="card" style="flex:1;display:flex;flex-direction:column;">
+          <div class="card-header">
+            <span>Project Issues</span>
+            <span style="font-family:var(--font-mono);font-size:11.5px;color:var(--text-muted);" id="issues-list-summary">0 issues</span>
+          </div>
+          <div id="issues-list" style="overflow-y:auto;flex:1;"></div>
+        </div>
+      </section>
+
+      <!-- 7. API & LEGACY GIT VIEW -->
+      <section class="view" id="view-api">
+        <div class="view-header">
+          <div>
+            <h1>Legacy <code>/api/v4</code> + Smart-HTTP Git + Better <code>/api/holo/v11</code></h1>
+            <p>Dismantled GitLab architecture: live <code>fetch()</code> inspector for GitLab REST v4, Git pkt-line Smart-HTTP, and canonical Holo v11 CAS endpoints.</p>
+          </div>
+          <div class="btn-row">
+            <span class="badge badge-passed">0 Rails &bull; 0 Gitaly &bull; 0 PostgreSQL</span>
+          </div>
+        </div>
+
+        <div class="api-grid">
+          <div class="card" style="display:flex;flex-direction:column;">
+            <div class="card-header">
+              <span>Live Endpoint Tester (1-Click <code>fetch()</code>)</span>
+            </div>
+            <div class="api-ep-list" id="api-endpoint-list">
+              <button class="api-ep-btn" data-api-url="./api/v4/projects" data-api-label="GitLab REST v4 Projects">
+                <div class="api-ep-top"><span class="api-method">GET</span><span>./api/v4/projects</span></div>
+                <div class="api-ep-desc">Legacy GitLab v4 project catalog</div>
+              </button>
+              <button class="api-ep-btn" data-api-url="./api/v4/projects/hello-holo/repository/commits" data-api-label="GitLab REST v4 Commits">
+                <div class="api-ep-top"><span class="api-method">GET</span><span>./api/v4/projects/hello-holo/repository/commits</span></div>
+                <div class="api-ep-desc">Commit history backed by OPFS v11</div>
+              </button>
+              <button class="api-ep-btn" data-api-url="./api/v4/projects/hello-holo/issues" data-api-label="GitLab REST v4 Issues">
+                <div class="api-ep-top"><span class="api-method">GET</span><span>./api/v4/projects/hello-holo/issues</span></div>
+                <div class="api-ep-desc">Live issue tracker JSON</div>
+              </button>
+              <button class="api-ep-btn" data-api-url="./awesome-os/hello-holo.git/info/refs?service=git-upload-pack" data-api-label="Git Smart-HTTP pkt-line">
+                <div class="api-ep-top"><span class="api-method">GET</span><span>./awesome-os/hello-holo.git/info/refs?service=git-upload-pack</span></div>
+                <div class="api-ep-desc">Real Git Smart-HTTP pkt-line wire protocol</div>
+              </button>
+              <button class="api-ep-btn" data-api-url="./api/holo/v11/projects/hello-holo/tree" data-api-label="Holo v11 Canonical Tree">
+                <div class="api-ep-top"><span class="api-method">GET</span><span>./api/holo/v11/projects/hello-holo/tree</span></div>
+                <div class="api-ep-desc">Canonical <code>v11-tree.json</code> (SHA-512 shards)</div>
+              </button>
+              <button class="api-ep-btn" data-api-url="./api/holo/v11/status" data-api-label="Holo v11 Runtime Status">
+                <div class="api-ep-top"><span class="api-method">GET</span><span>./api/holo/v11/status</span></div>
+                <div class="api-ep-desc">OPFS v11 CAS stats &amp; Service Worker health</div>
+              </button>
+            </div>
+          </div>
+
+          <div class="card" style="display:flex;flex-direction:column;">
+            <div class="card-header">
+              <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+                <span id="api-res-title">Response Inspector</span>
+                <span class="badge badge-pending" id="api-res-status">ready</span>
+              </div>
+              <span style="font-family:var(--font-mono);font-size:11.5px;color:var(--text-muted);" id="api-res-time">0 ms</span>
+            </div>
+            <div class="api-headers-bar" id="api-headers-bar">
+              <span class="api-header-chip"><strong>X-Holo-SW:</strong> (click an endpoint)</span>
+              <span class="api-header-chip"><strong>X-Holo-Cache-API:</strong> (click an endpoint)</span>
+            </div>
+            <pre class="api-response-body" id="api-response-body">Click any endpoint on the left to execute a live fetch() and inspect HTTP status, X-Holo-SW / X-Holo-Cache-API headers, and raw response body.</pre>
+          </div>
+        </div>
+
+        <div class="mini-term">
+          <div class="card-header">
+            <span>Interactive <code>git</code> / <code>holo</code> Mini-Terminal</span>
+            <button class="btn btn-sm" id="btn-term-clear">Clear</button>
+          </div>
+          <div class="quick-cmds" id="quick-cmds">
+            <button class="quick-cmd-chip" data-cmd="git status">git status</button>
+            <button class="quick-cmd-chip" data-cmd="git log">git log</button>
+            <button class="quick-cmd-chip" data-cmd="git branch">git branch</button>
+            <button class="quick-cmd-chip" data-cmd="git ls-remote">git ls-remote</button>
+            <button class="quick-cmd-chip" data-cmd="holo-v11 tree">holo-v11 tree</button>
+            <button class="quick-cmd-chip" data-cmd="curl /api/v4/projects">curl /api/v4/projects</button>
+            <button class="quick-cmd-chip" data-cmd="help">help</button>
+          </div>
+          <div class="mini-term-out" id="mini-term-out"></div>
+          <form class="mini-term-input-row" id="mini-term-form">
+            <span class="mini-term-prompt" id="mini-term-prompt">holo@awesome-os:hello-holo (main)$</span>
+            <input id="mini-term-input" class="mini-term-input" type="text" placeholder="Type git status, git ls-remote, holo-v11 tree, curl /api/v4/projects, or help…" autocomplete="off" spellcheck="false" />
+            <button class="btn btn-sm btn-primary" type="submit">Run</button>
+          </form>
         </div>
       </section>
     </main>
@@ -1000,11 +1316,45 @@ export function runTests(): { passed: number; failed: number; logs: string[] } {
   // ---------------------------------------------------------------------------
   // 3. Application State
   // ---------------------------------------------------------------------------
+  const SEED_ISSUES = [
+    {
+      iid: 1,
+      title: 'Verify Git Smart-HTTP pkt-line refs via holo-web-service-worker.js',
+      description: 'Serve /awesome-os/hello-holo.git/info/refs?service=git-upload-pack directly from OPFS:/v11/ with zero Gitaly daemon.',
+      state: 'opened',
+      labels: ['git-smart-http', 'holo-v11'],
+      author: { name: 'Holo Maintainer', username: 'holo' },
+      created_at: new Date(Date.now() - 3600 * 1000 * 5).toISOString(),
+    },
+    {
+      iid: 2,
+      title: 'Expose canonical /api/holo/v11/projects/hello-holo/tree alongside /api/v4/*',
+      description: 'Provide 0-byte SHA-512 v11-tree.json manifests for instant repository:// and project:// hardlink mounts.',
+      state: 'opened',
+      labels: ['api-v11', 'cas'],
+      author: { name: 'Holo Maintainer', username: 'holo' },
+      created_at: new Date(Date.now() - 3600 * 1000 * 2).toISOString(),
+    },
+    {
+      iid: 3,
+      title: 'Dismantle legacy Rails + PostgreSQL + Redis stack into OPFS v11',
+      description: 'Replaced monolith services with content-addressed SHA-512 blobs and browser-native ServiceWorker routing.',
+      state: 'closed',
+      labels: ['architecture', 'done'],
+      author: { name: 'Holo Maintainer', username: 'holo' },
+      created_at: new Date(Date.now() - 3600 * 1000 * 18).toISOString(),
+    },
+  ];
+
   const state = {
     branch: 'main',
+    branches: [],         // [{ name, commitSha, default, protected }]
     commits: [],          // newest last
     pipelines: [],        // newest last
     pages: null,          // { sha512, shard, opfsUri, size, commitSha, pipelineId, deployedAt, html }
+    issues: [],           // GitLab /api/v4 issue objects
+    issuesSource: 'local',
+    issuesFilter: 'opened',
     selectedFile: 'README.md',
     draftEdits: {},       // path -> string (unsaved working tree edits)
     activeView: 'repo',
@@ -1016,7 +1366,21 @@ export function runTests(): { passed: number; failed: number; logs: string[] } {
     runningPipeline: false,
     swStatus: 'registering',
     selectedCasSha: null,
+    termHistory: [],
+    termHistoryIdx: -1,
   };
+
+  function persistStatePayload() {
+    return {
+      branch: state.branch,
+      branches: state.branches,
+      commits: state.commits,
+      pipelines: state.pipelines,
+      pages: state.pages,
+      issues: state.issues,
+      knownBlobRoles: state.knownBlobRoles,
+    };
+  }
 
   function currentCommit() {
     return state.commits[state.commits.length - 1];
@@ -1132,6 +1496,9 @@ export function runTests(): { passed: number; failed: number; logs: string[] } {
     commitPayload.sha = commitBlob.sha512;
     state.knownBlobRoles[commitBlob.sha512] = `commit:${shortSha(commitBlob.sha512)}`;
     state.commits.push(commitPayload);
+    state.branch = 'main';
+    state.branches = [{ name: 'main', commitSha: commitPayload.sha, default: true, protected: true }];
+    state.issues = SEED_ISSUES.map((i) => ({ ...i, labels: [...i.labels] }));
     state.selectedFile = 'README.md';
     state.selectedDiffSha = commitPayload.sha;
 
@@ -1149,12 +1516,7 @@ export function runTests(): { passed: number; failed: number; logs: string[] } {
       html: pagesHtml,
     };
 
-    await saveRepoState({
-      commits: state.commits,
-      pipelines: state.pipelines,
-      pages: state.pages,
-      knownBlobRoles: state.knownBlobRoles,
-    });
+    await saveRepoState(persistStatePayload());
   }
 
   async function hydrateOrSeed() {
@@ -1165,6 +1527,13 @@ export function runTests(): { passed: number; failed: number; logs: string[] } {
       state.pipelines = saved.pipelines || [];
       state.pages = saved.pages || null;
       state.knownBlobRoles = saved.knownBlobRoles || {};
+      state.branch = saved.branch || 'main';
+      state.branches = Array.isArray(saved.branches) && saved.branches.length > 0
+        ? saved.branches
+        : [{ name: 'main', commitSha: (state.commits[state.commits.length - 1] || {}).sha || null, default: true, protected: true }];
+      state.issues = Array.isArray(saved.issues) && saved.issues.length > 0
+        ? saved.issues
+        : SEED_ISSUES.map((i) => ({ ...i, labels: [...i.labels] }));
       // Verify latest commit blobs are readable; if missing (e.g. fresh memory session), re-seed
       const head = currentCommit();
       let intact = Boolean(head && head.tree);
@@ -1258,20 +1627,17 @@ export function runTests(): { passed: number; failed: number; logs: string[] } {
     state.knownBlobRoles[commitObj.sha] = `commit:${shortSha(commitObj.sha)}`;
 
     state.commits.push(commitObj);
+    const activeBr = state.branches.find((b) => b.name === state.branch);
+    if (activeBr) activeBr.commitSha = commitObj.sha;
     state.draftEdits = {};
     state.selectedDiffSha = commitObj.sha;
     document.getElementById('commit-msg-input').value = '';
 
-    await saveRepoState({
-      commits: state.commits,
-      pipelines: state.pipelines,
-      pages: state.pages,
-      knownBlobRoles: state.knownBlobRoles,
-    });
+    await saveRepoState(persistStatePayload());
 
     await updateOpfsStatusPill();
     await renderAll();
-    showToast(`Committed ${shortSha(commitObj.sha)} to main (${casWrites} stored, ${casHits} CAS hit)`);
+    showToast(`Committed ${shortSha(commitObj.sha)} to ${state.branch} (${casWrites} stored, ${casHits} CAS hit)`);
 
     if (triggerCi) {
       switchView('pipelines');
@@ -1434,7 +1800,7 @@ export function runTests(): { passed: number; failed: number; logs: string[] } {
         appendLog(job, `  on browser-opfs-worker (${opfsAvailable ? 'OPFS:/v11/files/' : 'MEM:/v11/files/'})`, 'ansi-dim');
         await delay(140);
 
-        appendLog(job, `\n$ holo-checkout --commit ${shortSha(commit.sha, 12)} --branch main`, 'ansi-bold');
+        appendLog(job, `\n$ holo-checkout --commit ${shortSha(commit.sha, 12)} --branch ${state.branch}`, 'ansi-bold');
         for (const [fpath, sha] of Object.entries(commit.tree)) {
           const isHit = prevTree[fpath] === sha;
           const tag = isHit ? 'CAS HIT (0.1ms zero-copy)' : 'CAS MISS (materialized)';
@@ -1538,12 +1904,7 @@ export function runTests(): { passed: number; failed: number; logs: string[] } {
     pipeline.status = pipelineFailed ? 'failed' : 'passed';
     state.runningPipeline = false;
 
-    await saveRepoState({
-      commits: state.commits,
-      pipelines: state.pipelines,
-      pages: state.pages,
-      knownBlobRoles: state.knownBlobRoles,
-    });
+    await saveRepoState(persistStatePayload());
     await updateOpfsStatusPill();
     renderAll();
     showToast(pipelineFailed ? `Pipeline #${pipeline.id} failed (exit code 1)` : `Pipeline #${pipeline.id} passed — Pages updated!`);
@@ -1611,6 +1972,8 @@ export function runTests(): { passed: number; failed: number; logs: string[] } {
     if (viewName === 'pages') renderPagesView();
     if (viewName === 'cas') renderCasView();
     if (viewName === 'pipelines') renderPipelinesView();
+    if (viewName === 'issues') { fetchIssuesFromApi(); }
+    if (viewName === 'api') { initMiniTerminalWelcome(); }
   }
 
   function renderHeaderBadges() {
@@ -1618,6 +1981,18 @@ export function runTests(): { passed: number; failed: number; logs: string[] } {
     document.getElementById('nav-file-count').textContent = String(Object.keys(head.tree).length);
     document.getElementById('sidebar-commit-count').textContent = String(state.commits.length);
     document.getElementById('nav-mr-count').textContent = `!${state.commits.length}`;
+    const openIssues = state.issues.filter((i) => i.state === 'opened').length;
+    const navIssues = document.getElementById('nav-issues-count');
+    if (navIssues) navIssues.textContent = String(openIssues);
+
+    const treeBr = document.getElementById('tree-branch-name');
+    const commitBr = document.getElementById('commit-branch-name');
+    const pipeBr = document.getElementById('pipe-branch-name');
+    const termPrompt = document.getElementById('mini-term-prompt');
+    if (treeBr) treeBr.textContent = state.branch;
+    if (commitBr) commitBr.textContent = state.branch;
+    if (pipeBr) pipeBr.textContent = state.branch;
+    if (termPrompt) termPrompt.textContent = `holo@awesome-os:hello-holo (${state.branch})$`;
 
     const lastPipe = state.pipelines[state.pipelines.length - 1];
     const navPipe = document.getElementById('nav-pipe-status');
@@ -1925,10 +2300,574 @@ export function runTests(): { passed: number; failed: number; logs: string[] } {
     pre.textContent = text.slice(0, 16000) + (text.length > 16000 ? '\n… [truncated]' : '');
   }
 
+  // ---------------------------------------------------------------------------
+  // 8b. Dismantled GitLab: Branches, Clone, Issues, Live API & Mini-Terminal
+  // ---------------------------------------------------------------------------
+  function renderBranchSelector() {
+    const sel = document.getElementById('branch-select');
+    if (!sel) return;
+    if (!state.branches.some((b) => b.name === 'main')) {
+      state.branches.unshift({ name: 'main', commitSha: (currentCommit() || {}).sha || null, default: true, protected: true });
+    }
+    sel.innerHTML = '';
+    for (const br of state.branches) {
+      const opt = document.createElement('option');
+      opt.value = br.name;
+      opt.textContent = `\u2387 ${br.name}`;
+      if (br.name === state.branch) opt.selected = true;
+      sel.appendChild(opt);
+    }
+    updateCloneUrls();
+  }
+
+  function updateCloneUrls() {
+    const br = encodeURIComponent(state.branch || 'main');
+    const repoEl = document.getElementById('clone-holo-repo');
+    const projEl = document.getElementById('clone-holo-proj');
+    if (repoEl) repoEl.value = `repository://awesome-os.com/awesome-os/hello-holo@${br}`;
+    if (projEl) projEl.value = `project://node/hello-holo?from=repository://awesome-os.com/awesome-os/hello-holo@${br}`;
+  }
+
+  async function syncBranchesFromApi() {
+    try {
+      const res = await fetch('./api/v4/projects/hello-holo/repository/branches');
+      const ct = res.headers.get('content-type') || '';
+      if (res.ok && ct.includes('application/json')) {
+        const list = await res.json();
+        if (Array.isArray(list) && list.length > 0) {
+          for (const item of list) {
+            const name = item && item.name;
+            if (name && !state.branches.some((b) => b.name === name)) {
+              state.branches.push({
+                name,
+                commitSha: (item.commit && item.commit.id) || (currentCommit() || {}).sha || null,
+                default: Boolean(item.default),
+                protected: Boolean(item.protected),
+              });
+            }
+          }
+          renderBranchSelector();
+        }
+      }
+    } catch {}
+  }
+
+  async function createBranch(rawName) {
+    const clean = String(rawName || '').trim().replace(/\s+/g, '-').replace(/[^A-Za-z0-9._\/-]/g, '');
+    if (!clean) return;
+    if (state.branches.some((b) => b.name === clean)) {
+      state.branch = clean;
+      renderBranchSelector();
+      renderHeaderBadges();
+      showToast(`Switched to existing branch ${clean}`);
+      return;
+    }
+
+    let viaSw = false;
+    try {
+      const res = await fetch('./api/v4/projects/hello-holo/repository/branches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ branch: clean, ref: state.branch }),
+      });
+      const ct = res.headers.get('content-type') || '';
+      if (res.ok && ct.includes('application/json')) {
+        viaSw = true;
+      }
+    } catch {}
+
+    const head = currentCommit();
+    state.branches.push({
+      name: clean,
+      commitSha: head ? head.sha : null,
+      default: false,
+      protected: false,
+    });
+    state.branch = clean;
+    await saveRepoState(persistStatePayload());
+    renderBranchSelector();
+    renderHeaderBadges();
+    showToast(`Created branch ${clean} (${viaSw ? 'live /api/v4 SW' : 'local OPFS fallback'})`);
+  }
+
+  // Issues (/api/v4/projects/hello-holo/issues with local fallback)
+  async function fetchIssuesFromApi() {
+    let live = false;
+    try {
+      const res = await fetch('./api/v4/projects/hello-holo/issues');
+      const ct = res.headers.get('content-type') || '';
+      if (res.ok && ct.includes('application/json')) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          state.issues = data;
+          state.issuesSource = 'live /api/v4 (SW)';
+          live = true;
+        }
+      }
+    } catch {}
+    if (!live) {
+      if (!Array.isArray(state.issues) || state.issues.length === 0) {
+        state.issues = SEED_ISSUES.map((i) => ({ ...i, labels: [...i.labels] }));
+      }
+      state.issuesSource = 'local OPFS fallback';
+    }
+    renderIssuesView();
+    renderHeaderBadges();
+  }
+
+  async function createIssue(title, description, labelsRaw) {
+    const labels = String(labelsRaw || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    let created = null;
+    let viaSw = false;
+    try {
+      const res = await fetch('./api/v4/projects/hello-holo/issues', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, description, labels }),
+      });
+      const ct = res.headers.get('content-type') || '';
+      if (res.ok && ct.includes('application/json')) {
+        created = await res.json();
+        viaSw = true;
+      }
+    } catch {}
+
+    if (!created || typeof created.iid === 'undefined') {
+      const nextIid = state.issues.reduce((max, i) => Math.max(max, Number(i.iid) || 0), 0) + 1;
+      created = {
+        iid: nextIid,
+        title,
+        description: description || '',
+        state: 'opened',
+        labels: labels.length > 0 ? labels : ['holo-v11'],
+        author: { name: 'Holo Maintainer', username: 'holo' },
+        created_at: new Date().toISOString(),
+      };
+    }
+    state.issues.unshift(created);
+    state.issuesSource = viaSw ? 'live /api/v4 (SW)' : 'local OPFS fallback';
+    await saveRepoState(persistStatePayload());
+    renderIssuesView();
+    renderHeaderBadges();
+    showToast(`Created issue #${created.iid} (${viaSw ? 'POST /api/v4 SW' : 'local fallback'})`);
+  }
+
+  async function toggleIssueState(iid) {
+    const issue = state.issues.find((i) => Number(i.iid) === Number(iid));
+    if (!issue) return;
+    const nextState = issue.state === 'opened' ? 'closed' : 'opened';
+    const stateEvent = nextState === 'closed' ? 'close' : 'reopen';
+    let viaSw = false;
+    try {
+      const res = await fetch(`./api/v4/projects/hello-holo/issues/${encodeURIComponent(iid)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ state_event: stateEvent, state: nextState }),
+      });
+      const ct = res.headers.get('content-type') || '';
+      if (res.ok && ct.includes('application/json')) {
+        const updated = await res.json();
+        if (updated && updated.state) issue.state = updated.state;
+        else issue.state = nextState;
+        viaSw = true;
+      } else {
+        issue.state = nextState;
+      }
+    } catch {
+      issue.state = nextState;
+    }
+    state.issuesSource = viaSw ? 'live /api/v4 (SW)' : 'local OPFS fallback';
+    await saveRepoState(persistStatePayload());
+    renderIssuesView();
+    renderHeaderBadges();
+    showToast(`Issue #${issue.iid} ${issue.state === 'closed' ? 'closed' : 'reopened'}`);
+  }
+
+  function renderIssuesView() {
+    const openCount = state.issues.filter((i) => i.state === 'opened').length;
+    const closedCount = state.issues.filter((i) => i.state === 'closed').length;
+    const openEl = document.getElementById('issues-open-count');
+    const closedEl = document.getElementById('issues-closed-count');
+    const srcBadge = document.getElementById('issues-source-badge');
+    const summaryEl = document.getElementById('issues-list-summary');
+    const listEl = document.getElementById('issues-list');
+    if (!listEl) return;
+
+    if (openEl) openEl.textContent = String(openCount);
+    if (closedEl) closedEl.textContent = String(closedCount);
+    if (srcBadge) {
+      srcBadge.textContent = state.issuesSource;
+      srcBadge.className = state.issuesSource.startsWith('live') ? 'badge badge-passed' : 'badge badge-cas';
+    }
+
+    document.querySelectorAll('[data-issue-filter]').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.issueFilter === state.issuesFilter);
+    });
+
+    const filtered = state.issues.filter((i) => state.issuesFilter === 'all' || i.state === state.issuesFilter);
+    if (summaryEl) summaryEl.textContent = `${filtered.length} shown (${openCount} open, ${closedCount} closed)`;
+
+    listEl.innerHTML = '';
+    if (filtered.length === 0) {
+      listEl.innerHTML = `<div style="padding:18px;color:var(--text-muted);font-size:12.5px;">No ${escapeHtml(state.issuesFilter)} issues.</div>`;
+      return;
+    }
+
+    for (const issue of filtered) {
+      const row = document.createElement('div');
+      row.className = 'issue-row';
+      const labelsHtml = (Array.isArray(issue.labels) ? issue.labels : [])
+        .map((l) => `<span class="issue-label">${escapeHtml(l)}</span>`)
+        .join('');
+      const isClosed = issue.state === 'closed';
+      const authorName = (issue.author && (issue.author.name || issue.author.username)) || 'Holo Maintainer';
+      const createdTs = issue.created_at ? Date.parse(issue.created_at) : Date.now();
+      row.innerHTML = `
+        <div style="min-width:0;flex:1;">
+          <div class="issue-title">
+            <span class="badge ${isClosed ? 'badge-pending' : 'badge-passed'}">#${escapeHtml(issue.iid)} ${escapeHtml(issue.state)}</span>
+            <span>${escapeHtml(issue.title)}</span>
+            ${labelsHtml}
+          </div>
+          ${issue.description ? `<div class="issue-desc">${escapeHtml(issue.description)}</div>` : ''}
+          <div class="issue-meta">opened by ${escapeHtml(authorName)} &bull; ${formatRelTime(isNaN(createdTs) ? Date.now() : createdTs)}</div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-sm ${isClosed ? 'btn-green' : ''}" data-toggle-issue="${escapeHtml(issue.iid)}">${isClosed ? 'Reopen' : 'Close'}</button>
+        </div>
+      `;
+      row.querySelector('[data-toggle-issue]').addEventListener('click', () => toggleIssueState(issue.iid));
+      listEl.appendChild(row);
+    }
+  }
+
+  // Git Smart-HTTP pkt-line encoder & local v11 synthesis fallback
+  function pktLine(str) {
+    const len = encoder.encode(str).byteLength + 4;
+    return len.toString(16).padStart(4, '0') + str;
+  }
+
+  function buildLocalV11Tree() {
+    const head = currentCommit();
+    const files = {};
+    if (head && head.tree) {
+      for (const [path, sha512] of Object.entries(head.tree)) {
+        files[path] = {
+          sha512,
+          shard: sha512.slice(0, 2),
+          opfs: `OPFS:/v11/files/${sha512.slice(0, 2)}/${sha512}`,
+          size: (head.treeSizes && head.treeSizes[path]) || 0,
+        };
+      }
+    }
+    return {
+      schema: 'holo.v11.tree/1',
+      project: 'awesome-os/hello-holo',
+      branch: state.branch,
+      commit: head ? head.sha : null,
+      abi_magic: '0x33564742',
+      cas_root: 'OPFS:/v11/files/',
+      files,
+    };
+  }
+
+  function buildSmartHttpInfoRefs() {
+    const head = currentCommit();
+    const headSha40 = (head ? head.sha : '0'.repeat(40)).slice(0, 40);
+    const caps = 'multi_ack thin-pack side-band side-band-64k ofs-delta shallow deepen-since agent=holo-git-v11/1.0 symref=HEAD:refs/heads/' + state.branch;
+    let out = pktLine('# service=git-upload-pack\n') + '0000';
+    out += pktLine(`${headSha40} HEAD\0${caps}\n`);
+    for (const br of state.branches) {
+      const brSha = ((br.commitSha || headSha40) + '0'.repeat(40)).slice(0, 40);
+      out += pktLine(`${brSha} refs/heads/${br.name}\n`);
+    }
+    out += '0000';
+    return out;
+  }
+
+  async function buildLocalApiFallback(url) {
+    const head = currentCommit();
+    if (url.includes('/info/refs')) {
+      return { contentType: 'application/x-git-upload-pack-advertisement', body: buildSmartHttpInfoRefs() };
+    }
+    if (url.includes('/api/holo/v11/projects/hello-holo/tree')) {
+      return { contentType: 'application/json', body: JSON.stringify(buildLocalV11Tree(), null, 2) };
+    }
+    if (url.includes('/api/holo/v11/status')) {
+      const objs = await listAllV11Objects();
+      return {
+        contentType: 'application/json',
+        body: JSON.stringify({
+          status: 'ok',
+          abi_magic: '0x33564742',
+          opfs_available: opfsAvailable,
+          cache_api: 'BYPASSED (OPFS-v11)',
+          sw_status: state.swStatus,
+          branch: state.branch,
+          branches: state.branches.length,
+          commits: state.commits.length,
+          v11_blobs: objs.length,
+        }, null, 2),
+      };
+    }
+    if (url.includes('/repository/commits')) {
+      const commits = [...state.commits].reverse().map((c) => ({
+        id: c.sha.slice(0, 40),
+        short_id: shortSha(c.sha, 8),
+        sha512: c.sha,
+        title: c.message,
+        author_name: c.author,
+        created_at: new Date(c.timestamp).toISOString(),
+        parent_ids: c.parentSha ? [c.parentSha.slice(0, 40)] : [],
+      }));
+      return { contentType: 'application/json', body: JSON.stringify(commits, null, 2) };
+    }
+    if (url.includes('/issues')) {
+      return { contentType: 'application/json', body: JSON.stringify(state.issues, null, 2) };
+    }
+    if (url.includes('/api/v4/projects')) {
+      return {
+        contentType: 'application/json',
+        body: JSON.stringify([{
+          id: 1,
+          name: 'hello-holo',
+          path_with_namespace: 'awesome-os/hello-holo',
+          default_branch: 'main',
+          http_url_to_repo: 'https://awesome-os.com/apps/awesome-os/hello-holo.git',
+          ssh_url_to_repo: 'git@awesome-os.com:awesome-os/hello-holo.git',
+          holo_repository_uri: `repository://awesome-os.com/awesome-os/hello-holo@${state.branch}`,
+          holo_project_uri: `project://node/hello-holo?from=repository://awesome-os.com/awesome-os/hello-holo@${state.branch}`,
+          head_sha512: head ? head.sha : null,
+        }], null, 2),
+      };
+    }
+    return { contentType: 'application/json', body: JSON.stringify({ error: 'Not found', url }, null, 2) };
+  }
+
+  async function executeApiFetch(url) {
+    const t0 = performance.now();
+    try {
+      const res = await fetch(url);
+      const elapsed = Math.round(performance.now() - t0);
+      const ct = res.headers.get('content-type') || '';
+      const swHeader = res.headers.get('X-Holo-SW') || '';
+      const cacheHeader = res.headers.get('X-Holo-Cache-API') || '';
+      const casHeader = res.headers.get('X-Holo-CAS') || '';
+      const rawText = await res.text();
+
+      const looksLikeHtmlFallback = ct.includes('text/html') || rawText.trim().startsWith('<!DOCTYPE') || rawText.trim().startsWith('<html');
+      if (res.ok && !looksLikeHtmlFallback) {
+        let formatted = rawText;
+        if (ct.includes('application/json')) {
+          try { formatted = JSON.stringify(JSON.parse(rawText), null, 2); } catch {}
+        }
+        return {
+          ok: true,
+          live: true,
+          status: res.status,
+          statusText: res.statusText || 'OK',
+          elapsed,
+          headers: {
+            'X-Holo-SW': swHeader || '(not set)',
+            'X-Holo-Cache-API': cacheHeader || '(not set)',
+            'Content-Type': ct || 'text/plain',
+            ...(casHeader ? { 'X-Holo-CAS': casHeader } : {}),
+          },
+          body: formatted,
+        };
+      }
+
+      const synth = await buildLocalApiFallback(url);
+      return {
+        ok: true,
+        live: false,
+        status: res.status,
+        statusText: `${res.statusText || 'Fallback'} -> local OPFS v11`,
+        elapsed,
+        headers: {
+          'X-Holo-SW': swHeader || 'unclaimed (local v11 synthesis)',
+          'X-Holo-Cache-API': cacheHeader || 'BYPASSED (OPFS-v11)',
+          'Content-Type': synth.contentType,
+        },
+        body: synth.body,
+      };
+    } catch (err) {
+      const elapsed = Math.round(performance.now() - t0);
+      const synth = await buildLocalApiFallback(url);
+      return {
+        ok: true,
+        live: false,
+        status: 200,
+        statusText: 'local OPFS v11 synthesis',
+        elapsed,
+        headers: {
+          'X-Holo-SW': 'standalone (local v11 synthesis)',
+          'X-Holo-Cache-API': 'BYPASSED (OPFS-v11)',
+          'Content-Type': synth.contentType,
+        },
+        body: synth.body,
+      };
+    }
+  }
+
+  async function testApiEndpoint(url, label) {
+    document.querySelectorAll('.api-ep-btn').forEach((b) => {
+      b.classList.toggle('active', b.dataset.apiUrl === url);
+    });
+    const titleEl = document.getElementById('api-res-title');
+    const statusEl = document.getElementById('api-res-status');
+    const timeEl = document.getElementById('api-res-time');
+    const headersBar = document.getElementById('api-headers-bar');
+    const bodyEl = document.getElementById('api-response-body');
+    if (!bodyEl) return;
+
+    titleEl.textContent = label || url;
+    statusEl.textContent = 'fetching…';
+    statusEl.className = 'badge badge-running';
+    bodyEl.textContent = `GET ${url} …`;
+
+    const result = await executeApiFetch(url);
+    statusEl.textContent = result.live
+      ? `${result.status} ${result.statusText}`
+      : `200 OK (local fallback; HTTP ${result.status})`;
+    statusEl.className = result.live ? 'badge badge-passed' : 'badge badge-cas';
+    timeEl.textContent = `${result.elapsed} ms`;
+
+    headersBar.innerHTML = Object.entries(result.headers)
+      .map(([k, v]) => `<span class="api-header-chip"><strong>${escapeHtml(k)}:</strong> ${escapeHtml(v)}</span>`)
+      .join('');
+    bodyEl.textContent = result.body;
+  }
+
+  // Embedded Interactive git / holo Mini-Terminal
+  let miniTermInitialized = false;
+  function appendTermLine(text, cls = '') {
+    const out = document.getElementById('mini-term-out');
+    if (!out) return;
+    const div = document.createElement('div');
+    if (cls) div.className = cls;
+    div.textContent = text;
+    out.appendChild(div);
+    out.scrollTop = out.scrollHeight;
+  }
+
+  function initMiniTerminalWelcome() {
+    if (miniTermInitialized) return;
+    miniTermInitialized = true;
+    appendTermLine('Holo Dismantled GitLab Shell — OPFS:/v11/ + Legacy /api/v4 + Smart-HTTP', 'ansi-cyan ansi-bold');
+    appendTermLine('Type `help` or click a quick command above (git status, git log, git branch, git ls-remote, holo-v11 tree, curl /api/v4/projects).', 'ansi-dim');
+  }
+
+  async function runTerminalCommand(rawCmd) {
+    const cmd = String(rawCmd || '').trim();
+    if (!cmd) return;
+    initMiniTerminalWelcome();
+    state.termHistory.push(cmd);
+    state.termHistoryIdx = state.termHistory.length;
+    appendTermLine(`\n$ ${cmd}`, 'ansi-green ansi-bold');
+
+    const parts = cmd.split(/\s+/);
+    const head = currentCommit();
+
+    if (cmd === 'help') {
+      appendTermLine([
+        'Available commands:',
+        '  git status                Show active branch, HEAD SHA-512, and working tree edits',
+        '  git log                   List commits in OPFS:/v11/ history',
+        '  git branch [name]         List branches or create a new branch',
+        '  git ls-remote             Fetch live Git Smart-HTTP pkt-line refs',
+        '  holo-v11 tree             Fetch canonical /api/holo/v11/projects/hello-holo/tree',
+        '  curl <endpoint>           Live fetch() any /api/v4/*, /api/holo/v11/*, or .git endpoint',
+        '  clear                     Clear terminal output',
+      ].join('\n'), 'ansi-cyan');
+      return;
+    }
+
+    if (cmd === 'clear') {
+      const out = document.getElementById('mini-term-out');
+      if (out) out.innerHTML = '';
+      return;
+    }
+
+    if (cmd === 'git status') {
+      const dirty = Object.keys(state.draftEdits);
+      appendTermLine(`On branch ${state.branch}`, 'ansi-bold');
+      appendTermLine(`HEAD -> v11:${head ? shortSha(head.sha, 16) : 'none'} (${state.commits.length} commit(s))`, 'ansi-dim');
+      if (dirty.length === 0) {
+        appendTermLine('nothing to commit, working tree clean (OPFS:/v11/files/)', 'ansi-green');
+      } else {
+        appendTermLine('Changes not staged for commit:', 'ansi-yellow');
+        for (const p of dirty) appendTermLine(`  modified:   ${p}`, 'ansi-yellow');
+      }
+      return;
+    }
+
+    if (cmd === 'git log') {
+      for (const c of [...state.commits].reverse()) {
+        appendTermLine(`commit ${c.sha.slice(0, 40)} (v11:${shortSha(c.sha, 12)})`, 'ansi-yellow');
+        appendTermLine(`Author: ${c.author}`, 'ansi-dim');
+        appendTermLine(`Date:   ${new Date(c.timestamp).toISOString()}`, 'ansi-dim');
+        appendTermLine(`    ${c.message}\n`);
+      }
+      return;
+    }
+
+    if (parts[0] === 'git' && parts[1] === 'branch') {
+      if (parts[2]) {
+        await createBranch(parts[2]);
+        appendTermLine(`Switched to a new branch '${state.branch}'`, 'ansi-green');
+      } else {
+        for (const br of state.branches) {
+          const mark = br.name === state.branch ? '* ' : '  ';
+          appendTermLine(`${mark}${br.name.padEnd(22)} ${shortSha(br.commitSha || (head && head.sha), 10)}`, br.name === state.branch ? 'ansi-green' : '');
+        }
+      }
+      return;
+    }
+
+    if (cmd.startsWith('git ls-remote')) {
+      const url = './awesome-os/hello-holo.git/info/refs?service=git-upload-pack';
+      const res = await executeApiFetch(url);
+      appendTermLine(`From https://awesome-os.com/apps/awesome-os/hello-holo.git [${res.live ? 'live SW' : 'local pkt-line'}]`, 'ansi-dim');
+      const lines = res.body.split('\n').filter((l) => l.includes('refs/') || l.includes(' HEAD'));
+      for (const l of lines) {
+        const cleaned = l.replace(/^[0-9a-f]{4}/i, '').split('\0')[0].trim();
+        if (cleaned) appendTermLine(cleaned, 'ansi-cyan');
+      }
+      return;
+    }
+
+    if (cmd === 'holo-v11 tree') {
+      const res = await executeApiFetch('./api/holo/v11/projects/hello-holo/tree');
+      appendTermLine(`GET ./api/holo/v11/projects/hello-holo/tree (${res.elapsed} ms, X-Holo-SW: ${res.headers['X-Holo-SW']})`, 'ansi-purple');
+      appendTermLine(res.body);
+      return;
+    }
+
+    if (parts[0] === 'curl' && parts[1]) {
+      const target = parts[1].startsWith('./') || parts[1].startsWith('http')
+        ? parts[1]
+        : '.' + (parts[1].startsWith('/') ? parts[1] : '/' + parts[1]);
+      const res = await executeApiFetch(target);
+      appendTermLine(`HTTP/1.1 ${res.status} ${res.statusText} (${res.elapsed} ms)`, 'ansi-cyan');
+      appendTermLine(`X-Holo-SW: ${res.headers['X-Holo-SW']}`, 'ansi-dim');
+      appendTermLine(`X-Holo-Cache-API: ${res.headers['X-Holo-Cache-API']}`, 'ansi-dim');
+      appendTermLine(res.body);
+      return;
+    }
+
+    appendTermLine(`Unknown command: ${cmd}. Type 'help' for supported commands.`, 'ansi-red');
+  }
+
   async function renderAll() {
+    renderBranchSelector();
     await renderRepoView();
     renderPipelinesView();
     renderPagesView();
+    renderIssuesView();
     if (state.activeView === 'diff') await renderDiffView();
     if (state.activeView === 'cas') await renderCasView();
   }
@@ -2049,6 +2988,115 @@ export function runTests(): { passed: number; failed: number; logs: string[] } {
     showToast('Repository reset to initial seed.');
   });
 
+  // Branch selector & + New Branch
+  document.getElementById('branch-select').addEventListener('change', async (ev) => {
+    state.branch = ev.target.value;
+    updateCloneUrls();
+    await saveRepoState(persistStatePayload());
+    renderHeaderBadges();
+    showToast(`Switched active branch to ${state.branch}`);
+  });
+
+  document.getElementById('btn-new-branch').addEventListener('click', async () => {
+    const name = window.prompt('New branch name (e.g. feat/holo-v11):', 'feat/holo-v11');
+    if (name && name.trim()) await createBranch(name);
+  });
+
+  // Classic GitLab Clone ▾ dropdown
+  const cloneToggleBtn = document.getElementById('btn-clone-toggle');
+  const cloneMenu = document.getElementById('clone-menu');
+  cloneToggleBtn.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    const isOpen = cloneMenu.classList.toggle('open');
+    cloneToggleBtn.setAttribute('aria-expanded', String(isOpen));
+  });
+  document.addEventListener('click', (ev) => {
+    const dd = document.getElementById('clone-dropdown');
+    if (dd && !dd.contains(ev.target)) {
+      cloneMenu.classList.remove('open');
+      cloneToggleBtn.setAttribute('aria-expanded', 'false');
+    }
+  });
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape' && cloneMenu.classList.contains('open')) {
+      cloneMenu.classList.remove('open');
+      cloneToggleBtn.setAttribute('aria-expanded', 'false');
+    }
+  });
+  document.querySelectorAll('.clone-copy-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const input = document.getElementById(btn.dataset.copyTarget);
+      if (!input) return;
+      try {
+        await navigator.clipboard.writeText(input.value);
+        showToast(`Copied: ${input.value}`);
+      } catch {
+        input.select();
+        showToast(input.value);
+      }
+    });
+  });
+
+  // Issues View listeners
+  document.getElementById('issue-create-form').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const titleEl = document.getElementById('issue-title-input');
+    const descEl = document.getElementById('issue-desc-input');
+    const labelsEl = document.getElementById('issue-labels-input');
+    const title = titleEl.value.trim();
+    if (!title) return;
+    await createIssue(title, descEl.value.trim(), labelsEl.value.trim());
+    titleEl.value = '';
+    descEl.value = '';
+    labelsEl.value = '';
+  });
+
+  document.querySelectorAll('[data-issue-filter]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      state.issuesFilter = btn.dataset.issueFilter;
+      renderIssuesView();
+    });
+  });
+
+  document.getElementById('btn-refresh-issues').addEventListener('click', async () => {
+    await fetchIssuesFromApi();
+    showToast('Refreshed issues via GET ./api/v4/projects/hello-holo/issues');
+  });
+
+  // API & Legacy Git Endpoint Tester listeners
+  document.querySelectorAll('.api-ep-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      testApiEndpoint(btn.dataset.apiUrl, btn.dataset.apiLabel);
+    });
+  });
+
+  // Interactive git / holo Mini-Terminal listeners
+  const termInput = document.getElementById('mini-term-input');
+  document.getElementById('mini-term-form').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const val = termInput.value;
+    termInput.value = '';
+    await runTerminalCommand(val);
+  });
+  termInput.addEventListener('keydown', (ev) => {
+    if (ev.key === 'ArrowUp' && state.termHistory.length > 0) {
+      ev.preventDefault();
+      state.termHistoryIdx = Math.max(0, state.termHistoryIdx - 1);
+      termInput.value = state.termHistory[state.termHistoryIdx] || '';
+    } else if (ev.key === 'ArrowDown' && state.termHistory.length > 0) {
+      ev.preventDefault();
+      state.termHistoryIdx = Math.min(state.termHistory.length, state.termHistoryIdx + 1);
+      termInput.value = state.termHistory[state.termHistoryIdx] || '';
+    }
+  });
+  document.querySelectorAll('.quick-cmd-chip').forEach((btn) => {
+    btn.addEventListener('click', () => runTerminalCommand(btn.dataset.cmd));
+  });
+  document.getElementById('btn-term-clear').addEventListener('click', () => {
+    const out = document.getElementById('mini-term-out');
+    if (out) out.innerHTML = '';
+  });
+
   // ---------------------------------------------------------------------------
   // 10. Boot
   // ---------------------------------------------------------------------------
@@ -2057,6 +3105,8 @@ export function runTests(): { passed: number; failed: number; logs: string[] } {
     await hydrateOrSeed();
     await updateOpfsStatusPill();
     await renderAll();
+    syncBranchesFromApi();
+    fetchIssuesFromApi();
   })();
 })();
 </script>
