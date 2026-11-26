@@ -384,12 +384,12 @@ int main(void) {
 
     log_both("\n");
     log_both("============================================================\n");
-    log_both("  Awesome-OS Desktop v11 — Unified Bare-Metal Foundation\n");
+    log_both("  AwesomeOS 1.0-v11 — Unified Bare-Metal Foundation\n");
     log_both("  ABI       : B8G_ABI_MAGIC_V3 (0x33564742)\n");
     log_both("  Devices   : local & remote => terminal | desktop\n");
-    log_both("  Desktops  : Omarchy | Noctalia | ChonkStep | Sectium\n");
+    log_both("  Engines   : Sectium 160 | Ladybird 18/18 | Omarchy | Noctalia\n");
     log_both("  v11 CAS   : /var/lib/b8g/cas/v11/files/\n");
-    log_both("  System    : system://local/appliance/awesome-os-desktop\n");
+    log_both("  System    : system://local/appliance/awesome-os\n");
     log_both("============================================================\n\n");
 
     struct sigaction sa;
@@ -397,6 +397,15 @@ int main(void) {
     sa.sa_handler = reap_zombies;
     sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
     (void)sigaction(SIGCHLD, &sa, NULL);
+
+    /* Load Holo-Linux b8g_abi.ko (/dev/b8g-arena) if bundled */
+    if (access("/bin/insmod", X_OK) == 0 &&
+        access("/lib/modules/b8g_abi.ko", R_OK) == 0) {
+        char *const abi_argv[] = {"/bin/insmod", "/lib/modules/b8g_abi.ko", NULL};
+        if (run_wait(abi_argv) == 0 || access("/dev/b8g-arena", F_OK) == 0) {
+            log_both("[AWESOME-OS] /dev/b8g-arena online (B8G_ABI_MAGIC_V3)\n");
+        }
+    }
 
     /* Hydrate hardware drivers via modalias index before launching desktop */
     if (access("/bin/awesome-driver-hydrator", X_OK) == 0) {

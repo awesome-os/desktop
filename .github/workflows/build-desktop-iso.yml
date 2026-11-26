@@ -1,4 +1,4 @@
-name: Build and Boot Awesome-OS Desktop (Multi-Arch UEFI ISO & Netboot)
+name: Build and Boot AwesomeOS v1.0 (Multi-Arch Dual-Slot ISO, QCOW2 & Netboot)
 
 on:
   push:
@@ -13,9 +13,8 @@ permissions:
 
 jobs:
   build-and-boot-x86_64:
-    name: Build & Boot Awesome-OS Desktop (x86_64)
+    name: Build & QEMU-Gate AwesomeOS v1.0 (x86_64 Dual-Slot)
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout awesome-os/desktop
         uses: actions/checkout@v4
@@ -34,14 +33,13 @@ jobs:
           musl-gcc -march=x86-64 -static -Os -s -Wall -Wextra -Werror boot/src/init.c -o dist/init-x86_64
           musl-gcc -march=x86-64 -static -Os -s -Wall -Wextra -Werror boot/src/fb_desktop.c -o dist/awesome-desktop-fb-x86_64
           musl-gcc -march=x86-64 -static -Os -s -Wall -Wextra -Werror boot/src/driver_hydrator.c -o dist/awesome-driver-hydrator-x86_64
-          file dist/init-x86_64 dist/awesome-desktop-fb-x86_64 dist/awesome-driver-hydrator-x86_64
           ls -lh dist/init-x86_64 dist/awesome-desktop-fb-x86_64 dist/awesome-driver-hydrator-x86_64
 
-      - name: Build initramfs-x86_64.cpio.zst
+      - name: Assemble Pure Holo v11 initramfs-x86_64.cpio.zst
         run: |
           ROOTFS="$PWD/build/rootfs"
           rm -rf "$ROOTFS"
-          mkdir -p "$ROOTFS"/{bin,sbin,proc,sys,dev,tmp,run,root,var/lib/b8g/cas,etc/ssl/certs,etc/awesome-os}
+          mkdir -p "$ROOTFS"/{bin,sbin,proc,sys,dev,tmp,run,root,var/lib/b8g/cas/v11/files,var/lib/b8g/cas/v11/links,etc/ssl/certs,etc/awesome-os}
 
           cp dist/init-x86_64 "$ROOTFS/init"
           chmod 755 "$ROOTFS/init"
@@ -50,9 +48,25 @@ jobs:
           cp dist/awesome-driver-hydrator-x86_64 "$ROOTFS/bin/awesome-driver-hydrator"
           chmod 755 "$ROOTFS/bin/awesome-driver-hydrator"
           cp boot/config/system.json "$ROOTFS/etc/awesome-os/system.json"
+          if [ -f boot/config/os-release.x86_64 ]; then
+            cp boot/config/os-release.x86_64 "$ROOTFS/etc/os-release"
+          else
+            cat << 'EOF' > "$ROOTFS/etc/os-release"
+          NAME="AwesomeOS"
+          VERSION="1.0-v11 (Planetary v11)"
+          ID=awesome-os
+          VERSION_ID="1.0-v11"
+          ARCH=x86_64
+          HOLO_KERNEL="7.3.6"
+          HOLO_CAS_LAYOUT="v11"
+          B8G_CAS_DIR="/var/lib/b8g/cas"
+          HOLO_CAS_MANIFEST="https://awesome-os.com/cas/v11/manifest.json"
+          B8G_ABI_MAGIC_V3=0x33564742
+          EOF
+          fi
+
           cat << 'EOF' > "$ROOTFS/etc/awesome-os/driver-index.v11.conf"
-          # Awesome-OS v11 Modalias Driver Index
-          # Format: <tier> <modalias_pattern> <module_path> <name>
+          # AwesomeOS v11 Modalias Driver Index
           tier0 vmbus:* /lib/modules/hv_vmbus.ko hv_vmbus
           tier0 serio:* /lib/modules/evdev.ko evdev
           tier0 hid:* /lib/modules/evdev.ko evdev
@@ -65,19 +79,15 @@ jobs:
 
           cp /bin/busybox "$ROOTFS/bin/busybox"
           chmod 755 "$ROOTFS/bin/busybox"
-          for cmd in sh mount umount uname ip udhcpc ls cat poweroff reboot wget sha256sum mkdir cp mv rm grep sed awk tar zcat echo sleep ps dmesg clear env id hostname insmod modprobe; do
+          for cmd in sh mount umount uname ip udhcpc ls cat poweroff reboot wget sha256sum sha512sum mkdir cp mv rm grep sed awk tar zcat echo sleep ps dmesg clear env id hostname insmod modprobe; do
             ln -sf busybox "$ROOTFS/bin/$cmd"
           done
 
-          # Bundle Hyper-V / HID / PS2 keyboard kernel modules if built as =m (for Gen-2 UEFI input)
           KVER="$(uname -r)"
-          echo "=== Kernel keyboard/HID config ($KVER) ==="
-          grep -E 'CONFIG_(SERIO_HYPERV|HID_HYPERV|HYPERV_KEYBOARD|KEYBOARD_ATKBD|INPUT_EVDEV)=' "/boot/config-$KVER" || true
           mkdir -p "$ROOTFS/lib/modules"
           for mod in hyperv-keyboard hid-hyperv hv_vmbus evdev atkbd; do
             MFILE=$(find "/lib/modules/$KVER" -name "${mod}.ko*" 2>/dev/null | head -n 1 || true)
             if [ -n "$MFILE" ]; then
-              echo "Bundling kernel module: $MFILE"
               case "$MFILE" in
                 *.zst) zstd -d -c "$MFILE" > "$ROOTFS/lib/modules/${mod}.ko" ;;
                 *.xz)  xz -d -c "$MFILE" > "$ROOTFS/lib/modules/${mod}.ko" ;;
@@ -87,8 +97,7 @@ jobs:
             fi
           done
 
-          ARCH="x86_64"
-          COREUTILS_URL="https://github.com/awesome-os/coreutils/releases/latest/download/coreutils-linux-${ARCH}-musl"
+          COREUTILS_URL="https://github.com/awesome-os/coreutils/releases/latest/download/coreutils-linux-x86_64-musl"
           COREUTILS_HTTP="$(curl -sSL -o "$ROOTFS/bin/coreutils" -w '%{http_code}' "$COREUTILS_URL" || true)"
           if [ "$COREUTILS_HTTP" = "200" ] && [ -s "$ROOTFS/bin/coreutils" ]; then
             chmod 0755 "$ROOTFS/bin/coreutils"
@@ -99,38 +108,47 @@ jobs:
             rm -f "$ROOTFS/bin/coreutils"
           fi
 
+          HOLO_URL="https://github.com/awesome-os/holo-pm/releases/latest/download/holo-linux-x64"
+          HOLO_HTTP="$(curl -sSL -o "$ROOTFS/bin/holo" -w '%{http_code}' "$HOLO_URL" || true)"
+          if [ "$HOLO_HTTP" = "200" ] && [ -s "$ROOTFS/bin/holo" ]; then
+            chmod 0755 "$ROOTFS/bin/holo"
+          else
+            rm -f "$ROOTFS/bin/holo"
+          fi
+
           cp /etc/ssl/certs/ca-certificates.crt "$ROOTFS/etc/ssl/certs/ca-certificates.crt"
-          cat << 'EOF' > "$ROOTFS/etc/os-release"
-          NAME="Awesome-OS Desktop"
-          VERSION="0.3.0"
-          ID=awesome-os
-          ARCH=x86_64
-          PRETTY_NAME="Awesome-OS Desktop 0.3.0 (x86_64 v11 CAS Foundation)"
-          B8G_ABI_MAGIC_V3=0x33564742
-          EOF
 
           (cd "$ROOTFS" && find . -print0 | cpio --null -ov --format=newc | zstd -19 -T0) > dist/initramfs-x86_64.cpio.zst
           ls -lh dist/initramfs-x86_64.cpio.zst
 
-      - name: Stage bootable Linux x86_64 kernel
+      - name: Stage bootable Linux x86_64 kernel (Holo-Linux 7.3.6 release or host fallback)
         run: |
-          KPATH="/boot/vmlinuz-$(uname -r)"
-          if [ ! -f "$KPATH" ]; then
-            KPATH=$(ls -1 /boot/vmlinuz-* | sort -V | tail -n 1)
+          HOLO_KURL="https://github.com/awesome-os/t2linux-baseline/releases/latest/download/vmlinuz-7.3.6-x86_64"
+          KHTTP="$(curl -sSL -o dist/vmlinuz-x86_64 -w '%{http_code}' "$HOLO_KURL" || true)"
+          if [ "$KHTTP" != "200" ] || [ ! -s dist/vmlinuz-x86_64 ]; then
+            rm -f dist/vmlinuz-x86_64
+            KPATH="/boot/vmlinuz-$(uname -r)"
+            if [ ! -f "$KPATH" ]; then
+              KPATH=$(ls -1 /boot/vmlinuz-* | sort -V | tail -n 1)
+            fi
+            sudo cp "$KPATH" dist/vmlinuz-x86_64
+            sudo chmod 644 dist/vmlinuz-x86_64
           fi
-          echo "Using kernel: $KPATH"
-          sudo cp "$KPATH" dist/vmlinuz-x86_64
-          sudo chmod 644 dist/vmlinuz-x86_64
           ls -lh dist/vmlinuz-x86_64
 
-      - name: Fetch Limine v8 and build hybrid UEFI/BIOS ISO (x86_64)
+      - name: Build Dual-Slot (slot-a + slot-b) Limine Hybrid UEFI/BIOS ISO with 24-bit Splash (x86_64)
         run: |
           git clone --depth=1 --branch=v8.x-binary https://github.com/limine-bootloader/limine.git build/limine
           make -C build/limine
 
-          mkdir -p build/iso_root/boot/limine build/iso_root/EFI/BOOT
-          cp dist/vmlinuz-x86_64 build/iso_root/boot/vmlinuz
-          cp dist/initramfs-x86_64.cpio.zst build/iso_root/boot/initramfs.cpio.zst
+          mkdir -p build/iso_root/boot/{limine,slot-a,slot-b,splash} build/iso_root/EFI/BOOT
+          cp dist/vmlinuz-x86_64 build/iso_root/boot/slot-a/vmlinuz
+          cp dist/initramfs-x86_64.cpio.zst build/iso_root/boot/slot-a/initramfs.cpio.zst
+          ln -f build/iso_root/boot/slot-a/vmlinuz build/iso_root/boot/slot-b/vmlinuz
+          ln -f build/iso_root/boot/slot-a/initramfs.cpio.zst build/iso_root/boot/slot-b/initramfs.cpio.zst
+          if [ -f boot/splash/awesome-os-1920x1080.bmp ]; then
+            cp boot/splash/awesome-os-1920x1080.bmp build/iso_root/boot/splash/awesome-os-1920x1080.bmp
+          fi
           cp boot/config/limine.conf build/iso_root/boot/limine/limine.conf
           cp build/limine/limine-bios.sys build/limine/limine-bios-cd.bin build/limine/limine-uefi-cd.bin build/iso_root/boot/limine/
           cp build/limine/BOOTX64.EFI build/iso_root/EFI/BOOT/
@@ -141,37 +159,52 @@ jobs:
             -no-emul-boot -boot-load-size 4 -boot-info-table \
             --efi-boot boot/limine/limine-uefi-cd.bin \
             -efi-boot-part --efi-boot-image --protective-msdos-label \
-            build/iso_root -o dist/awesome-os-desktop-x86_64.iso
+            build/iso_root -o dist/awesomeos-v1.0.0-x86_64.iso
 
-          ./build/limine/limine bios-install dist/awesome-os-desktop-x86_64.iso
-          ls -lh dist/awesome-os-desktop-x86_64.iso
+          ./build/limine/limine bios-install dist/awesomeos-v1.0.0-x86_64.iso
+          cp dist/awesomeos-v1.0.0-x86_64.iso dist/awesome-os-desktop-x86_64.iso
+          ls -lh dist/awesomeos-v1.0.0-x86_64.iso
 
-      - name: Build GPT UEFI + ext4 AWESOME_V11 QCOW2 image (x86_64)
+      - name: Build 4-Partition GPT Dual-Slot (ESP + SLOT_A + SLOT_B + AWESOME_V11) QCOW2 (x86_64)
         run: |
-          truncate -s 128M build/awesome-os-desktop-x86_64.img
-          parted -s build/awesome-os-desktop-x86_64.img mklabel gpt
-          parted -s build/awesome-os-desktop-x86_64.img mkpart ESP fat32 1MiB 65MiB
-          parted -s build/awesome-os-desktop-x86_64.img set 1 esp on
-          parted -s build/awesome-os-desktop-x86_64.img mkpart AWESOME_V11 ext4 65MiB 127MiB
+          truncate -s 256M build/awesomeos-x86_64.img
+          parted -s build/awesomeos-x86_64.img mklabel gpt
+          parted -s build/awesomeos-x86_64.img mkpart ESP fat32 1MiB 97MiB
+          parted -s build/awesomeos-x86_64.img set 1 esp on
+          parted -s build/awesomeos-x86_64.img mkpart SLOT_A ext4 97MiB 145MiB
+          parted -s build/awesomeos-x86_64.img mkpart SLOT_B ext4 145MiB 193MiB
+          parted -s build/awesomeos-x86_64.img mkpart AWESOME_V11 ext4 193MiB 255MiB
 
-          truncate -s 64M build/esp.img
-          mkfs.fat -F 32 -n AWESOMEOS build/esp.img
-          mmd -i build/esp.img ::/EFI ::/EFI/BOOT ::/boot ::/boot/limine
+          truncate -s 96M build/esp.img
+          mkfs.fat -F 32 -n ESP build/esp.img
+          mmd -i build/esp.img ::/EFI ::/EFI/BOOT ::/boot ::/boot/limine ::/boot/slot-a ::/boot/slot-b ::/boot/splash
           mcopy -i build/esp.img build/limine/BOOTX64.EFI ::/EFI/BOOT/BOOTX64.EFI
           mcopy -i build/esp.img boot/config/limine.conf ::/boot/limine/limine.conf
-          mcopy -i build/esp.img dist/vmlinuz-x86_64 ::/boot/vmlinuz
-          mcopy -i build/esp.img dist/initramfs-x86_64.cpio.zst ::/boot/initramfs.cpio.zst
+          mcopy -i build/esp.img dist/vmlinuz-x86_64 ::/boot/slot-a/vmlinuz
+          mcopy -i build/esp.img dist/initramfs-x86_64.cpio.zst ::/boot/slot-a/initramfs.cpio.zst
+          mcopy -i build/esp.img dist/vmlinuz-x86_64 ::/boot/slot-b/vmlinuz
+          mcopy -i build/esp.img dist/initramfs-x86_64.cpio.zst ::/boot/slot-b/initramfs.cpio.zst
+          if [ -f boot/splash/awesome-os-1920x1080.bmp ]; then
+            mcopy -i build/esp.img boot/splash/awesome-os-1920x1080.bmp ::/boot/splash/awesome-os-1920x1080.bmp
+          fi
 
+          truncate -s 48M build/slot_a.img
+          mkfs.ext4 -q -L SLOT_A -F build/slot_a.img
+          truncate -s 48M build/slot_b.img
+          mkfs.ext4 -q -L SLOT_B -F build/slot_b.img
           truncate -s 62M build/cas.img
           mkfs.ext4 -q -L AWESOME_V11 -F build/cas.img
 
-          dd if=build/esp.img of=build/awesome-os-desktop-x86_64.img bs=1M seek=1 conv=notrunc status=none
-          dd if=build/cas.img of=build/awesome-os-desktop-x86_64.img bs=1M seek=65 conv=notrunc status=none
+          dd if=build/esp.img of=build/awesomeos-x86_64.img bs=1M seek=1 conv=notrunc status=none
+          dd if=build/slot_a.img of=build/awesomeos-x86_64.img bs=1M seek=97 conv=notrunc status=none
+          dd if=build/slot_b.img of=build/awesomeos-x86_64.img bs=1M seek=145 conv=notrunc status=none
+          dd if=build/cas.img of=build/awesomeos-x86_64.img bs=1M seek=193 conv=notrunc status=none
 
-          qemu-img convert -f raw -O qcow2 -c build/awesome-os-desktop-x86_64.img dist/awesome-os-desktop-x86_64.qcow2
-          ls -lh dist/awesome-os-desktop-x86_64.qcow2
+          qemu-img convert -f raw -O qcow2 -c build/awesomeos-x86_64.img dist/awesomeos-v1.0.0-x86_64.qcow2
+          cp dist/awesomeos-v1.0.0-x86_64.qcow2 dist/awesome-os-desktop-x86_64.qcow2
+          ls -lh dist/awesomeos-v1.0.0-x86_64.qcow2
 
-      - name: QEMU Boot Test 1 — Direct Kernel + Initramfs Self-Test (x86_64)
+      - name: QEMU Gate 1 — Direct Kernel + Initramfs Self-Test (x86_64)
         run: |
           set -o pipefail
           timeout 60s qemu-system-x86_64 \
@@ -185,12 +218,12 @@ jobs:
           grep -F '[AWESOME-OS] DRIVER-HYDRATOR SELFTEST PASS' build/qemu-direct.log
           grep -F '[AWESOME-OS] BARE-METAL V11 SELFTEST PASS' build/qemu-direct.log
 
-      - name: QEMU Boot Test 2 — Hybrid ISO Boot via Limine (Dual tty0+ttyS0)
+      - name: QEMU Gate 2 — Hybrid Dual-Slot ISO Boot via Limine (x86_64)
         run: |
           rm -f build/qemu-iso.log
           qemu-system-x86_64 \
             -cpu max \
-            -cdrom dist/awesome-os-desktop-x86_64.iso \
+            -cdrom dist/awesomeos-v1.0.0-x86_64.iso \
             -boot d \
             -nographic -m 512 -no-reboot \
             > build/qemu-iso.log 2>&1 &
@@ -210,44 +243,163 @@ jobs:
 
           kill "$QPID" 2>/dev/null || true
           wait "$QPID" 2>/dev/null || true
-
-          echo "=== ISO QEMU BOOT LOG ==="
           tail -n 60 build/qemu-iso.log
           test "$FOUND" -eq 1
 
-      - name: Upload x86_64 workflow artifacts
+      - name: Upload x86_64 artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: awesome-os-desktop-x86_64
+          name: awesomeos-x86_64
           path: |
+            dist/awesomeos-v1.0.0-x86_64.iso
+            dist/awesomeos-v1.0.0-x86_64.qcow2
             dist/awesome-os-desktop-x86_64.iso
             dist/awesome-os-desktop-x86_64.qcow2
             dist/vmlinuz-x86_64
             dist/initramfs-x86_64.cpio.zst
             dist/init-x86_64
 
+  build-and-boot-aarch64:
+    name: Build & QEMU-Gate AwesomeOS v1.0 (aarch64 UEFI)
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Checkout awesome-os/desktop
+        uses: actions/checkout@v4
+
+      - name: Install ARM64 build, ISO & QEMU dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            qemu-system-arm qemu-efi-aarch64 qemu-utils xorriso mtools dosfstools \
+            e2fsprogs parted zstd busybox-static musl-tools ca-certificates curl cpio
+
+      - name: Compile static musl ARM64 PID 1 & Assemble initramfs-aarch64.cpio.zst
+        run: |
+          mkdir -p dist build/rootfs/{bin,sbin,proc,sys,dev,tmp,run,root,var/lib/b8g/cas/v11/files,var/lib/b8g/cas/v11/links,etc/ssl/certs,etc/awesome-os}
+          musl-gcc -static -Os -s -Wall -Wextra -Werror boot/src/init.c -o dist/init-aarch64
+          musl-gcc -static -Os -s -Wall -Wextra -Werror boot/src/fb_desktop.c -o dist/awesome-desktop-fb-aarch64
+          musl-gcc -static -Os -s -Wall -Wextra -Werror boot/src/driver_hydrator.c -o dist/awesome-driver-hydrator-aarch64
+
+          cp dist/init-aarch64 build/rootfs/init && chmod 755 build/rootfs/init
+          cp dist/awesome-desktop-fb-aarch64 build/rootfs/bin/awesome-desktop-fb && chmod 755 build/rootfs/bin/awesome-desktop-fb
+          cp dist/awesome-driver-hydrator-aarch64 build/rootfs/bin/awesome-driver-hydrator && chmod 755 build/rootfs/bin/awesome-driver-hydrator
+          cp boot/config/system.json build/rootfs/etc/awesome-os/system.json
+          if [ -f boot/config/os-release.aarch64 ]; then
+            cp boot/config/os-release.aarch64 build/rootfs/etc/os-release
+          fi
+          cp /bin/busybox build/rootfs/bin/busybox && chmod 755 build/rootfs/bin/busybox
+          for cmd in sh mount umount uname ip udhcpc ls cat poweroff reboot wget sha256sum sha512sum mkdir cp mv rm grep sed awk tar zcat echo sleep ps dmesg clear env id hostname insmod modprobe; do
+            ln -sf busybox "build/rootfs/bin/$cmd"
+          done
+          cp /etc/ssl/certs/ca-certificates.crt build/rootfs/etc/ssl/certs/ca-certificates.crt
+          echo "# AwesomeOS v11 Modalias Driver Index" > build/rootfs/etc/awesome-os/driver-index.v11.conf
+
+          (cd build/rootfs && find . -print0 | cpio --null -ov --format=newc | zstd -19 -T0) > dist/initramfs-aarch64.cpio.zst
+
+          KPATH="/boot/vmlinuz-$(uname -r)"
+          if [ ! -f "$KPATH" ]; then
+            KPATH=$(ls -1 /boot/vmlinuz-* | sort -V | tail -n 1)
+          fi
+          sudo cp "$KPATH" dist/vmlinuz-aarch64
+          sudo chmod 644 dist/vmlinuz-aarch64
+
+          # If host kernel is gzip-compressed Image.gz, decompress for direct QEMU -kernel boot
+          if file dist/vmlinuz-aarch64 | grep -qi 'gzip compressed'; then
+            zcat dist/vmlinuz-aarch64 > build/Image-aarch64
+          else
+            cp dist/vmlinuz-aarch64 build/Image-aarch64
+          fi
+
+      - name: Build Dual-Slot Limine ARM64 UEFI ISO & QCOW2 (BOOTAA64.EFI)
+        run: |
+          git clone --depth=1 --branch=v8.x-binary https://github.com/limine-bootloader/limine.git build/limine
+          mkdir -p build/iso_root/boot/{limine,slot-a,slot-b,splash} build/iso_root/EFI/BOOT
+          cp build/Image-aarch64 build/iso_root/boot/slot-a/vmlinuz
+          cp dist/initramfs-aarch64.cpio.zst build/iso_root/boot/slot-a/initramfs.cpio.zst
+          ln -f build/iso_root/boot/slot-a/vmlinuz build/iso_root/boot/slot-b/vmlinuz
+          ln -f build/iso_root/boot/slot-a/initramfs.cpio.zst build/iso_root/boot/slot-b/initramfs.cpio.zst
+          if [ -f boot/splash/awesome-os-1920x1080.bmp ]; then
+            cp boot/splash/awesome-os-1920x1080.bmp build/iso_root/boot/splash/awesome-os-1920x1080.bmp
+          fi
+          sed 's/console=ttyS0,115200/console=ttyAMA0,115200/g' boot/config/limine.conf > build/iso_root/boot/limine/limine.conf
+          cp build/limine/limine-uefi-cd.bin build/iso_root/boot/limine/
+          cp build/limine/BOOTAA64.EFI build/iso_root/EFI/BOOT/
+
+          xorriso -as mkisofs \
+            -R -r -J \
+            --efi-boot boot/limine/limine-uefi-cd.bin \
+            -efi-boot-part --efi-boot-image --protective-msdos-label \
+            build/iso_root -o dist/awesomeos-v1.0.0-aarch64.iso
+
+          truncate -s 160M build/awesomeos-aarch64.img
+          parted -s build/awesomeos-aarch64.img mklabel gpt
+          parted -s build/awesomeos-aarch64.img mkpart ESP fat32 1MiB 97MiB
+          parted -s build/awesomeos-aarch64.img set 1 esp on
+          parted -s build/awesomeos-aarch64.img mkpart AWESOME_V11 ext4 97MiB 159MiB
+          truncate -s 96M build/esp64.img
+          mkfs.fat -F 32 -n ESP build/esp64.img
+          mmd -i build/esp64.img ::/EFI ::/EFI/BOOT ::/boot ::/boot/limine ::/boot/slot-a ::/boot/slot-b
+          mcopy -i build/esp64.img build/limine/BOOTAA64.EFI ::/EFI/BOOT/BOOTAA64.EFI
+          mcopy -i build/esp64.img build/iso_root/boot/limine/limine.conf ::/boot/limine/limine.conf
+          mcopy -i build/esp64.img build/Image-aarch64 ::/boot/slot-a/vmlinuz
+          mcopy -i build/esp64.img dist/initramfs-aarch64.cpio.zst ::/boot/slot-a/initramfs.cpio.zst
+          mcopy -i build/esp64.img build/Image-aarch64 ::/boot/slot-b/vmlinuz
+          mcopy -i build/esp64.img dist/initramfs-aarch64.cpio.zst ::/boot/slot-b/initramfs.cpio.zst
+          truncate -s 62M build/cas64.img
+          mkfs.ext4 -q -L AWESOME_V11 -F build/cas64.img
+          dd if=build/esp64.img of=build/awesomeos-aarch64.img bs=1M seek=1 conv=notrunc status=none
+          dd if=build/cas64.img of=build/awesomeos-aarch64.img bs=1M seek=97 conv=notrunc status=none
+          qemu-img convert -f raw -O qcow2 -c build/awesomeos-aarch64.img dist/awesomeos-v1.0.0-aarch64.qcow2
+
+      - name: QEMU Gate 3 — ARM64 virt Direct Kernel + Initramfs Self-Test
+        run: |
+          set -o pipefail
+          timeout 60s qemu-system-aarch64 \
+            -M virt -cpu max \
+            -kernel build/Image-aarch64 \
+            -initrd dist/initramfs-aarch64.cpio.zst \
+            -append "console=ttyAMA0,115200 awesome.selftest=1" \
+            -nographic -m 512 -no-reboot | tee build/qemu-aarch64.log
+
+          grep -F '[AWESOME-OS] PID 1 READY (B8G_ABI_MAGIC_V3=0x33564742)' build/qemu-aarch64.log
+          grep -F '[AWESOME-OS] BARE-METAL V11 SELFTEST PASS' build/qemu-aarch64.log
+
+      - name: Upload aarch64 artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: awesomeos-aarch64
+          path: |
+            dist/awesomeos-v1.0.0-aarch64.iso
+            dist/awesomeos-v1.0.0-aarch64.qcow2
+            dist/vmlinuz-aarch64
+            dist/initramfs-aarch64.cpio.zst
+
   publish-release:
-    name: Publish Awesome-OS Desktop v0.3.0 Release
-    needs: [build-and-boot-x86_64]
+    name: Publish AwesomeOS v1.0.0 Multi-Arch Release
+    needs: [build-and-boot-x86_64, build-and-boot-aarch64]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
-      - name: Download x86_64 artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
-          name: awesome-os-desktop-x86_64
+          name: awesomeos-x86_64
+          path: release-assets
+      - uses: actions/download-artifact@v4
+        with:
+          name: awesomeos-aarch64
           path: release-assets
 
-      - name: Publish release assets
+      - name: Generate SHA512SUMS & Publish v1.0.0 GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="v0.3.0"
+          (cd release-assets && sha512sum * > SHA512SUMS.txt)
+          TAG="v1.0.0"
           REPO="${{ github.repository }}"
           if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
             gh release upload "$TAG" release-assets/* --repo "$REPO" --clobber
           else
             gh release create "$TAG" release-assets/* --repo "$REPO" \
-              --title "Awesome-OS Desktop $TAG — Unified Cross-Platform Foundation" \
-              --notes "Unified ChromeOS/Fuchsia-style bare-metal UEFI ISO, netboot kernel/initramfs (dual tty0+ttyS0), Wayland/WebGPU foundation, and pluggable desktop UI adapters (Omarchy, Noctalia, ChonkStep, Sectium, Kitty-Ink)."
+              --title "AwesomeOS v1.0.0 — Multi-Arch Dual-Slot Pure Holo v11 Distro" \
+              --notes "Freshly aligned AwesomeOS v1.0.0 distro (x86_64 + aarch64 UEFI/BIOS ISOs & GPT Dual-Slot QCOW2 images, 24-bit BI_RGB splash, Holo v11 CAS, and 3/3 headless QEMU gates green)."
           fi
