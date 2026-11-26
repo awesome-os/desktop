@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Awesome-OS Zero-Asset 3D VTuber Studio (Three.js)</title>
+<style>
+  :root {
+    --bg: #0b101b; --surface: rgba(15,23,42,0.82); --border: rgba(96,165,250,0.35);
+    --text: #e6eefc; --muted: #94a3b8; --accent: #38bdf8; --good: #34d399;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; font-family: system-ui, -apple-system, sans-serif; color: var(--text); background: radial-gradient(circle at 50% 25%, #172554 0%, #0b101b 70%); }
+  body.bg-transparent { background: transparent !important; }
+  body.bg-chroma { background: #00ff00 !important; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+  .hud {
+    position: fixed; top: 14px; left: 14px; width: 320px; max-height: calc(100vh - 28px);
+    overflow-y: auto; background: var(--surface); backdrop-filter: blur(14px);
+    border: 1px solid var(--border); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px;
+  }
+  body.obs-clean .hud { display: none !important; }
+  h1 { margin: 0; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
+  .pill { font-size: 10px; padding: 2px 7px; border-radius: 999px; background: rgba(52,211,153,0.16); border: 1px solid rgba(52,211,153,0.45); color: #6ee7b7; }
+  .sec-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--muted); margin-top: 2px; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; }
+  button, select {
+    cursor: pointer; background: rgba(30,41,59,0.9); color: var(--text); border: 1px solid rgba(148,163,184,0.3);
+    border-radius: 8px; padding: 6px 9px; font-size: 11px; font-weight: 600;
+  }
+  button:hover { border-color: var(--accent); }
+  button.active { background: #2563eb; border-color: #60a5fa; color: #fff; }
+  button.good { background: rgba(52,211,153,0.16); border-color: rgba(52,211,153,0.5); color: #6ee7b7; }
+  textarea {
+    width: 100%; height: 96px; resize: vertical; background: #090d16; color: #93c5fd;
+    border: 1px solid var(--border); border-radius: 8px; padding: 8px; font-family: var(--mono); font-size: 11px;
+  }
+  .meter { height: 6px; background: #0f172a; border-radius: 999px; overflow: hidden; }
+  .meter > div { height: 100%; width: 0%; background: linear-gradient(90deg, #38bdf8, #34d399); transition: width 40ms linear; }
+  .hint { font-size: 11px; color: var(--muted); line-height: 1.4; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.174.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.174.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<aside class="hud">
+  <h1>Lumi 3D VTuber Studio <span class="pill">0 Assets</span></h1>
+  <div class="hint">100% procedural Three.js (<code>vtuber-rig.mjs</code>). Move mouse to track head/eyes. Keys <b>1-6</b> expressions, <b>W</b> wave, <b>Space</b> bounce.</div>
+
+  <div class="sec-title">Character Preset</div>
+  <div class="row" id="presets">
+    <button class="active" data-preset="lumi">Lumi</button>
+    <button data-preset="omarchy">Omarchy</button>
+    <button data-preset="dragon">White Dragon</button>
+  </div>
+
+  <div class="sec-title">Expressions (Hotkeys 1–6)</div>
+  <div class="row" id="exprs">
+    <button class="active" data-expr="neutral">1 Neutral</button>
+    <button data-expr="happy">2 Happy</button>
+    <button data-expr="pog">3 Pog</button>
+    <button data-expr="wink">4 Wink</button>
+    <button data-expr="hype">5 Hype</button>
+    <button data-expr="sleepy">6 Sleepy</button>
+  </div>
+
+  <div class="sec-title">Lip-Sync &amp; Emotes</div>
+  <div class="row">
+    <button class="good" id="micBtn">Enable Mic Lip-Sync</button>
+    <button id="simTalkBtn">Sim Talk</button>
+    <button id="waveBtn">Wave (W)</button>
+    <button id="bounceBtn">Bounce</button>
+  </div>
+  <div class="meter"><div id="micBar"></div></div>
+
+  <div class="sec-title">OBS Background Mode</div>
+  <div class="row" id="bgs">
+    <button class="active" data-bg="studio">Studio</button>
+    <button data-bg="transparent">Transparent</button>
+    <button data-bg="chroma">Chroma Green</button>
+    <button id="obsLinkBtn" title="Copy clean OBS Browser Source URL">Copy OBS URL</button>
+  </div>
+
+  <div class="sec-title">Live Script Console (<code>rig</code> API)</div>
+  <textarea id="scriptBox">rig.setExpression('happy');
+rig.wave(2.5);
+rig.bounce(1.4);
+rig.setDragonSpeed(2.2);</textarea>
+  <button id="runScriptBtn">Run VTuber Script</button>
+</aside>
+
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { buildVtuberRig, CHARACTER_PRESETS } from './vtuber-rig.mjs';
+
+const params = new URLSearchParams(location.search);
+if (params.get('obs') === '1') document.body.classList.add('obs-clean');
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const camera = new THREE.PerspectiveCamera(34, window.innerWidth / window.innerHeight, 0.1, 50);
+camera.position.set(0, 2.05, 4.4);
+camera.lookAt(0, 1.85, 0);
+
+// Warm Pixar-style key + cool rim + soft bounce lighting
+const keyLight = new THREE.DirectionalLight(0xfff4e0, 2.2);
+keyLight.position.set(3.2, 5.2, 4.2);
+keyLight.castShadow = true;
+scene.add(keyLight);
+
+const rimLight = new THREE.DirectionalLight(0x38bdf8, 1.6);
+rimLight.position.set(-3.5, 3.2, -3.0);
+scene.add(rimLight);
+
+const hemi = new THREE.HemisphereLight(0x93c5fd, 0x1e293b, 0.85);
+scene.add(hemi);
+
+let rig = null;
+function loadPreset(key) {
+  if (rig) scene.remove(rig.root);
+  rig = buildVtuberRig(THREE, CHARACTER_PRESETS[key] || CHARACTER_PRESETS.lumi);
+  scene.add(rig.root);
+  window.rig = rig.api;
+}
+loadPreset(params.get('preset') || 'lumi');
+
+function setBg(mode) {
+  document.body.classList.remove('bg-transparent', 'bg-chroma');
+  if (mode === 'transparent') document.body.classList.add('bg-transparent');
+  if (mode === 'chroma') document.body.classList.add('bg-chroma');
+}
+if (params.get('bg')) setBg(params.get('bg'));
+
+// Mouse head tracking
+window.addEventListener('pointermove', (e) => {
+  const nx = (e.clientX / window.innerWidth) * 2 - 1;
+  const ny = (e.clientY / window.innerHeight) * 2 - 1;
+  rig.api.setLook(nx * 0.65, ny * 0.42);
+});
+
+// Keyboard hotkeys
+const EXPR_KEYS = { '1': 'neutral', '2': 'happy', '3': 'pog', '4': 'wink', '5': 'hype', '6': 'sleepy' };
+window.addEventListener('keydown', (e) => {
+  if (document.activeElement?.tagName === 'TEXTAREA') return;
+  if (EXPR_KEYS[e.key]) {
+    rig.api.setExpression(EXPR_KEYS[e.key]);
+    document.querySelectorAll('#exprs button').forEach(b => b.classList.toggle('active', b.dataset.expr === EXPR_KEYS[e.key]));
+  } else if (e.key === 'w' || e.key === 'W') rig.api.wave(2.0);
+  else if (e.key === ' ') rig.api.bounce(1.2);
+});
+
+// UI controls
+document.getElementById('presets').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-preset]'); if (!b) return;
+  document.querySelectorAll('#presets button').forEach(x => x.classList.toggle('active', x === b));
+  loadPreset(b.dataset.preset);
+});
+document.getElementById('exprs').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-expr]'); if (!b) return;
+  document.querySelectorAll('#exprs button').forEach(x => x.classList.toggle('active', x === b));
+  rig.api.setExpression(b.dataset.expr);
+});
+document.getElementById('bgs').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-bg]'); if (!b) return;
+  document.querySelectorAll('#bgs button[data-bg]').forEach(x => x.classList.toggle('active', x === b));
+  setBg(b.dataset.bg);
+});
+document.getElementById('waveBtn').addEventListener('click', () => rig.api.wave(2.0));
+document.getElementById('bounceBtn').addEventListener('click', () => rig.api.bounce(1.2));
+document.getElementById('obsLinkBtn').addEventListener('click', async () => {
+  const url = `${location.origin}${location.pathname}?obs=1&bg=transparent`;
+  try { await navigator.clipboard.writeText(url); } catch {}
+  document.getElementById('obsLinkBtn').textContent = 'Copied!';
+  setTimeout(() => { document.getElementById('obsLinkBtn').textContent = 'Copy OBS URL'; }, 1600);
+});
+document.getElementById('runScriptBtn').addEventListener('click', () => {
+  const code = document.getElementById('scriptBox').value;
+  try { new Function('rig', code)(rig.api); } catch (err) { alert(err.message); }
+});
+
+// Microphone + Simulated Lip-Sync
+let analyser = null, freqData = null, simTalk = false;
+document.getElementById('simTalkBtn').addEventListener('click', (e) => {
+  simTalk = !simTalk;
+  e.target.classList.toggle('active', simTalk);
+});
+document.getElementById('micBtn').addEventListener('click', async (e) => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const ac = new AudioContext();
+    const src = ac.createMediaStreamSource(stream);
+    analyser = ac.createAnalyser();
+    analyser.fftSize = 256;
+    src.connect(analyser);
+    freqData = new Uint8Array(analyser.frequencyBinCount);
+    e.target.textContent = 'Mic Live';
+    e.target.classList.add('active');
+  } catch (err) {
+    alert(`Mic permission error: ${err.message}`);
+  }
+});
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+const clock = new THREE.Clock();
+const micBar = document.getElementById('micBar');
+function tick() {
+  requestAnimationFrame(tick);
+  const dt = Math.min(0.05, clock.getDelta());
+  const elapsed = clock.elapsedTime;
+
+  let voice = 0;
+  if (analyser && freqData) {
+    analyser.getByteTimeDomainData(freqData);
+    let sum = 0;
+    for (let i = 0; i < freqData.length; i++) {
+      const v = (freqData[i] - 128) / 128;
+      sum += v * v;
+    }
+    voice = Math.min(1, Math.sqrt(sum / freqData.length) * 6.5);
+  } else if (simTalk) {
+    voice = Math.max(0, Math.sin(elapsed * 13) * 0.55 + Math.sin(elapsed * 21) * 0.35 + 0.25);
+  }
+  rig.api.setMouth(voice);
+  micBar.style.width = `${Math.round(voice * 100)}%`;
+
+  rig.update(dt, elapsed);
+  renderer.render(scene, camera);
+}
+tick();
+</script>
+</body>
+</html>
