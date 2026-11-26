@@ -50,8 +50,26 @@ jobs:
 
           cp /bin/busybox "$ROOTFS/bin/busybox"
           chmod 755 "$ROOTFS/bin/busybox"
-          for cmd in sh mount umount uname ip udhcpc ls cat poweroff reboot wget sha256sum mkdir cp mv rm grep sed awk tar zcat echo sleep ps dmesg clear env id hostname; do
+          for cmd in sh mount umount uname ip udhcpc ls cat poweroff reboot wget sha256sum mkdir cp mv rm grep sed awk tar zcat echo sleep ps dmesg clear env id hostname insmod modprobe; do
             ln -sf busybox "$ROOTFS/bin/$cmd"
+          done
+
+          # Bundle Hyper-V / HID / PS2 keyboard kernel modules if built as =m (for Gen-2 UEFI input)
+          KVER="$(uname -r)"
+          echo "=== Kernel keyboard/HID config ($KVER) ==="
+          grep -E 'CONFIG_(SERIO_HYPERV|HID_HYPERV|HYPERV_KEYBOARD|KEYBOARD_ATKBD|INPUT_EVDEV)=' "/boot/config-$KVER" || true
+          mkdir -p "$ROOTFS/lib/modules"
+          for mod in hyperv-keyboard hid-hyperv hv_vmbus evdev atkbd; do
+            MFILE=$(find "/lib/modules/$KVER" -name "${mod}.ko*" 2>/dev/null | head -n 1 || true)
+            if [ -n "$MFILE" ]; then
+              echo "Bundling kernel module: $MFILE"
+              case "$MFILE" in
+                *.zst) zstd -d -c "$MFILE" > "$ROOTFS/lib/modules/${mod}.ko" ;;
+                *.xz)  xz -d -c "$MFILE" > "$ROOTFS/lib/modules/${mod}.ko" ;;
+                *.gz)  gzip -d -c "$MFILE" > "$ROOTFS/lib/modules/${mod}.ko" ;;
+                *)     cp "$MFILE" "$ROOTFS/lib/modules/${mod}.ko" ;;
+              esac
+            fi
           done
 
           ARCH="x86_64"

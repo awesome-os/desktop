@@ -311,7 +311,7 @@ static void render_desktop(Surface *s, int mode, int theme_idx, const char *unam
         draw_text(s, gap + 18, top + 78, uname_str, 1, t->accent2);
         draw_text(s, gap + 18, top + 102, "ABI Magic     : B8G_ABI_MAGIC_V3 (0x33564742)", 1, t->text);
         draw_text(s, gap + 18, top + 120, "v11 CAS Store : /var/lib/b8g/cas/v11/files/ (RAM Netboot)", 1, t->text);
-        draw_text(s, gap + 18, top + 138, "Boot Slot     : SLOT A [ACTIVE · VERIFIED]", 1, t->accent2);
+        draw_text(s, gap + 18, top + 138, "Boot Slot     : SLOT A [ACTIVE - VERIFIED]", 1, t->accent2);
         draw_text(s, gap + 18, top + 156, "Devices       : local & remote => terminal | desktop", 1, t->text);
         draw_text(s, gap + 18, top + 184, "Hotkeys:", 1, t->accent);
         draw_text(s, gap + 18, top + 202, "  [1] Omarchy Hyprland   [2] Noctalia Shell", 1, t->muted);
@@ -394,7 +394,10 @@ int main(void) {
         snprintf(uname_str, sizeof(uname_str), "%s %s (%s)", uts.sysname, uts.release, uts.machine);
     }
 
-    int tty_fd = open("/dev/tty0", O_RDWR);
+    int tty_fd = open("/dev/tty1", O_RDWR);
+    if (tty_fd < 0) tty_fd = open("/dev/tty0", O_RDWR);
+    if (tty_fd < 0) tty_fd = STDIN_FILENO;
+    int ser_fd = open("/dev/ttyS0", O_RDONLY | O_NOCTTY | O_NONBLOCK);
     struct termios orig_tio;
     int has_tio = 0;
     if (tty_fd >= 0 && tcgetattr(tty_fd, &orig_tio) == 0) {
@@ -417,12 +420,17 @@ int main(void) {
     for (;;) {
         fd_set rfds;
         FD_ZERO(&rfds);
-        if (tty_fd >= 0) FD_SET(tty_fd, &rfds);
+        int maxfd = -1;
+        if (tty_fd >= 0) { FD_SET(tty_fd, &rfds); if (tty_fd > maxfd) maxfd = tty_fd; }
+        if (ser_fd >= 0) { FD_SET(ser_fd, &rfds); if (ser_fd > maxfd) maxfd = ser_fd; }
         struct timeval tv = {1, 0};
-        int r = select(tty_fd >= 0 ? tty_fd + 1 : 0, &rfds, NULL, NULL, &tv);
-        if (r > 0 && tty_fd >= 0 && FD_ISSET(tty_fd, &rfds)) {
+        int r = select(maxfd + 1, &rfds, NULL, NULL, &tv);
+        if (r > 0) {
             char ch = 0;
-            if (read(tty_fd, &ch, 1) == 1) {
+            ssize_t n = 0;
+            if (tty_fd >= 0 && FD_ISSET(tty_fd, &rfds)) n = read(tty_fd, &ch, 1);
+            else if (ser_fd >= 0 && FD_ISSET(ser_fd, &rfds)) n = read(ser_fd, &ch, 1);
+            if (n == 1) {
                 if (ch == '1') mode = 0;
                 else if (ch == '2') mode = 1;
                 else if (ch == '3') mode = 2;
@@ -434,10 +442,11 @@ int main(void) {
         render_desktop(&surf, mode, theme_idx, uname_str);
     }
 
+    if (ser_fd >= 0) close(ser_fd);
     if (tty_fd >= 0) {
         (void)write(tty_fd, "\033[?25h\033[2J\033[H", 13);
         if (has_tio) (void)tcsetattr(tty_fd, TCSANOW, &orig_tio);
-        close(tty_fd);
+        if (tty_fd > 2) close(tty_fd);
     }
     destroy_surface(&surf);
     return 0;

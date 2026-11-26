@@ -389,13 +389,46 @@ int main(void) {
     sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
     (void)sigaction(SIGCHLD, &sa, NULL);
 
+    /* Load bundled Hyper-V / HID / evdev keyboard modules if present */
+    if (access("/bin/insmod", X_OK) == 0) {
+        const char *mods[] = {"/lib/modules/hv_vmbus.ko",
+                              "/lib/modules/evdev.ko",
+                              "/lib/modules/hyperv-keyboard.ko",
+                              "/lib/modules/hid-hyperv.ko",
+                              "/lib/modules/atkbd.ko", NULL};
+        for (int i = 0; mods[i] != NULL; i++) {
+            if (access(mods[i], R_OK) == 0) {
+                char *const im_argv[] = {"/bin/insmod", (char *)mods[i], NULL};
+                (void)run_wait(im_argv);
+            }
+        }
+    }
+
     /* Launch graphical Lumi bootscreen -> Omarchy/Noctalia/ChonkStep/Sectium desktop on /dev/fb0 */
     if (!cmdline_has_token("awesome.nogui=1") &&
         access("/dev/fb0", R_OK | W_OK) == 0 &&
         access("/bin/awesome-desktop-fb", X_OK) == 0) {
         log_both("[AWESOME-OS] Starting graphical desktop on /dev/fb0 (Press [5] or [ESC] for shell)\n");
-        char *const fb_argv[] = {"/bin/awesome-desktop-fb", NULL};
-        (void)run_wait(fb_argv);
+        pid_t fb_pid = fork();
+        if (fb_pid == 0) {
+            (void)setsid();
+            int tfd = open("/dev/tty1", O_RDWR);
+            if (tfd < 0) tfd = open("/dev/tty0", O_RDWR);
+            if (tfd >= 0) {
+                (void)ioctl(tfd, TIOCSCTTY, 1);
+                dup2(tfd, STDIN_FILENO);
+                dup2(tfd, STDOUT_FILENO);
+                dup2(tfd, STDERR_FILENO);
+                if (tfd > 2) close(tfd);
+            }
+            char *const fb_argv[] = {"/bin/awesome-desktop-fb", NULL};
+            execv("/bin/awesome-desktop-fb", fb_argv);
+            _exit(127);
+        }
+        if (fb_pid > 0) {
+            int st = 0;
+            while (waitpid(fb_pid, &st, 0) < 0 && errno == EINTR) {}
+        }
     }
 
     /* Spawn interactive terminal devices on both local VGA (tty0) and serial (ttyS0) */
