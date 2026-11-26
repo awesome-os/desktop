@@ -99,7 +99,7 @@ rig.setDragonSpeed(2.2);</textarea>
 <script type="module">
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { buildVtuberRig, CHARACTER_PRESETS } from './vtuber-rig.mjs';
+import { buildVtuberRig, CHARACTER_PRESETS } from './vtuber-rig.mjs?v=2';
 
 const params = new URLSearchParams(location.search);
 if (params.get('obs') === '1') document.body.classList.add('obs-clean');

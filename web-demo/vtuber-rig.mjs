@@ -387,43 +387,130 @@ export function buildVtuberRig(THREE, preset = CHARACTER_PRESETS.lumi) {
     hairGroup.add(halo);
   }
 
-  // 3. Orbiting Procedural Mini White Dragon Companion!
+  // 3. Orbiting Procedural Chibi White Dragon Companion (sculpted head, horns, eyes, dorsal ridge, scalloped wings!)
   const dragonOrbit = new THREE.Group();
-  dragonOrbit.position.set(0, 2.2, 0);
+  dragonOrbit.position.set(0, 2.25, 0);
   root.add(dragonOrbit);
 
   const dragonGroup = new THREE.Group();
-  dragonGroup.position.set(1.35, 0.1, 0.2);
+  dragonGroup.position.set(1.42, 0.12, 0.25);
+  dragonGroup.rotation.y = -0.35;
   dragonOrbit.add(dragonGroup);
 
-  const matDragon = new THREE.MeshStandardMaterial({ color: preset.dragonPrimary, roughness: 0.25, metalness: 0.1 });
+  const matDragon = new THREE.MeshStandardMaterial({ color: preset.dragonPrimary, roughness: 0.28, metalness: 0.08 });
+  const matDragonBelly = new THREE.MeshStandardMaterial({ color: '#e0f2fe', roughness: 0.4 });
   const matDragonGlow = new THREE.MeshStandardMaterial({
     color: preset.dragonAccent,
     emissive: preset.dragonAccent,
-    emissiveIntensity: 0.55,
-    roughness: 0.2,
+    emissiveIntensity: 0.48,
+    roughness: 0.22,
+    side: THREE.DoubleSide,
+  });
+  const matDragonHorn = new THREE.MeshStandardMaterial({ color: '#fbbf24', roughness: 0.25, metalness: 0.55 });
+  const matDragonEye = new THREE.MeshStandardMaterial({
+    color: '#10b981',
+    emissive: '#34d399',
+    emissiveIntensity: 0.9,
+    roughness: 0.1,
   });
 
-  const dragonCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0, 0.1, 0.24),
-    new THREE.Vector3(0, 0.02, 0.0),
-    new THREE.Vector3(0.05, -0.06, -0.28),
-    new THREE.Vector3(-0.04, 0.04, -0.52),
-  ]);
-  const dragonBody = new THREE.Mesh(new THREE.TubeGeometry(dragonCurve, 22, 0.085, 12, false), matDragon);
-  dragonGroup.add(dragonBody);
-  const dragonHead = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.24, 12), matDragon);
-  dragonHead.rotation.x = Math.PI / 2;
-  dragonHead.position.set(0, 0.11, 0.34);
-  dragonGroup.add(dragonHead);
+  // Plump chibi torso + tapering serpentine tail
+  const dragonTorso = new THREE.Mesh(new THREE.SphereGeometry(0.14, 20, 16), matDragon);
+  dragonTorso.scale.set(0.95, 0.88, 1.35);
+  dragonGroup.add(dragonTorso);
+
+  const dragonBelly = new THREE.Mesh(new THREE.SphereGeometry(0.115, 16, 14), matDragonBelly);
+  dragonBelly.scale.set(0.85, 0.72, 1.15);
+  dragonBelly.position.set(0, -0.045, 0.02);
+  dragonGroup.add(dragonBelly);
+
+  // Tapering tail segments + spade tip
+  const tailSegs = [
+    { z: -0.20, y: -0.02, r: 0.085 },
+    { z: -0.32, y: -0.05, r: 0.062 },
+    { z: -0.43, y: -0.03, r: 0.044 },
+    { z: -0.53, y: 0.02, r: 0.030 },
+  ];
+  for (const seg of tailSegs) {
+    const s = new THREE.Mesh(new THREE.SphereGeometry(seg.r, 12, 12), matDragon);
+    s.position.set(0, seg.y, seg.z);
+    dragonGroup.add(s);
+    const fin = new THREE.Mesh(new THREE.ConeGeometry(seg.r * 0.45, seg.r * 1.4, 4), matDragonGlow);
+    fin.position.set(0, seg.y + seg.r * 1.1, seg.z);
+    fin.rotation.x = -0.35;
+    dragonGroup.add(fin);
+  }
+  // Glowing diamond tail spade
+  const spadeShape = new THREE.Shape();
+  spadeShape.moveTo(0, 0);
+  spadeShape.lineTo(0.07, 0.06);
+  spadeShape.lineTo(0, 0.16);
+  spadeShape.lineTo(-0.07, 0.06);
+  spadeShape.closePath();
+  const tailSpade = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(spadeShape, { depth: 0.015, bevelEnabled: false }),
+    matDragonGlow,
+  );
+  tailSpade.rotation.x = Math.PI / 2;
+  tailSpade.position.set(0, 0.03, -0.55);
+  dragonGroup.add(tailSpade);
+
+  // Cute sculpted dragon head (cranium + snout + glowing eyes + swept-back golden horns!)
+  const dHead = new THREE.Group();
+  dHead.position.set(0, 0.10, 0.22);
+  dragonGroup.add(dHead);
+
+  const cranium = new THREE.Mesh(new THREE.SphereGeometry(0.125, 20, 18), matDragon);
+  cranium.scale.set(1.0, 0.92, 1.05);
+  dHead.add(cranium);
+
+  const snout = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.075, 0.14), matDragon);
+  snout.position.set(0, -0.02, 0.12);
+  dHead.add(snout);
+
+  for (const side of [-1, 1]) {
+    // Glowing emerald dragon eyes
+    const dEye = new THREE.Mesh(new THREE.SphereGeometry(0.028, 12, 12), matDragonEye);
+    dEye.position.set(side * 0.078, 0.025, 0.095);
+    dHead.add(dEye);
+
+    // Swept-back golden dragon horns
+    const hornCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(side * 0.055, 0.085, -0.01),
+      new THREE.Vector3(side * 0.11, 0.17, -0.10),
+      new THREE.Vector3(side * 0.15, 0.22, -0.22),
+    ]);
+    const horn = new THREE.Mesh(new THREE.TubeGeometry(hornCurve, 12, 0.018, 8, false), matDragonHorn);
+    dHead.add(horn);
+
+    // Cute side cheek fins
+    const earFin = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.10, 4), matDragonGlow);
+    earFin.position.set(side * 0.12, -0.01, -0.03);
+    earFin.rotation.z = -side * 1.1;
+    earFin.rotation.x = -0.4;
+    dHead.add(earFin);
+  }
+
+  // Real scalloped dragon wings (ExtrudeGeometry pivoted at shoulders!)
+  const wingShape = new THREE.Shape();
+  wingShape.moveTo(0, 0);
+  wingShape.quadraticCurveTo(0.16, 0.22, 0.38, 0.20);
+  wingShape.quadraticCurveTo(0.32, 0.08, 0.34, -0.04);
+  wingShape.quadraticCurveTo(0.24, 0.02, 0.20, -0.09);
+  wingShape.quadraticCurveTo(0.12, -0.02, 0.06, -0.10);
+  wingShape.closePath();
+  const wingGeo = new THREE.ExtrudeGeometry(wingShape, { depth: 0.016, bevelEnabled: true, bevelThickness: 0.005, bevelSize: 0.005, bevelSegments: 2 });
 
   const dragonWings = [];
   for (const side of [-1, 1]) {
-    const wing = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.36, 3), matDragonGlow);
-    wing.rotation.z = side * Math.PI * 0.42;
-    wing.position.set(side * 0.18, 0.10, 0.02);
-    dragonGroup.add(wing);
-    dragonWings.push(wing);
+    const wingPivot = new THREE.Group();
+    wingPivot.position.set(side * 0.11, 0.07, 0.01);
+    const wingMesh = new THREE.Mesh(wingGeo, matDragonGlow);
+    if (side === -1) wingMesh.scale.x = -1;
+    wingMesh.rotation.y = side * -0.25;
+    wingPivot.add(wingMesh);
+    dragonGroup.add(wingPivot);
+    dragonWings.push(wingPivot);
   }
 
   // Rig state for smooth spring physics & live scripting
@@ -529,11 +616,12 @@ export function buildVtuberRig(THREE, preset = CHARACTER_PRESETS.lumi) {
 
     mouthInner.scale.set(mouthW, mouthH, 0.45);
 
-    // Orbiting White Dragon companion
+    // Orbiting White Dragon companion (smooth shoulder-pivoted wing flap)
     dragonOrbit.rotation.y = elapsed * state.dragonSpeed;
     dragonGroup.position.y = 0.12 + Math.sin(elapsed * 3.5) * 0.16;
-    dragonWings[0].rotation.z = -Math.PI * 0.42 + Math.sin(elapsed * 12) * 0.45;
-    dragonWings[1].rotation.z = Math.PI * 0.42 - Math.sin(elapsed * 12) * 0.45;
+    const flap = Math.sin(elapsed * 10) * 0.52;
+    dragonWings[0].rotation.z = -flap;
+    dragonWings[1].rotation.z = flap;
   }
 
   return {
