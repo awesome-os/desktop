@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Awesome-OS Rack Manager — 19&quot; Virtual Blade Chassis &amp; OLED Telemetry</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      min-height: 100%; background: #05070c; color: #e2e8f0;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    }
+
+    /* Top Header */
+    .hdr {
+      position: sticky; top: 0; z-index: 30;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+      padding: 10px 18px; background: rgba(9, 13, 22, 0.94); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(56,189,248,0.24);
+    }
+    .hdr-title { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 800; color: #f8fafc; }
+    .hdr-title span { color: #38bdf8; }
+    .hdr-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .pill {
+      padding: 3px 9px; border-radius: 999px; font-size: 11px;
+      font-family: ui-monospace, Consolas, monospace;
+      background: rgba(16,185,129,0.14); border: 1px solid rgba(16,185,129,0.35); color: #6ee7b7;
+    }
+    .pill.blue { background: rgba(56,189,248,0.14); border-color: rgba(56,189,248,0.35); color: #7dd3fc; }
+    .btn {
+      padding: 5px 11px; border-radius: 7px; font-size: 11.5px; font-weight: 600;
+      background: #111827; border: 1px solid rgba(148,163,184,0.26); color: #e2e8f0;
+      cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;
+    }
+    .btn:hover { border-color: #38bdf8; color: #fff; }
+    .btn.primary { background: #0284c7; border-color: #38bdf8; color: #fff; }
+
+    /* 19-Inch Server Rack Chassis */
+    .rack-wrap {
+      max-width: 1040px; margin: 24px auto 48px; padding: 0 16px;
+    }
+    .rack-frame {
+      background: linear-gradient(180deg, #0d121d 0%, #090d16 100%);
+      border: 2px solid #222d42; border-radius: 14px;
+      padding: 14px 12px;
+      box-shadow: 0 28px 80px rgba(0,0,0,0.72), inset 0 1px 0 rgba(255,255,255,0.06);
+      display: flex; flex-direction: column; gap: 10px;
+    }
+
+    /* Rack Unit Blade */
+    .blade {
+      display: grid; grid-template-columns: 34px 1fr 34px;
+      background: linear-gradient(180deg, #161e2e 0%, #101724 52%, #0c121d 100%);
+      border: 1px solid rgba(148,163,184,0.22); border-radius: 9px;
+      overflow: hidden; transition: opacity 180ms ease, border-color 140ms ease;
+    }
+    .blade:hover { border-color: rgba(56,189,248,0.5); }
+    .blade.off { opacity: 0.48; }
+    .blade.off .oled { filter: grayscale(1) brightness(0.32); }
+
+    /* Rack Mounting Ears + Hex Screws */
+    .ear {
+      background: #0b101a; border-right: 1px solid rgba(148,163,184,0.14);
+      display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+      padding: 10px 0;
+    }
+    .ear.right { border-right: none; border-left: 1px solid rgba(148,163,184,0.14); }
+    .screw {
+      width: 12px; height: 12px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #475569, #1e293b 70%);
+      border: 1px solid #0f172a; box-shadow: inset 0 0 2px rgba(0,0,0,0.9);
+    }
+    .u-tag {
+      font-family: ui-monospace, Consolas, monospace; font-size: 10px; color: #64748b; font-weight: 700;
+    }
+
+    /* Blade Front Bezel Faceplate */
+    .face {
+      padding: 12px 14px; display: grid;
+      grid-template-columns: 230px 1fr auto;
+      gap: 14px; align-items: center;
+    }
+    @media (max-width: 820px) {
+      .face { grid-template-columns: 1fr; }
+    }
+
+    /* Left Identity + Status LEDs */
+    .blade-id h2 { font-size: 14px; color: #f8fafc; font-weight: 700; margin-bottom: 3px; }
+    .blade-id p { font-size: 11.5px; color: #94a3b8; margin-bottom: 8px; }
+    .leds { display: flex; gap: 10px; align-items: center; font-family: ui-monospace, Consolas, monospace; font-size: 10px; color: #94a3b8; }
+    .led-item { display: inline-flex; align-items: center; gap: 4px; }
+    .led {
+      width: 7px; height: 7px; border-radius: 50%; background: #334155;
+    }
+    .led.green { background: #10b981; box-shadow: 0 0 7px #10b981; }
+    .led.blue { background: #38bdf8; box-shadow: 0 0 7px #38bdf8; }
+    .led.amber { background: #f59e0b; box-shadow: 0 0 7px #f59e0b; }
+    .blade.off .led { background: #334155 !important; box-shadow: none !important; }
+
+    /* Front-Bezel Mini OLED Screen */
+    .oled {
+      background: #030710; border: 2px solid #1e293b; border-radius: 7px;
+      padding: 8px 10px; min-height: 64px;
+      box-shadow: inset 0 0 18px rgba(56,189,248,0.14);
+      font-family: ui-monospace, 'Cascadia Code', Consolas, monospace; font-size: 11px;
+      color: #7dd3fc; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      position: relative; overflow: hidden;
+    }
+    .oled::after {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background: repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 3px);
+    }
+    .oled-lines { display: flex; flex-direction: column; gap: 2px; min-width: 0; z-index: 2; }
+    .oled-hi { color: #6ee7b7; font-weight: 700; }
+    .oled-dim { color: #94a3b8; font-size: 10.5px; }
+    .oled-canvas { width: 132px; height: 46px; border-radius: 4px; background: rgba(15,23,42,0.5); flex-shrink: 0; z-index: 2; }
+
+    /* Right Bezel Controls */
+    .controls { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+    .ctrl-row { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .pwr-btn {
+      width: 28px; height: 28px; border-radius: 50%; border: 1px solid #10b981;
+      background: rgba(16,185,129,0.16); color: #6ee7b7; font-size: 13px; font-weight: 800;
+      cursor: pointer; display: grid; place-items: center;
+    }
+    .blade.off .pwr-btn { border-color: #475569; background: #0f172a; color: #64748b; }
+
+    /* Bottom 1U Serial Console */
+    .console-oled {
+      background: #030710; border: 1px solid rgba(56,189,248,0.28); border-radius: 7px;
+      padding: 8px 12px; font-family: ui-monospace, Consolas, monospace; font-size: 11px;
+      color: #6ee7b7; max-height: 92px; overflow-y: auto; line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <header class="hdr">
+    <div class="hdr-title">AWESOME-OS <span>19&quot; RACK MANAGER</span></div>
+    <div class="hdr-right">
+      <span id="rack-pwr-pill" class="pill">6/6 BLADES ONLINE · 45.2 MB SHARED</span>
+      <span id="rack-opfs-pill" class="pill blue">OPFS v11: scanning...</span>
+      <a class="btn primary" href="./kvm.html">Open KVM Switch &rarr;</a>
+      <a class="btn" href="./">App Catalog</a>
+    </div>
+  </header>
+
+  <main class="rack-wrap">
+    <section id="rack-frame" class="rack-frame"></section>
+  </main>
+
+  <script type="module">
+    const BLADES = [
+      {
+        id: 'kvm', u: '1U', name: 'KVM Switch & HID Matrix',
+        sub: 'holo-kvm-switch · 64B B8G_ARENA_V1',
+        leds: ['PWR:green', 'HID:blue', 'LOCK:amber'],
+        launch: './kvm.html', launchLabel: 'KVM Console',
+        oledTop: 'MON=CH2 (omarchy) · HID=CH2',
+        oledSub: '0x33564742 · Strict HID Split · 0 dup RAM',
+        sparkColor: '#38bdf8',
+      },
+      {
+        id: 'webgpu', u: '2U', name: 'Sectium WebGPU Compositor',
+        sub: 'holo-display-webgpu · WGSL / Dawn',
+        leds: ['PWR:green', 'GPU:blue', '60HZ:green'],
+        launch: './sectium.html', launchLabel: 'Sectium',
+        oledTop: () => (navigator.gpu ? 'GPU: WebGPU (WGSL Active)' : 'GPU: WebGL2 / Canvas2D'),
+        oledSub: 'Shared Pure-Lib: dawn-webgpu (32 MB × 1)',
+        sparkColor: '#34d399',
+      },
+      {
+        id: 'desktops', u: '2U', name: 'Desktop OS Blades (4×)',
+        sub: 'Omarchy · Noctalia · Chonkstep · Kitty-Ink',
+        leds: ['PWR:green', 'BSP:blue', '25TH:amber'],
+        launch: './omarchy.html', launchLabel: 'Omarchy',
+        extraLinks: [
+          { label: 'Noctalia', href: './noctalia.html' },
+          { label: 'Chonkstep', href: './chonkstep.html' },
+          { label: 'Kitty-Ink', href: './kitty-ink.html' },
+        ],
+        oledTop: 'ACTIVE: desktop-omarchy (25 themes)',
+        oledSub: 'Dwindle BSP · Real Wallpapers · Super Lock',
+        sparkColor: '#a78bfa',
+      },
+      {
+        id: 'gitlab', u: '2U', name: 'GitLab Holo Forge & Gitaly',
+        sub: 'holo-gitlab-api · Zero Rails / Postgres',
+        leds: ['PWR:green', 'API4:blue', 'GIT:green'],
+        launch: './gitlab.html', launchLabel: 'GitLab Forge',
+        oledTop: 'REST /api/v4 + Smart-HTTP pkt-line READY',
+        oledSub: 'OPFS:/v11/files/ · CI Runner · Live Pages',
+        sparkColor: '#f59e0b',
+      },
+      {
+        id: 'cas', u: '1U', name: 'Global v11 CAS Storage Array',
+        sub: 'OPFS:/v11/files/ · 0 Cache API',
+        leds: ['PWR:green', 'CAS:green', 'DEDUP:blue'],
+        launch: './cas-mandelbrot.html', launchLabel: 'Q(self) CAS',
+        oledTop: 'OPFS:/v11/files/ · 39/39 v11-tree adopted',
+        oledSub: 'Shared Pure-Lib Pool: 45.2 MB (226 MB saved)',
+        sparkColor: '#38bdf8',
+      },
+      {
+        id: 'emukit', u: '1U', name: 'holo-vm-arch Multi-Arch Node',
+        sub: 'x86_64 · RISC-V · PowerPC · COEP SAB',
+        leds: ['PWR:green', 'COI:blue', 'FORK:amber'],
+        launch: '/emukit.html', launchLabel: 'holo-vm-arch',
+        oledTop: () => `COI/SAB=${self.crossOriginIsolated ? 'ONLINE' : 'STANDBY'} · b8g-emu-kit.b8p`,
+        oledSub: '233 KB Multi-Arch Microkernel · WebGPU',
+        sparkColor: '#f472b6',
+      },
+    ];
+
+    const state = new Map(BLADES.map((b) => [b.id, { on: true, history: Array.from({ length: 28 }, () => 0.25 + Math.random() * 0.45) }]));
+    const frame = document.getElementById('rack-frame');
+    const canvases = new Map();
+    const consoleLines = ['[rack] 19" Awesome-OS Chassis online — B8G_ABI_MAGIC_V3 (0x33564742)'];
+
+    function logConsole(msg) {
+      const ts = new Date().toTimeString().slice(0, 8);
+      consoleLines.push(`[${ts}] ${msg}`);
+      if (consoleLines.length > 24) consoleLines.shift();
+      const el = document.getElementById('rack-console');
+      if (el) { el.textContent = consoleLines.join('\n'); el.scrollTop = el.scrollHeight; }
+    }
+
+    function updateHeader() {
+      const onCount = [...state.values()].filter((s) => s.on).length;
+      document.getElementById('rack-pwr-pill').textContent =
+        `${onCount}/${BLADES.length} BLADES ONLINE · 45.2 MB SHARED RAM`;
+    }
+
+    BLADES.forEach((b) => {
+      const row = document.createElement('div');
+      row.className = 'blade';
+      row.id = 'blade-' + b.id;
+
+      const ledHtml = b.leds.map((spec) => {
+        const [lbl, col] = spec.split(':');
+        return `<span class="led-item"><span class="led ${col}"></span>${lbl}</span>`;
+      }).join('');
+
+      const extraBtns = (b.extraLinks || [])
+        .map((x) => `<a class="btn" href="${x.href}">${x.label}</a>`)
+        .join('');
+
+      const topText = typeof b.oledTop === 'function' ? b.oledTop() : b.oledTop;
+
+      row.innerHTML = `
+        <div class="ear"><span class="screw"></span><span class="u-tag">${b.u}</span><span class="screw"></span></div>
+        <div class="face">
+          <div class="blade-id">
+            <h2>${b.name}</h2>
+            <p>${b.sub}</p>
+            <div class="leds">${ledHtml}</div>
+          </div>
+          <div class="oled">
+            <div class="oled-lines">
+              <div class="oled-hi" id="oled-top-${b.id}">${topText}</div>
+              <div class="oled-dim" id="oled-sub-${b.id}">${b.oledSub}</div>
+            </div>
+            <canvas class="oled-canvas" width="132" height="46" id="spark-${b.id}"></canvas>
+          </div>
+          <div class="controls">
+            <div class="ctrl-row">
+              <a class="btn primary" href="${b.launch}">${b.launchLabel} &rarr;</a>
+              <button class="pwr-btn" title="Power Toggle Blade" data-pwr="${b.id}">&#9211;</button>
+            </div>
+            ${extraBtns ? `<div class="ctrl-row">${extraBtns}</div>` : ''}
+          </div>
+        </div>
+        <div class="ear right"><span class="screw"></span><span class="u-tag">${b.u}</span><span class="screw"></span></div>
+      `;
+      frame.append(row);
+      canvases.set(b.id, row.querySelector('#spark-' + b.id));
+    });
+
+    // Bottom 1U Serial Telemetry Console
+    const conBlade = document.createElement('div');
+    conBlade.className = 'blade';
+    conBlade.innerHTML = `
+      <div class="ear"><span class="screw"></span><span class="u-tag">1U</span><span class="screw"></span></div>
+      <div style="padding:10px 14px">
+        <div id="rack-console" class="console-oled">${consoleLines[0]}</div>
+      </div>
+      <div class="ear right"><span class="screw"></span><span class="u-tag">ttyS0</span><span class="screw"></span></div>
+    `;
+    frame.append(conBlade);
+
+    // Power toggles
+    document.querySelectorAll('[data-pwr]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.pwr;
+        const st = state.get(id);
+        st.on = !st.on;
+        document.getElementById('blade-' + id).classList.toggle('off', !st.on);
+        logConsole(`blade "${id}" powered ${st.on ? 'ON' : 'OFF'}`);
+        updateHeader();
+      });
+    });
+
+    // Live OLED sparkline ticker
+    function drawSparks() {
+      BLADES.forEach((b) => {
+        const st = state.get(b.id);
+        const c = canvases.get(b.id);
+        const ctx = c.getContext('2d');
+        if (st.on) {
+          const prev = st.history[st.history.length - 1];
+          const next = Math.max(0.12, Math.min(0.92, prev + (Math.random() - 0.5) * 0.22));
+          st.history.push(next);
+          st.history.shift();
+        }
+        ctx.clearRect(0, 0, c.width, c.height);
+        if (!st.on) return;
+        ctx.strokeStyle = b.sparkColor;
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        st.history.forEach((v, i) => {
+          const x = (i / (st.history.length - 1)) * c.width;
+          const y = c.height - 5 - v * (c.height - 10);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+      });
+    }
+    setInterval(drawSparks, 380);
+    drawSparks();
+
+    // Live OPFS v11 + holo-gitlab-api SW probe
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./holo-web-service-worker.js', { scope: './' }).catch(() => {});
+    }
+    (async () => {
+      try {
+        const root = await navigator.storage.getDirectory();
+        const v11 = await root.getDirectoryHandle('v11', { create: true });
+        const files = await v11.getDirectoryHandle('files', { create: true });
+        let count = 0, bytes = 0;
+        for await (const shard of files.values()) {
+          if (shard.kind === 'directory') {
+            for await (const f of shard.values()) {
+              if (f.kind === 'file') { count++; bytes += (await f.getFile()).size; }
+            }
+          }
+        }
+        document.getElementById('rack-opfs-pill').textContent = `OPFS v11: ${count} blobs (${(bytes / 1024).toFixed(1)} KB)`;
+        document.getElementById('oled-top-cas').textContent = `OPFS:/v11/files/ · ${count} live blobs (${(bytes / 1024).toFixed(1)} KB)`;
+        logConsole(`OPFS:/v11/files/ mounted (${count} blobs, 0 Cache API)`);
+      } catch {
+        document.getElementById('rack-opfs-pill').textContent = 'OPFS v11: standby';
+      }
+      try {
+        const r = await fetch('./api/holo/v11/status');
+        if (r.ok) {
+          const j = await r.json();
+          document.getElementById('oled-top-gitlab').textContent = `${j.swVersion || 'holo-web-sw'} · /api/v4 + Smart-HTTP LIVE`;
+          logConsole(`holo-gitlab-api probe OK (${j.swVersion || 'v11.3'})`);
+        }
+      } catch {}
+    })();
+  </script>
+</body>
+</html>
