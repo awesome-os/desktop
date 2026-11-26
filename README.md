@@ -47,9 +47,11 @@ Every host (bare-metal PC, Hyper-V/QEMU VM, Proxmox blade, Windows/macOS/Linux w
 | **4. VGA Text (`80×25`)** | 16-color `tty0` / `linux` VT (`TTY-Ink Greeter`) | **1987+ VGA**, IPMI/iDRAC/iLO KVM consoles, recovery boots |
 | **5. Pure Serial (`ttyS0`)** | `115200 8N1` VT100 / ASCII (`awesome-os/posix`) | Headless 19" rack blades, embedded boards, **1978 VT100** |
 
+- **Selectable `+ Advanced Graphics` Layer (Default Rootless `Xwayland`):**
+  - **Base OS (`~31 MB`):** Boots anywhere with `/dev/fb0` + `kitty-ink` + `ttyS0` — zero GPU stack bloat on servers, VMs, or minimal installs.
+  - **`+ Advanced Graphics` (opt-in workstation toggle):** Adds full **Wayland DRM+KMS + Mesa / Vulkan / Dawn WebGPU** hardware acceleration **with rootless `Xwayland` enabled by default** — so every legacy X11 app works seamlessly inside Wayland without ever shipping `xorg-server` or the 549 legacy Xorg packages.
 - **Hardware drivers belong in the kernel + `modalias` `v11` CAS hydrator (`boot/src/driver_hydrator.c`), not X11.**
 - **Zero X11 security surface** (no global keystroke-sniffing X11 bus, no `setuid` Xorg).
-- **Ancient X11-only apps** run rootless via `Xwayland` or the frozen opt-in `packages-legacy` overlay — never replacing the host display stack.
 
 ## Quick Start
 
