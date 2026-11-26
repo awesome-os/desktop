@@ -1,0 +1,15 @@
+{
+  "schema": "holo-ci.v1",
+  "name": "desktop",
+  "kind": "app",
+  "tests": [
+    "node --test desktop.test.mts"
+  ],
+  "docs": [
+    "README.md"
+  ],
+  "guards": {
+    "zeroGhost": true,
+    "zeroCasV1": true
+  }
+}
