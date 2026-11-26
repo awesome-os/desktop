@@ -199,8 +199,9 @@ static void setup_baremetal_network(void) {
         if (ent->d_name[0] == '.' || strcmp(ent->d_name, "lo") == 0) {
             continue;
         }
-        char ifname[64];
-        snprintf(ifname, sizeof(ifname), "%s", ent->d_name);
+        char ifname[256];
+        snprintf(ifname, sizeof(ifname), "%.*s", (int)(sizeof(ifname) - 1),
+                 ent->d_name);
         char *const up_argv[] = {"/bin/ip", "link", "set", ifname, "up", NULL};
         if (run_wait(up_argv) == 0) {
             log_both("[AWESOME-OS] NIC up: %s\n", ifname);
